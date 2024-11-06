@@ -75,9 +75,9 @@ app.get("/chat/:roomId", (req, res) => {
 	};
 
 	const members = [];
-	for (const [_userId, obj] of Object.entries(req.connection.server.ROOMS[roomId])) {
+	for (const [_userId, member] of Object.entries(req.connection.server.ROOMS[roomId])) {
 		if (_userId !== userId) {
-			members.push(obj.displayName);
+			members.push(member.displayName);
 		}
 	}
 
