@@ -1,6 +1,13 @@
 # chat-app
  Real time chat app built with websockets
 
+### App Flow
+
+ - When a user browses to `/join` a `userId` is created
+ - This `userId` is then passed to the `/chat` endpoint
+
+
+### Rooms Schema
 
 ```js
 ROOMS = {

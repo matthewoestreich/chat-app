@@ -13,9 +13,12 @@
 		</style>
 	</head>
 	<body>
-		<div class="container h-100">
-			<div class="row h-100 justify-content-center align-items-center">
-				<div class="col-6">
+		<div class="container-fluid min-vh-100 d-flex flex-column">
+			<div class="row flex-grow-1 justify-content-center align-items-center">
+				<div class="col-md-6 col-lg-4 col-sm-10 col-xs-12">
+					<div class="text-center mb-5">
+						<h1 class="display-1">Join Room</h1>
+					</div>
 					<div class="form-group">
 						<form id="join-form">
 							<div class="mb-3">
@@ -43,8 +46,8 @@
 			const roomId = document.getElementById("room-id");
 
 			const queryParams = new URL(window.location.toString()).searchParams;
-			if (queryParams && queryParams.get("roomId")) {
-				roomId.value = queryParams.get("roomId");
+			if (queryParams && queryParams.get("id")) {
+				roomId.value = queryParams.get("id");
 			}
 
 			joinRoomButton.addEventListener("click", async (event) => {
@@ -54,13 +57,16 @@
 				form.isValid = form.checkValidity();
 				form.classList.add("was-validated");
 
-				if (form.isValid) {
-					const url = new URL(window.location.href);
-					url.pathname = `/chat/${roomId.value}`;
-					url.searchParams.append("userId", "<%- userId %>");
-					url.searchParams.append("displayName", displayName.value);
-					window.location = url;
+				if (!form.isValid) {
+					return;
 				}
+
+				const url = new URL(window.location.href);
+				url.pathname = `/chat/${roomId.value}`;
+				url.searchParams.forEach((val, key) => url.searchParams.delete(key, val));
+				url.searchParams.append("userId", "<%- userId %>");
+				url.searchParams.append("displayName", displayName.value);
+				window.location = url;
 			});
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

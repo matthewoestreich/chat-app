@@ -1,11 +1,30 @@
 import express from "express";
 import path from "path";
 import { v7 as uuidv7 } from "uuid";
-import getRandomLightColorHex from "./getRandomLightColorHex.js";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
 
 const app = express();
+
+/**
+ * MISC FUNCTIONS
+ */
+
+function getRandomLightColorHex() {
+	let color = "#";
+	for (let i = 0; i < 6; i++) {
+		// Generate a random hex digit (0-F)
+		const digit = Math.floor(Math.random() * 16).toString(16);
+
+		// Ensure the color is light by biasing towards higher values (A-F)
+		if (Math.random() < 0.5) {
+			color += digit;
+		} else {
+			color += Math.floor(Math.random() * 6 + 10).toString(16); // A-F
+		}
+	}
+	return color;
+}
 
 /**
  * VIEW ENGINE
@@ -35,7 +54,13 @@ app.get("/join", (req, res) => {
 });
 
 app.get("/create", (req, res) => {
-	res.render("create-room");
+	const roomId = uuidv7();
+	const userId = uuidv7();
+	// Only create the room here, don't add the user to it.
+	// We do that when the user first hits the "/chat/roomId" endpoint.
+	// Adding them here would technically be premature.
+	req.connection.server.ROOMS[roomId] = {};
+	res.render("create-room", { roomId, userId });
 });
 
 // url.com/chat/fooRoom?userId=foo&displayName=foo
@@ -44,6 +69,7 @@ app.get("/chat/:roomId", (req, res) => {
 	const { userId, displayName } = req.query;
 
 	if (!roomId || !displayName || !userId) {
+		console.log(`[/chat][ERROR] missing required param!`, { roomId, displayName, userId });
 		res.render("error", { error: "Something went wrong!" });
 		return;
 	}
@@ -55,23 +81,25 @@ app.get("/chat/:roomId", (req, res) => {
 	}
 
 	if (!req.connection.server.ROOMS[roomId]) {
+		console.log(`[/chat][ERROR] room does not exist!`, { roomId });
 		res.render("error", { error: "Something went wrong!" });
 		return;
 	}
 
+	// ~~~ NEED TO TEST THIS ~~
 	// If someone tries to join roomId with existing userId
 	if (req.connection.server.ROOMS[roomId][userId]) {
 		// If the displayName is diff it's prob a duplicate userId...
 		if (req.connection.server.ROOMS[roomId][userId].displayName !== displayName) {
-			console.log(`[/chat][ERROR] Duplicate userId's in single room!`, { roomId, userId, displayName });
+			console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
 			res.render("error", { error: "Something went wrong!" });
 			return;
 		}
 	}
 
 	req.connection.server.ROOMS[roomId][userId] = {
-		displayName,
 		chatBubbleColor: getRandomLightColorHex(),
+		displayName,
 	};
 
 	const members = [];
