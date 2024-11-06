@@ -75,10 +75,12 @@ app.get("/chat/:roomId", (req, res) => {
 	};
 
 	const members = [];
-	for (const [_userId, member] of Object.entries(req.connection.server.ROOMS[roomId])) {
-		if (_userId !== userId) {
-			members.push(member.displayName);
+	for (const [memberId, member] of Object.entries(req.connection.server.ROOMS[roomId])) {
+		// We don't need to add ourselves as we already know we exist....
+		if (memberId === userId) {
+			continue;
 		}
+		members.push(member.displayName);
 	}
 
 	res.render("chat-room", { displayName, roomId, userId, members });
