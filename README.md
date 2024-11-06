@@ -7,11 +7,13 @@ ROOMS = {
   "roomid_1": { // <- this is what a room object looks like
     "userID_1": { // <- this is what a user object looks like
       "displayName": "foo",
-      "socket": "WebSocket"
+      "socket": "WebSocket",
+      "chatBubbleColor": "<hex_color>",
     },
     "userID_2": {
       "displayName": "bar",
-      "socket": "WebSocket"
+      "socket": "WebSocket",
+      "chatBubbleColor": "<hex_color>",
     },
   },
   "roomid_2": {
