@@ -55,7 +55,11 @@
 				form.classList.add("was-validated");
 
 				if (form.isValid) {
-					window.location.pathname = `/chat/${roomId.value}/?userId=${"<%- userId %>"}&displayName=${displayName.value}`;
+					const url = new URL(window.location.href);
+					url.pathname = `/chat/${roomId.value}`;
+					url.searchParams.append("userId", "<%- userId %>");
+					url.searchParams.append("displayName", displayName.value);
+					window.location = url;
 				}
 			});
 		</script>

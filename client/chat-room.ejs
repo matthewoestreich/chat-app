@@ -9,36 +9,30 @@
 			* {
 				box-sizing: border-box;
 			}
-
 			html,
 			body {
 				height: 100%;
 				margin: 0;
 			}
-
 			.min-h-200px {
 				min-height: 200px;
 			}
-
 			.min-vh-50 {
 				min-height: 50vh;
 			}
-
 			.max-vh-100 {
 				max-height: 100vh;
 			}
-
 			.max-vh-80 {
 				max-height: 80vh;
 			}
-
 			.min-vh-50 {
 				height: 50vh;
 				min-height: 50vh;
 			}
-
 			.message {
 				display: flex;
+				margin-bottom: 20px;
 			}
 			.message.message-from {
 				justify-content: start;
@@ -53,9 +47,6 @@
 				position: relative;
 				padding: 10px;
 				border-radius: 10px;
-			}
-			.message.message-from > .message-body {
-				background-color: #82ccdd;
 			}
 			.message.message-to > .message-body {
 				background-color: #78e08f;
@@ -74,8 +65,8 @@
 			<div class="row flex-grow-1">
 				<div class="col-sm-2 d-none d-xl-block border border-dark-subtle">
 					<h1 class="text-center">Members</h1>
+					<div id="members-list" class="list-group list-group-flush"></div>
 				</div>
-
 				<div class="col border border-dark-subtle">
 					<div class="text-center">
 						<h1><%= displayName %></h1>
@@ -85,55 +76,11 @@
 						<div class="row max-vh-100 justify-content-center">
 							<div class="col-xl-6 col-lg-8 col-sm-12">
 								<div class="card min-h-200px max-vh-80 d-flex flex-column">
-									<!--<div class="card-body d-flex flex-column flex-nowrap align-items-start vh-50" style="overflow:scroll;">-->
-									<div class="card-body min-vh-50" style="overflow: scroll">
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-										<div class="message message-from">
-											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
-										</div>
-										<div class="message message-to">
-											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
-										</div>
-									</div>
+									<div id="chat-display" class="card-body min-vh-50" style="overflow: scroll"></div>
 									<div class="card-footer">
 										<div class="input-group">
-											<textarea class="form-control custom-control" rows="3" style="resize: none"></textarea>
-											<button class="input-group-addon btn btn-lg btn-primary">Send</button>
+											<textarea id="chat-text-input" class="form-control custom-control" rows="3" style="resize: none"></textarea>
+											<button id="send-chat-btn" class="input-group-addon btn btn-lg btn-primary">Send</button>
 										</div>
 									</div>
 								</div>
@@ -142,79 +89,120 @@
 					</div>
 				</div>
 			</div>
-
-			<!--
-					<div class="row">
-						<div class="card">
-							<div class="card-body d-flex flex-column">
-								<div class="message message-to">Hello, how can I assist you?</div>
-								<div class="message message-to">Are you there? How can I assist you?</div>
-								<div class="message message-from">Oh, I'm sorry! I need your password.</div>
-								<div class="message message-to">Goodbye.</div>
-							</div>
-							<div class="card-footer">
-								<div class="input-group">
-									<textarea class="form-control custom-control bgc-lightgray" rows="8" style="resize: none"></textarea>
-									<button class="input-group-addon btn btn-lg btn-primary w-20-pct">Send</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-      -->
-
-			<!--
-      <div class="col-2 h-100 p-0 border border-dark-subtle">
-        <div class="row border-bottom border-dark-subtle" style="max-height: 50px;">
-          <h1 class="text-center">Members</h1>
-        </div>
-        <div class="row">
-
-        </div>
-      </div>
-
-      <div class="col-10 h-100 p-0 border border-dark-subtle">
-
-        <div class="row border-bottom border-dark-subtle" style="max-height: 50px;">
-          <h1 class="text-center">DISPLAY_NAME_PLACEHOLDER</h1>
-        </div>
-
-        <div class="row h-80">
-
-        </div>
-        
-        <div class="row">
-          <div class="col-12">
-            <div class="input-group">
-              <textarea class="form-control custom-control" rows="3" style="resize:none"></textarea>     
-              <span class="input-group-addon btn btn-primary">Send</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      -->
 		</div>
 		<script>
-			deleteAllCookies();
-			const roomId = "<%- JSON.stringify(roomId) %>";
-			const displayName = "<%- JSON.stringify(displayName) %>";
-			const members = "<%- JSON.stringify(members) %>";
+			const chatTextInput = document.getElementById("chat-text-input");
+			const sendChatButton = document.getElementById("send-chat-btn");
+			const chatDisplay = document.getElementById("chat-display");
+			const membersList = document.getElementById("members-list");
+
+			const roomId = "<%- roomId %>";
+			const userId = "<%- userId %>";
+			const displayName = "<%- displayName %>";
+			const renderedMembers = "<%- members %>";
+			const members = renderedMembers.split(",").map((m) => m);
 
 			const socket = new WebSocket("ws://localhost:3000");
+			// When this browser window is closed, alert the server that we left.
+			window.onbeforeunload = () => socket.send(JSON.stringify({ type: "close", roomId, userId, displayName }));
+
+			// Register a socket for this user on the backend after we first connect/open.
 			socket.onopen = (ws, event) => {
-				console.log("socket open", { displayName, roomId, members });
+				socket.send(JSON.stringify({ type: "register", roomId, userId, displayName }));
 			};
 
-			function deleteAllCookies() {
-				const cookies = document.cookie.split(";");
+			// Recieved socket message
+			socket.onmessage = (event) => {
+				const message = JSON.parse(event.data);
 
-				for (let i = 0; i < cookies.length; i++) {
-					const cookie = cookies[i];
-					const eqPos = cookie.indexOf("=");
-					const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-					document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+				if (!message || !message.type) {
+					return;
 				}
+
+				switch (message?.type) {
+					case "join": {
+            if (!message?.displayName) {
+              return;
+            }
+						members.push(message.displayName);
+						updateMembersList(members);
+						break;
+					}
+
+					case "message": {
+						const { value, from, chatBubbleColor } = message;
+						const isSending = false;
+						chatDisplay.appendChild(generateChatHTML(value, from, chatBubbleColor, isSending));
+						scrollToBottomOfElement(chatDisplay);
+						break;
+					}
+
+					case "close": {
+						const { displayName } = message;
+						members.splice(members.indexOf(displayName), 1);
+						updateMembersList(members);
+						break;
+					}
+
+					default: {
+						break;
+					}
+				}
+			};
+
+			chatTextInput.addEventListener("keydown", (event) => {
+				if (event.key !== "Enter") {
+					return;
+				}
+				event.preventDefault();
+				sendChatButton.click();
+			});
+
+			sendChatButton.addEventListener("click", (event) => {
+				if (!chatTextInput.value) {
+					return;
+				}
+				socket.send(JSON.stringify({ type: "message", from: displayName, value: chatTextInput.value, roomId, userId }));
+				const msgHTML = generateChatHTML(chatTextInput.value, displayName, true);
+				chatTextInput.value = "";
+				chatDisplay.appendChild(msgHTML);
+				scrollToBottomOfElement(chatDisplay);
+			});
+
+			function scrollToBottomOfElement(element) {
+				element.scrollTop = element.scrollHeight;
+			}
+
+			// Generate HTML to put into chat display
+			function generateChatHTML(message, displayName, chatBubbleColor, isSending = true) {
+				const messageDiv = document.createElement("div");
+				const messageBodyDiv = document.createElement("div");
+				const messageFooterSpan = document.createElement("span");
+
+				let senderOrRecieverClass = "message-to";
+				if (!isSending) {
+					senderOrRecieverClass = "message-from";
+					messageBodyDiv.style.backgroundColor = chatBubbleColor;
+				}
+
+				messageDiv.classList.add("message");
+				messageDiv.classList.add(senderOrRecieverClass);
+
+				messageBodyDiv.classList.add("message-body");
+				messageBodyDiv.innerText = message;
+
+				messageFooterSpan.classList.add("message-footer");
+				messageFooterSpan.innerText = displayName;
+
+				messageBodyDiv.appendChild(messageFooterSpan);
+				messageDiv.appendChild(messageBodyDiv);
+
+				return messageDiv;
+			}
+
+			function updateMembersList(mems = []) {
+				membersList.innerHTML = "";
+				mems.forEach((m) => (membersList.innerHTML += `<div class="list-group-item">${m}</div>`));
 			}
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

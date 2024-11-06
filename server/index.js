@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { v7 as uuidv7 } from "uuid";
+import getRandomLightColorHex from "./getRandomLightColorHex.js";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
 
@@ -41,9 +42,8 @@ app.get("/create", (req, res) => {
 app.get("/chat/:roomId", (req, res) => {
 	const roomId = req.params?.roomId;
 	const { userId, displayName } = req.query;
-	console.log({ roomId, userId, displayName });
 
-	if (!roomId || !displayName) {
+	if (!roomId || !displayName || !userId) {
 		res.render("error", { error: "Something went wrong!" });
 		return;
 	}
@@ -69,8 +69,19 @@ app.get("/chat/:roomId", (req, res) => {
 		}
 	}
 
-	req.connection.server.ROOMS[roomId][userId] = { displayName };
-	res.render("chat-room", { displayName, roomId, members: req.connection.server.ROOMS[roomId] });
+	req.connection.server.ROOMS[roomId][userId] = {
+		displayName,
+		chatBubbleColor: getRandomLightColorHex(),
+	};
+
+	const members = [];
+	for (const [_userId, obj] of Object.entries(req.connection.server.ROOMS[roomId])) {
+		if (_userId !== userId) {
+			members.push(obj.displayName);
+		}
+	}
+
+	res.render("chat-room", { displayName, roomId, userId, members });
 });
 
 app.get("*", (req, res) => {
