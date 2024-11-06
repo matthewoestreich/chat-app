@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0" />
-		<title>Chat Room</title>
+		<title>RTChat | Room</title>
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
 		<style>
 			* {
@@ -68,9 +68,11 @@
 					<div id="members-list" class="list-group list-group-flush"></div>
 				</div>
 				<div class="col border border-dark-subtle">
-					<div class="text-center">
+					<div class="text-center mb-3">
 						<h1><%= displayName %></h1>
-						<small>Invite others using this link: /join?id=<%= roomId %></small>
+						<small role="button">
+							<a id="copy-room-url-link" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"> Copy room URL to invite others! </a>
+						</small>
 					</div>
 					<div class="container max-vh-100">
 						<div class="row max-vh-100 justify-content-center">
@@ -95,6 +97,7 @@
 			const sendChatButton = document.getElementById("send-chat-btn");
 			const chatDisplay = document.getElementById("chat-display");
 			const membersList = document.getElementById("members-list");
+			const copyRoomUrlLink = document.getElementById("copy-room-url-link");
 
 			const roomId = "<%- roomId %>";
 			const userId = "<%- userId %>";
@@ -104,12 +107,17 @@
 
 			const socket = new WebSocket("ws://localhost:3000");
 			// When this browser window is closed, alert the server that we left.
-			window.onbeforeunload = () => socket.send(JSON.stringify({ type: "close", roomId, userId, displayName }));
+			window.onbeforeunload = () => closeSocketAndInformServer(socket, roomId, userId, displayName);
 
 			// Register a socket for this user on the backend after we first connect/open.
 			socket.onopen = (ws, event) => {
 				socket.send(JSON.stringify({ type: "register", roomId, userId, displayName }));
 				updateMembersList(members);
+			};
+
+			socket.onclose = (ws, event) => {
+				console.log(`closing socket...'${ws?.reason ? `because ${ws.reason}` : ""}'`, { ws, event });
+				closeSocketAndInformServer(socket, roomId, userId, displayName);
 			};
 
 			// Recieved socket message
@@ -133,7 +141,7 @@
 					case "message": {
 						const { value, from, chatBubbleColor } = message;
 						const isSending = false;
-						chatDisplay.appendChild(generateChatHTML(value, from, chatBubbleColor, isSending));
+						chatDisplay.appendChild(generateChatHTML(value, from, isSending, chatBubbleColor));
 						scrollToBottomOfElement(chatDisplay);
 						break;
 					}
@@ -151,6 +159,16 @@
 				}
 			};
 
+			/**
+			 * EVENT HANDLERS
+			 */
+
+			copyRoomUrlLink.addEventListener("click", (event) => {
+				// Generate URL for copying to clipboard (for sharing rooms).
+				copyRoomUrlLink.value = `${window.location.host}/join?id=${roomId}`;
+				copyToClipboard(copyRoomUrlLink);
+			});
+
 			chatTextInput.addEventListener("keydown", (event) => {
 				if (event.key !== "Enter") {
 					return;
@@ -163,6 +181,12 @@
 				if (!chatTextInput.value) {
 					return;
 				}
+				if (socket.readyState !== socket.OPEN) {
+					chatDisplay.appendChild(generateChatHTML("Unable to send message", displayName, true, "red", true));
+					scrollToBottomOfElement(chatDisplay);
+					return;
+				}
+
 				socket.send(JSON.stringify({ type: "message", from: displayName, value: chatTextInput.value, roomId, userId }));
 				const msgHTML = generateChatHTML(chatTextInput.value, displayName, true);
 				chatTextInput.value = "";
@@ -175,7 +199,8 @@
 			}
 
 			// Generate HTML to put into chat display
-			function generateChatHTML(message, displayName, chatBubbleColor, isSending = true) {
+
+			function generateChatHTML(message, displayName, isSending = true, chatBubbleColor, isError = false) {
 				const messageDiv = document.createElement("div");
 				const messageBodyDiv = document.createElement("div");
 				const messageFooterSpan = document.createElement("span");
@@ -183,6 +208,10 @@
 				let senderOrRecieverClass = "message-to";
 				if (!isSending) {
 					senderOrRecieverClass = "message-from";
+					messageBodyDiv.style.backgroundColor = chatBubbleColor;
+				}
+
+				if (isError) {
 					messageBodyDiv.style.backgroundColor = chatBubbleColor;
 				}
 
@@ -201,9 +230,25 @@
 				return messageDiv;
 			}
 
+			function closeSocketAndInformServer(socket, roomId, userId, displayName) {
+				socket.send(JSON.stringify({ type: "close", roomId, userId, displayName }));
+			}
+
+			// Update members display
 			function updateMembersList(mems = []) {
 				membersList.innerHTML = "";
 				mems.forEach((m) => (membersList.innerHTML += `<div class="list-group-item">${m}</div>`));
+			}
+
+			// Copy to clipboard
+			// Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
+			function copyToClipboard(el) {
+				if (navigator.clipboard) {
+					return navigator.clipboard.writeText(el.value || el.innerText);
+				}
+				el.focus();
+				el.select();
+				document.execCommand("copy");
 			}
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

@@ -1,7 +1,5 @@
-import { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 import server from "../server/index.js";
-
-// process.env.WSS_PORT = process.env.WSS_PORT || 3001;
 
 const wss = new WebSocketServer({ server });
 
@@ -20,10 +18,13 @@ wss.on("connection", (ws, socket, request) => {
 				handleRegister(message, ws);
 				break;
 			}
+			// Handle receiving a message from a client
 			case "message": {
 				handleChatMessage(message, ws);
 				break;
 			}
+			// TODO: should prob use built-in
+			// A "custom", pseudo close.,
 			case "close": {
 				handleCloseSocket(message);
 				break;
@@ -35,6 +36,16 @@ wss.on("connection", (ws, socket, request) => {
 	});
 });
 
+/**
+ *
+ * Ensures all required params exist for sending a message.
+ * If everything passes, a message is broadcast to all members
+ * within the sending members room.
+ *
+ * @param {{}} message object containing data lol...
+ * @param {WebSocketServer<WebSocket.WebSocket>} socket current client socket
+ *
+ */
 function handleChatMessage(message, socket) {
 	const { roomId, from, value, userId } = message;
 	console.log(`[ws][message]`, { roomId, value, from, userId });
@@ -43,9 +54,9 @@ function handleChatMessage(message, socket) {
 		console.log(` [ws][message][ERROR] missing required param`, { userId, roomId, from, value, "ws.room": socket.room, "roomId !== ws.room": roomId !== socket.room });
 		return;
 	}
-
 	if (!server.ROOMS[roomId] || !server.ROOMS[roomId][userId]) {
 		console.log(` [ws][message][ERROR] either roomm doesn't exist or user not in this room tried sending message!`, { userId, displayName: from });
+		socket.close(1007, "Nonexistent room or user!");
 		return;
 	}
 
@@ -53,6 +64,15 @@ function handleChatMessage(message, socket) {
 	broadcastToRoom(roomId, userId, { type: "message", from, fromUserId: userId, value, chatBubbleColor });
 }
 
+/**
+ *
+ * When a client first connects to a backend socket, we register this client socket
+ * on the backend (for later use).
+ *
+ * @param {{}} message object containing data lol...
+ * @param {WebSocketServer<WebSocket.WebSocket>} socket current client socket
+ *
+ */
 function handleRegister(message, socket) {
 	const { roomId, userId, displayName } = message;
 	console.log(`[ws][register]`, { roomId, userId, displayName });
@@ -66,6 +86,13 @@ function handleRegister(message, socket) {
 	broadcastToRoom(roomId, userId, { type: "join", displayName });
 }
 
+/**
+ *
+ * Removes a user from a room and broadcasts that someone left to the room.
+ *
+ * @param {{}} message
+ *
+ */
 function handleCloseSocket(message) {
 	const { roomId, userId, displayName } = message;
 	console.log(`[ws][close]`, { roomId, userId, displayName });
@@ -79,10 +106,31 @@ function handleCloseSocket(message) {
 	broadcastToRoom(roomId, userId, { type: "close", displayName });
 }
 
+/**
+ *
+ * If valid data is recieved, deletes entry from server.ROOMS object.
+ *
+ * @param {UUIDv7} roomId
+ * @param {UUIDv7} userId
+ *
+ */
 function removeUserFromRoom(roomId, userId) {
+	if (!roomId || !userId || !server.ROOMS[roomId] || !server.ROOMS[roomId][userId]) {
+		return;
+	}
+	console.log(`[ws][remove] removing user from room`, { roomId, userId });
 	delete server.ROOMS[roomId][userId];
 }
 
+/**
+ *
+ * Stores a client socket with their user object, which is inside of the rooms object.
+ *
+ * @param {UUIDv7} roomId
+ * @param {UUIDv7} userId
+ * @param {WebSocketServer<WebSocket.WebSocket>} socket
+ *
+ */
 function registerSocketToUser(roomId, userId, socket) {
 	if (!server.ROOMS[roomId]) {
 		return;
@@ -91,6 +139,15 @@ function registerSocketToUser(roomId, userId, socket) {
 	socket.room = roomId;
 }
 
+/**
+ *
+ * Sends data to every member in specified room.
+ *
+ * @param {UUIDv7} roomId
+ * @param {UUIDv7} userId
+ * @param {{}} data any data as an object. eg. `{}`
+ *
+ */
 function broadcastToRoom(roomId, userId, data) {
 	const room = server.ROOMS[roomId];
 	if (room) {
