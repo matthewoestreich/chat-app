@@ -16,107 +16,134 @@
 				margin: 0;
 			}
 
-      .min-h-200px {
-        min-height: 200px;
-      }
+			.min-h-200px {
+				min-height: 200px;
+			}
 
-      .min-vh-50 {
-        min-height: 50vh;
-      }
+			.min-vh-50 {
+				min-height: 50vh;
+			}
 
-      .max-vh-100 {
-        max-height: 100vh;
-      }
+			.max-vh-100 {
+				max-height: 100vh;
+			}
 
-      .max-vh-80 {
-        max-height: 80vh;
-      }
+			.max-vh-80 {
+				max-height: 80vh;
+			}
 
-      .min-vh-50 {
-        height: 50vh;
-        min-height: 50vh;
-      }
+			.min-vh-50 {
+				height: 50vh;
+				min-height: 50vh;
+			}
 
-      .message {
-        display: flex;
-      }
-      .message.message-from {
-        justify-content: start;
-      }
-      .message.message-to {
-        justify-content: end;
-      }
-      .message > .message-body {
-        margin-top: auto;
-        margin-bottom: auto;
-        margin-left: 10px;
-        position: relative;
-        padding: 10px;
-        border-radius: 10px;
-      }
-      .message.message-from > .message-body {
-        background-color: #82ccdd;
-      }
-      .message.message-to > .message-body {
-        background-color: #78e08f;
-      }
-      .message > .message-body > .message-footer {
-        position: absolute;
-        left: 0;
-        bottom: -15px;
-        color: rgba(42, 41, 41, 0.5);
-        font-size: 10px;
-      }
+			.message {
+				display: flex;
+			}
+			.message.message-from {
+				justify-content: start;
+			}
+			.message.message-to {
+				justify-content: end;
+			}
+			.message > .message-body {
+				margin-top: auto;
+				margin-bottom: auto;
+				margin-left: 10px;
+				position: relative;
+				padding: 10px;
+				border-radius: 10px;
+			}
+			.message.message-from > .message-body {
+				background-color: #82ccdd;
+			}
+			.message.message-to > .message-body {
+				background-color: #78e08f;
+			}
+			.message > .message-body > .message-footer {
+				position: absolute;
+				left: 0;
+				bottom: -15px;
+				color: rgba(42, 41, 41, 0.5);
+				font-size: 10px;
+			}
 		</style>
 	</head>
 	<body>
 		<div class="container-fluid min-vh-100 d-flex flex-column">
-      <div class="row flex-grow-1">
-
+			<div class="row flex-grow-1">
 				<div class="col-sm-2 d-none d-xl-block border border-dark-subtle">
-						<h1 class="text-center">Members</h1>
+					<h1 class="text-center">Members</h1>
 				</div>
 
 				<div class="col border border-dark-subtle">
-						<div class="text-center">
-              <h1><%= displayName %></h1>
-              <small>Invite others using this link: /join?roomId=<%= roomId %></small>
-            </div>
-            <div class="container max-vh-100">
-              <div class="row max-vh-100 justify-content-center">
-                <div class="col-xl-6 col-lg-8 col-sm-12">
-                  <div class="card min-h-200px max-vh-80 d-flex flex-column">
-                    <!--<div class="card-body d-flex flex-column flex-nowrap align-items-start vh-50" style="overflow:scroll;">-->
-                    <div class="card-body min-vh-50" style="overflow:scroll;">
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                      <div class="message message-from"><div class="message-body">Hello!<span class="message-footer">Joe</span></div></div>
-                      <div class="message message-to"><div class="message-body">Whats Up!<span class="message-footer">Matt</span></div></div>
-                    </div>
-                    <div class="card-footer">
-      								<div class="input-group">
-                        <textarea class="form-control custom-control" rows="3" style="resize: none"></textarea>
-                        <button class="input-group-addon btn btn-lg btn-primary">Send</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
-      </div>
+					<div class="text-center">
+						<h1><%= displayName %></h1>
+						<small>Invite others using this link: /join?roomId=<%= roomId %></small>
+					</div>
+					<div class="container max-vh-100">
+						<div class="row max-vh-100 justify-content-center">
+							<div class="col-xl-6 col-lg-8 col-sm-12">
+								<div class="card min-h-200px max-vh-80 d-flex flex-column">
+									<!--<div class="card-body d-flex flex-column flex-nowrap align-items-start vh-50" style="overflow:scroll;">-->
+									<div class="card-body min-vh-50" style="overflow: scroll">
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+										<div class="message message-from">
+											<div class="message-body">Hello!<span class="message-footer">Joe</span></div>
+										</div>
+										<div class="message message-to">
+											<div class="message-body">Whats Up!<span class="message-footer">Matt</span></div>
+										</div>
+									</div>
+									<div class="card-footer">
+										<div class="input-group">
+											<textarea class="form-control custom-control" rows="3" style="resize: none"></textarea>
+											<button class="input-group-addon btn btn-lg btn-primary">Send</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 
-          <!--
+			<!--
 					<div class="row">
 						<div class="card">
 							<div class="card-body d-flex flex-column">
@@ -136,7 +163,7 @@
 				</div>
       -->
 
-				<!--
+			<!--
       <div class="col-2 h-100 p-0 border border-dark-subtle">
         <div class="row border-bottom border-dark-subtle" style="max-height: 50px;">
           <h1 class="text-center">Members</h1>
@@ -170,14 +197,14 @@
 		</div>
 		<script>
 			deleteAllCookies();
-      const roomId = '<%- JSON.stringify(roomId) %>';
-      const displayName = '<%- JSON.stringify(displayName) %>';
-      const members = '<%- JSON.stringify(members) %>';
+			const roomId = "<%- JSON.stringify(roomId) %>";
+			const displayName = "<%- JSON.stringify(displayName) %>";
+			const members = "<%- JSON.stringify(members) %>";
 
-      const socket = new WebSocket("ws://localhost:3000");
-      socket.onopen = (ws, event) => {
-        console.log("socket open", {displayName,roomId, members});
-      }
+			const socket = new WebSocket("ws://localhost:3000");
+			socket.onopen = (ws, event) => {
+				console.log("socket open", { displayName, roomId, members });
+			};
 
 			function deleteAllCookies() {
 				const cookies = document.cookie.split(";");
