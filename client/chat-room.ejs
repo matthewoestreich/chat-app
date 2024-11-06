@@ -105,7 +105,7 @@
 			const renderedMembers = "<%- members %>";
 			const members = renderedMembers.split(",").map((m) => m);
 
-			const socket = new WebSocket(`ws://<%- wsServerString %>`);
+			const socket = new WebSocket(`<%- wsServerString %>`);
 			// When this browser window is closed, alert the server that we left.
 			window.onbeforeunload = () => closeSocketAndInformServer(socket, roomId, userId, displayName);
 
