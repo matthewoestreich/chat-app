@@ -108,7 +108,8 @@ app.get("/chat/:roomId", (req, res) => {
 		members.push(member.displayName);
 	}
 
-	res.render("chat-room", { displayName, roomId, userId, members });
+	const wsServerString = process.env.IS_RUNNING_LOCAL === "no" ? process.env.HOST_NAME : `localhost:${process.env.EXPRESS_PORT}`;
+	res.render("chat-room", { displayName, roomId, userId, members, wsServerString });
 });
 
 /**
