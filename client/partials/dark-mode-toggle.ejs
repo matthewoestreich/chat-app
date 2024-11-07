@@ -1,0 +1,31 @@
+<div class="position-fixed top-0 end-0 m-3 d-none d-lg-block">
+	<button id="toggle-dark-mode" type="button" class="btn btn-secondary" type="button">
+		<svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-lightbulb fs-3" viewBox="0 0 16 16">
+			<path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m3 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1-.5-.5" />
+		</svg>
+	</button>
+</div>
+<script>
+	const htmlNode = document.querySelector("html");
+	let localStorageTheme = localStorage.getItem("theme");
+	if (!localStorageTheme) {
+		localStorageTheme = "light";
+		localStorage.setItem("theme", localStorageTheme);
+	}
+	htmlNode.setAttribute("data-bs-theme", localStorage.getItem("theme"));
+
+	const toggleTheme = document.getElementById("toggle-dark-mode");
+	const themeIcon = document.getElementById("theme-icon");
+	toggleTheme.addEventListener("click", () => {
+		if (localStorage.getItem("theme") === "light") {
+			localStorage.setItem("theme", "dark");
+			themeIcon.classList.remove("bi-lightbulb-fill");
+			themeIcon.classList.add("bi-lightbulb");
+		} else {
+			localStorage.setItem("theme", "light");
+			themeIcon.classList.remove("bi-lightbulb");
+			themeIcon.classList.add("bi-lightbulb-fill");
+		}
+		htmlNode.setAttribute("data-bs-theme", localStorage.getItem("theme"));
+	});
+</script>

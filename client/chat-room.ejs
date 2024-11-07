@@ -50,14 +50,22 @@
 		</style>
 	</head>
 	<body>
+		<!-- TOAST ALERTS -->
 		<div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
+		<!-- HAMBURGER MENU ON SMALL SCREENS -->
+		<%- include("partials/chat-room/hamburger-menu.ejs") %>
+		<!-- MODALS -->
+		<%- include("partials/chat-room/members-modal.ejs") %>
+		<!-- MAIN WEBSITE -->
 		<div class="container-fluid h-100 d-flex flex-column">
+			<!-- DARK MODE TOGGLE -->
+			<%- include("partials/dark-mode-toggle.ejs") %>
 			<!-- Header Row -->
 			<div class="row flex-shrink-0">
-				<div class="col-lg-2 border d-flex justify-content-center align-items-center">
+				<div class="col-xl-2 d-xl-flex d-none border d-flex justify-content-center align-items-center">
 					<h1>Members</h1>
 				</div>
-				<div class="col-lg-10 col-md-12 d-flex flex-column align-items-center mt-2">
+				<div class="col-lg-12 col-xl-10 d-flex flex-column align-items-center mt-2">
 					<h1><%- displayName %></h1>
 					<small role="button">
 						<a id="copy-room-url-link" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"> Copy room URL to invite others! </a>
@@ -67,16 +75,18 @@
 			<!-- Content Row (main row) -->
 			<div class="row flex-fill min-h-0">
 				<!-- Members List Content / Left Col -->
-				<div class="col-lg-2 mh-100 border overf-y-scroll">
+				<div class="col-xl-2 d-xl-block d-none mh-100 border overf-y-scroll">
 					<div id="members-list" class="list-group list-group-flush"></div>
 				</div>
 				<!-- Chat Col Content / Right Col -->
-				<div class="col-lg-10 col-md-12 mh-100 overf-y-scroll">
+				<!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
+				<div class="col mh-100 overf-y-scroll">
 					<!-- Nested container to hold chart card -->
 					<!-- This mirrors the main structure, but nested in a col -->
 					<div class="container-fluid h-100 d-flex flex-column">
 						<div class="row flex-fill min-h-0">
-							<div class="col-xl-6 offset-xl-3 mh-100">
+							<!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
+							<div class="col-xl-6 offset-xl-3 col-md-8 offset-md-2 mh-100">
 								<!-- Main Card For Chat Window -->
 								<div class="card mh-100 h-90pct mt-3">
 									<div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
@@ -98,8 +108,10 @@
 			const sendChatButton = document.getElementById("send-chat-btn");
 			const chatDisplay = document.getElementById("chat-display");
 			const membersList = document.getElementById("members-list");
+			const membersListModal = document.getElementById("members-list-modal");
 			const copyRoomUrlLink = document.getElementById("copy-room-url-link");
 			const toastContainer = document.getElementById("toast-container");
+			const hamburgerMenuViewMembersBtn = document.getElementById("hamburger-menu-view-members-btn");
 
 			const roomId = "<%- roomId %>";
 			const userId = "<%- userId %>";
@@ -114,7 +126,7 @@
 			socket.onopen = (ws, event) => {
 				// Register a socket for this user on the backend after we first connect/open.
 				socket.send(JSON.stringify({ type: "register", roomId, userId, displayName }));
-				updateMembersList(members);
+				renderMembers(members, membersList);
 			};
 
 			socket.onclose = (ws, event) => {
@@ -136,7 +148,7 @@
 						}
 						addToastAndShow(toastContainer, generateToastHTML(`${message.displayName} has joined!`));
 						members.push(message.displayName);
-						updateMembersList(members);
+						renderMembers(members, membersList);
 						break;
 					}
 
@@ -151,7 +163,7 @@
 					case "close": {
 						const { displayName } = message;
 						members.splice(members.indexOf(displayName), 1);
-						updateMembersList(members);
+						renderMembers(members, membersList);
 						break;
 					}
 
@@ -165,6 +177,7 @@
 			 * EVENT HANDLERS
 			 */
 
+			// Handles copying URL to clipboard
 			copyRoomUrlLink.addEventListener("click", (event) => {
 				// Generate URL for copying to clipboard (for sharing rooms).
 				copyRoomUrlLink.value = `${window.location.host}/join?id=${roomId}`;
@@ -173,6 +186,7 @@
 				}
 			});
 
+			// Handles enter key press to invoke sending a message
 			chatTextInput.addEventListener("keydown", (event) => {
 				if (event.key !== "Enter") {
 					return;
@@ -181,6 +195,7 @@
 				sendChatButton.click();
 			});
 
+			// Handles chat button click
 			sendChatButton.addEventListener("click", (event) => {
 				if (!chatTextInput.value) {
 					return;
@@ -190,13 +205,29 @@
 					scrollToBottomOfElement(chatDisplay);
 					return;
 				}
-
 				socket.send(JSON.stringify({ type: "message", from: displayName, value: chatTextInput.value, roomId, userId }));
 				const msgHTML = generateChatHTML(chatTextInput.value, displayName, true);
 				chatTextInput.value = "";
 				chatDisplay.appendChild(msgHTML);
 				scrollToBottomOfElement(chatDisplay);
 			});
+
+			// Handles viewing members on small devices
+			hamburgerMenuViewMembersBtn.addEventListener("click", (event) => {
+				console.log(members.length);
+				if (members.length === 1) {
+					// We are the only member...
+					renderMembers(["No Members To Display"], membersListModal);
+					return;
+				}
+				renderMembers(members, membersListModal);
+			});
+
+			/**
+			 *
+			 * FUNCTIONS
+			 *
+			 */
 
 			function scrollToBottomOfElement(element) {
 				element.scrollTop = element.scrollHeight;
@@ -219,6 +250,7 @@
 				messageDiv.classList.add("message");
 				messageDiv.classList.add(senderOrRecieverClass);
 				messageBodyDiv.classList.add("message-body");
+				messageBodyDiv.classList.add("text-black");
 				messageBodyDiv.innerText = message;
 				messageFooterSpan.classList.add("message-footer");
 				messageFooterSpan.innerText = displayName;
@@ -233,9 +265,9 @@
 			}
 
 			// Update members display
-			function updateMembersList(mems = []) {
-				membersList.innerHTML = "";
-				mems.forEach((m) => m && (membersList.innerHTML += `<div class="list-group-item">${m}</div>`));
+			function renderMembers(mems = [], displayElement) {
+				displayElement.innerHTML = "";
+				mems.forEach((m) => m && (displayElement.innerHTML += `<div class="list-group-item">${m}</div>`));
 			}
 
 			function addToastAndShow(toastContainer, toastElement) {
