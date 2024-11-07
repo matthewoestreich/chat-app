@@ -108,10 +108,13 @@ app.get("/chat/:roomId", (req, res) => {
 		members.push(member.displayName);
 	}
 
-	// Hack to get websocket url correctly..
-	// Must use 'wss' while on Render.com ...
-	const wsServerString = process.env.IS_RUNNING_LOCAL === "no" ? `wss://${process.env.HOST_NAME}` : `ws://localhost:${process.env.EXPRESS_PORT}`;
-	res.render("chat-room", { displayName, roomId, userId, members, wsServerString });
+	// Hack to get websocket url correctly..Must use 'wss' while on Render.com and 'ws' locally ...
+	let websocketUrl = `ws://localhost:${process.env.EXPRESS_PORT}`;
+	if (process.env.IS_RUNNING_LOCAL === "no") {
+		websocketUrl = `wss://${process.env.HOST_NAME}`;
+	}
+
+	res.render("chat-room", { displayName, roomId, userId, members, websocketUrl });
 });
 
 /**
