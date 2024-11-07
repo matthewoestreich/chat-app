@@ -116,7 +116,7 @@
 			};
 
 			socket.onclose = (ws, event) => {
-				console.log(`closing socket...'${ws?.reason ? `because ${ws.reason}` : ""}'`, { ws, event });
+				console.log(`closing socket...reason=${ws.reason}`, { ws, event });
 				if (socket.readyState === socket.OPEN || socket.readyState === socket.CONNECTING) {
 					closeSocketAndInformServer(socket, roomId, userId, displayName);
 				}
