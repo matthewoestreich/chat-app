@@ -235,7 +235,7 @@
 			// Update members display
 			function updateMembersList(mems = []) {
 				membersList.innerHTML = "";
-				mems.forEach((m) => (membersList.innerHTML += `<div class="list-group-item">${m}</div>`));
+				mems.forEach((m) => m && (membersList.innerHTML += `<div class="list-group-item">${m}</div>`));
 			}
 
 			function addToastAndShow(toastContainer, toastElement) {
