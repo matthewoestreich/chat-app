@@ -1,5 +1,5 @@
 import WebSocket, { WebSocketServer } from "ws";
-import server from "../server/index.js";
+import server, { CHAT_ROOMS } from "../server/index.js";
 
 const wss = new WebSocketServer({ server });
 
@@ -54,13 +54,17 @@ function handleChatMessage(message, socket) {
 		console.log(` [ws][message][ERROR] missing required param`, { userId, roomId, from, value, "ws.room": socket.room, "roomId !== ws.room": roomId !== socket.room });
 		return;
 	}
-	if (!server.ROOMS[roomId] || !server.ROOMS[roomId][userId]) {
+
+	const foundRoom = CHAT_ROOMS.get(roomId);
+	const foundMember = foundRoom.getMemberById(userId);
+
+	if (!foundRoom || !foundMember) {
 		console.log(` [ws][message][ERROR] either roomm doesn't exist or user not in this room tried sending message!`, { userId, displayName: from });
 		socket.close(1007, "Nonexistent room or user!");
 		return;
 	}
 
-	const chatBubbleColor = server.ROOMS[roomId][userId].chatBubbleColor;
+	const chatBubbleColor = foundMember.chatBubbleColor; //server.ROOMS[roomId][userId].chatBubbleColor;
 	broadcastToRoom(roomId, userId, { type: "message", from, fromUserId: userId, value, chatBubbleColor });
 }
 
@@ -115,11 +119,13 @@ function handleCloseSocket(message) {
  *
  */
 function removeUserFromRoom(roomId, userId) {
-	if (!roomId || !userId || !server.ROOMS[roomId] || !server.ROOMS[roomId][userId]) {
+	const foundRoom = CHAT_ROOMS.get(roomId);
+	const foundMember = foundRoom.getMemberById(userId);
+	if (!roomId || !userId || !foundRoom || !foundMember) {
 		return;
 	}
 	console.log(`[ws][remove] removing user from room`, { roomId, userId });
-	delete server.ROOMS[roomId][userId];
+	foundRoom.removeMember(foundMember.id);
 }
 
 /**
@@ -132,10 +138,15 @@ function removeUserFromRoom(roomId, userId) {
  *
  */
 function registerSocketToUser(roomId, userId, socket) {
-	if (!server.ROOMS[roomId]) {
+	const foundRoom = CHAT_ROOMS.get(roomId);
+	if (!foundRoom) {
 		return;
 	}
-	server.ROOMS[roomId][userId] = { socket, ...server.ROOMS[roomId][userId] };
+	const foundMember = foundRoom.getMemberById(userId);
+	if (!foundMember) {
+		return;
+	}
+	foundMember.socket = socket;
 	socket.room = roomId;
 }
 
@@ -149,12 +160,12 @@ function registerSocketToUser(roomId, userId, socket) {
  *
  */
 function broadcastToRoom(roomId, userId, data) {
-	const room = server.ROOMS[roomId];
+	const room = CHAT_ROOMS.get(roomId);
 	if (room) {
-		for (const [uid, member] of Object.entries(room)) {
-			if (member.socket && uid !== userId) {
-				member.socket.send(JSON.stringify(data));
+		room.members.forEach(m => {
+			if (m.socket && m.id !== userId) {
+				m.socket.send(JSON.stringify(data));
 			}
-		}
+		})
 	}
 }

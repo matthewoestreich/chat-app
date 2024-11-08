@@ -1,10 +1,16 @@
 import express from "express";
 import path from "path";
 import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
+import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
 
 const app = express();
+
+/**
+ * This is how we store room related data
+ */
+export const CHAT_ROOMS = new ChatRooms();
 
 /**
  * VIEW ENGINE
@@ -19,6 +25,11 @@ app.set("views", path.resolve(import.meta.dirname, "../client"));
 
 // Middleware to parse json bodies
 app.use(express.json());
+// Put an ID on each request
+app.use((req, res, next) => {
+	req.reqId = uuidv7();
+	next();
+});
 
 /**
  * ROUTES
@@ -48,14 +59,14 @@ app.get("/create", (req, res) => {
 	// Only create the room here, don't add the user to it yet. We will add
 	// the user to the room when the user first hits the "/chat/:roomId" endpoint.
 	// Adding them here would technically be premature.
-	req.connection.server.ROOMS[roomId] = {};
+	CHAT_ROOMS.add(new Room(roomId));
 	res.render("create-room", { roomId, userId });
 });
 
 /**
  * Handles chat room(s)..
  *
- * @route {GET} /chat:roomId?:userId=_&:displayName=_
+ * @route {GET} /chat/:roomId?:userId=_&:displayName=_
  */
 app.get("/chat/:roomId", (req, res) => {
 	const roomId = req.params?.roomId;
@@ -72,41 +83,45 @@ app.get("/chat/:roomId", (req, res) => {
 		res.render("error", { error: "Something went wrong!" });
 		return;
 	}
-	if (!req.connection.server.ROOMS[roomId]) {
+
+	const existingRoom = CHAT_ROOMS.get(roomId);
+
+	if (!existingRoom) {
 		console.log(`[/chat][ERROR] room does not exist!`, { roomId });
 		res.render("error", { error: "Something went wrong!" });
 		return;
 	}
 
+	let member = existingRoom.getMemberById(userId);
+
 	// ~~~ NEED TO TEST THIS ~~
 	// If someone tries to join roomId with existing userId
-	if (req.connection.server.ROOMS[roomId][userId]) {
+	//if (server.ROOMS[roomId][userId]) {
+	if (member) {
+		console.log(`user exists`);
 		// If the displayName is diff it's prob a duplicate userId...
-		if (req.connection.server.ROOMS[roomId][userId].displayName !== displayName) {
+		if (member.displayName !== displayName) {
 			console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
 			res.render("error", { error: "Something went wrong!" });
 			return;
 		}
+	} else {
+		console.log("user does not exist");
+		member = new RoomMember(userId, displayName);
+		member.chatBubbleColor = getRandomLightColorHex();
+		existingRoom.addMember(member);
 	}
-
-	req.connection.server.ROOMS[roomId][userId] = {
-		chatBubbleColor: getRandomLightColorHex(),
-		displayName,
-	};
 
 	// TODO:
 	// I dont really like this being here..
 	// Maybe find a better way of informing the user of current membersin room?
 	// Since the user will "register" with wss after this page is rendered, that
 	// may be a good place to do so?
-	const members = [];
-	for (const [memberId, member] of Object.entries(req.connection.server.ROOMS[roomId])) {
-		// We don't need to add ourselves as we already know we exist....
-		if (memberId === userId) {
-			continue;
+	const members = existingRoom.members.map((m) => {
+		if (m.id !== member.id) {
+			return m.displayName;
 		}
-		members.push(member.displayName);
-	}
+	});
 
 	// Hack to get websocket url correctly..Must use 'wss' while on Render.com and 'ws' locally ...
 	let websocketUrl = `ws://localhost:${process.env.EXPRESS_PORT}`;
@@ -129,16 +144,9 @@ app.get("*", (req, res) => {
  * START SERVER
  */
 
-const server = app.listen(process.env.EXPRESS_PORT, () => {
+export default app.listen(process.env.EXPRESS_PORT, () => {
 	console.log(`Express app listening on port ${process.env.EXPRESS_PORT}!`);
 });
-
-/**
- * This is how we store room related data so it is accessible via wss,
- * express routes, and any other file that wants to import our server.
- */
-server.ROOMS = {};
-export default server;
 
 /**
  * MISC FUNCTIONS
