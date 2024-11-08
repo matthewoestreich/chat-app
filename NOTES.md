@@ -32,3 +32,26 @@ ROOMS = {
   }
 }
 ```
+
+# Future Schema
+
+```js
+const ROOM_SCHEMA = {
+	id: "uuidv7",
+	displayName: "friendly room name",
+	members: [
+		/*UserSchema*/
+	],
+};
+
+const JOINED_ROOM_SCHEMA = {
+	roomId: ROOM_SCHEMA.id,
+	socket: "WebSocketServer<WebSocket.WebSocket> for this room",
+};
+
+const USER_SCHEMA = {
+	id: "uuidv7",
+	displayName: "friendly user name",
+	rooms: [JOINED_ROOM_SCHEMA],
+};
+```

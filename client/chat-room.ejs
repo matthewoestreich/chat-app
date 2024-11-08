@@ -21,13 +21,20 @@
 			}
 			.message {
 				display: flex;
+				flex-direction: column;
 				margin-bottom: 20px;
 			}
 			.message.message-from {
-				justify-content: start;
+				align-items: start;
 			}
 			.message.message-to {
-				justify-content: end;
+				align-items: end;
+			}
+			.message-from > .message-footer {
+				margin-left: 12px;
+			}
+			.message-to > .message-footer {
+				margin-right: 5px;
 			}
 			.message > .message-body {
 				margin-top: auto;
@@ -40,11 +47,8 @@
 			.message.message-to > .message-body {
 				background-color: #78e08f;
 			}
-			.message > .message-body > .message-footer {
-				position: absolute;
-				left: 0;
-				bottom: -15px;
-				color: rgba(42, 41, 41, 0.5);
+			.message > .message-footer {
+				color: var(--bs-secondary-color); /*rgba(42, 41, 41, 0.5);*/
 				font-size: 10px;
 			}
 		</style>
@@ -248,15 +252,20 @@
 					messageBodyDiv.style.backgroundColor = chatBubbleColor;
 				}
 
+				let textColor = "black";
+				if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
+					textColor = "white";
+				}
+
 				messageDiv.classList.add("message");
 				messageDiv.classList.add(senderOrRecieverClass);
 				messageBodyDiv.classList.add("message-body");
-				messageBodyDiv.classList.add("text-black");
+				messageBodyDiv.style.color = textColor;
 				messageBodyDiv.innerText = message;
 				messageFooterSpan.classList.add("message-footer");
 				messageFooterSpan.innerText = displayName;
-				messageBodyDiv.appendChild(messageFooterSpan);
 				messageDiv.appendChild(messageBodyDiv);
+				messageDiv.appendChild(messageFooterSpan);
 
 				return messageDiv;
 			}
@@ -275,6 +284,20 @@
 				toastContainer.appendChild(toastElement);
 				const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastElement);
 				toastBootstrap.show();
+			}
+
+			// Determines if a color, in hex, is dark or not.
+			// Returns ture if it's dark, false otherwise.
+			function isDarkColor(hex) {
+				hex = hex.replace(/^#/, "");
+				// Convert hex to RGB
+				let r = parseInt(hex.substring(0, 2), 16);
+				let g = parseInt(hex.substring(2, 4), 16);
+				let b = parseInt(hex.substring(4, 6), 16);
+				// Calculate luminance using the standard formula
+				const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				// If luminance is below a certain threshold, the color is dark
+				return luminance < 128; // Threshold of 128 is commonly used
 			}
 
 			function generateToastHTML(text) {
