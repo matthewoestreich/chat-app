@@ -70,8 +70,8 @@
 
 				const url = new URL(window.location.href);
 				url.pathname = `/chat/${roomId}`;
-				url.searchParams.append("userId", "<%- userId %>");
-				url.searchParams.append("displayName", displayName.value);
+				url.searchParams.append("userId", "<%= userId %>");
+				url.searchParams.append("displayName", encodeURIComponent(displayName.value));
 				window.location = url;
 			});
 		</script>
