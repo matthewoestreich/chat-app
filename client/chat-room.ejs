@@ -50,16 +50,17 @@
 		</style>
 	</head>
 	<body>
-		<!-- TOAST ALERTS -->
+		<!-- Toast alerts -->
 		<div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
-		<!-- HAMBURGER MENU ON SMALL SCREENS -->
-		<%- include("partials/chat-room/hamburger-menu.ejs") %>
-		<!-- MODALS -->
-		<%- include("partials/chat-room/members-modal.ejs") %>
-		<!-- MAIN WEBSITE -->
+		<!-- Hamburger Menu (on small devices) and toggle theme buttons -->
+		<div class="position-fixed" style="z-index: 1">
+			<div class="position-fixed top-0"><%- include("partials/hamburger-menu.ejs") %></div>
+			<div class="position-fixed top-0 end-0"><%- include("partials/dark-mode-toggle.ejs") %></div>
+		</div>
+		<!-- Modal that is shown via `show members` button (from within the hamburger menu)-->
+		<div><%- include("partials/display-members-modal.ejs") %></div>
+		<!-- MAIN CONTENT -->
 		<div class="container-fluid h-100 d-flex flex-column">
-			<!-- DARK MODE TOGGLE -->
-			<%- include("partials/dark-mode-toggle.ejs") %>
 			<!-- Header Row -->
 			<div class="row flex-shrink-0">
 				<div class="col-xl-2 d-xl-flex d-none border d-flex justify-content-center align-items-center">
