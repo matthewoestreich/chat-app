@@ -106,7 +106,11 @@ app.get("/chat/:roomId", (req, res) => {
 
 	// TODO:
 	// I dont really like this being here.. Is it a good idea to pass existing room members this way?
-	const members = existingRoom.members.filter((m) => m.id !== member.id);
+	const members = existingRoom.members.map((m) => {
+		if (m.id !== member.id) {
+			return m.displayName;
+		}
+	});
 
 	res.render("chat-room", { displayName, roomId, userId, members, websocketUrl: process.env.WSS_URL });
 });
