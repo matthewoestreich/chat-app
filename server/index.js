@@ -5,8 +5,6 @@ import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
 import apiRouter from "./routers/api/apiRouter.js";
 import v2Router from "./v2.js";
 
-process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
-
 const app = express();
 
 /**
@@ -90,7 +88,6 @@ app.get("/chat/:roomId", (req, res) => {
 	}
 
 	const existingRoom = CHAT_ROOMS.get(roomId);
-
 	if (!existingRoom) {
 		console.log(`[/chat][ERROR] room does not exist!`, { roomId });
 		res.render("error", { error: "Something went wrong!" });
@@ -98,43 +95,29 @@ app.get("/chat/:roomId", (req, res) => {
 	}
 
 	let member = existingRoom.getMemberById(userId);
-
-	// ~~~ NEED TO TEST THIS ~~
-	// If someone tries to join roomId with existing userId
-	//if (server.ROOMS[roomId][userId]) {
-	if (member) {
-		console.log(`user exists`);
+	// ~~~ NEED TO TEST THIS ~~ If someone tries to join roomId with existing userId. If (server.ROOMS[roomId][userId]) {
+	if (member && member.displayName !== displayName) {
 		// If the displayName is diff it's prob a duplicate userId...
-		if (member.displayName !== displayName) {
-			console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
-			res.render("error", { error: "Something went wrong!" });
-			return;
-		}
-	} else {
-		console.log("user does not exist");
+		console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
+		res.render("error", { error: "Something went wrong!" });
+		return;
+	}
+
+	if (!member) {
 		member = new RoomMember(userId, displayName);
 		member.chatBubbleColor = getRandomLightColorHex();
 		existingRoom.addMember(member);
 	}
 
 	// TODO:
-	// I dont really like this being here..
-	// Maybe find a better way of informing the user of current membersin room?
-	// Since the user will "register" with wss after this page is rendered, that
-	// may be a good place to do so?
+	// I dont really like this being here.. Is it a good idea to pass existing room members this way?
 	const members = existingRoom.members.map((m) => {
 		if (m.id !== member.id) {
 			return m.displayName;
 		}
 	});
 
-	// Hack to get websocket url correctly..Must use 'wss' while on Render.com and 'ws' locally ...
-	let websocketUrl = `ws://localhost:${process.env.EXPRESS_PORT}`;
-	if (process.env.IS_RUNNING_LOCAL === "no") {
-		websocketUrl = `wss://${process.env.HOST_NAME}`;
-	}
-
-	res.render("chat-room", { displayName, roomId, userId, members, websocketUrl });
+	res.render("chat-room", { displayName, roomId, userId, members, websocketUrl: process.env.WSS_URL });
 });
 
 /**
