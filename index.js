@@ -1,6 +1,6 @@
 import "dotenv/config";
 import "./wss/index.js";
-import server from "./server/index.js";
+import { CHAT_ROOMS } from "./server/index.js";
 
 // Only purge rooms if we are on a hosted platform.
 if (process.env.IS_RUNNING_LOCAL === "no") {
@@ -11,7 +11,7 @@ if (process.env.IS_RUNNING_LOCAL === "no") {
 /**
  *
  * Iterates over each member in each room and closes the socket.
- * After that we reset the server.ROOMS to an empty object.
+ * After that we reset the rooms and members (in memory).
  *
  * This is bc all room related data is held in memory, so if
  * we are hosted somewhere I don't want to chew up RAM.
@@ -29,15 +29,6 @@ function purgeRooms(everyMinutes) {
       ~~~~~~~~~~~~~~~~~~~~
       \n*\n*\n*\n`);
 
-		// Purge rooms after closing all connections
-		for (const members of Object.values(server.ROOMS)) {
-			for (const member of Object.values(members)) {
-				if (member?.socket) {
-					member.socket.close(1000, "purge");
-				}
-			}
-		}
-
-		server.ROOMS = {};
+		CHAT_ROOMS.purgeAll();
 	}, 1000 * 60 * everyMinutes);
 }

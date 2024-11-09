@@ -61,30 +61,41 @@ export class Room {
    */
   addMember(member) {
     if (!member.id) {
-      console.log(`[ERROR][addMember] member id is required! member id is missing!`);
       return;
     }
     this.#members.push(member);
   }
 
   removeMember(id) {
-    const index = this.#members.indexOf(this.getMemberById(id));
-    this.#members.splice(index, 1);
+    const member = this.getMemberById(id);
+    if (!member) {
+      return;
+    }
+    member.socket?.close(1000, "removed");
+    this.#members.splice(this.#members.indexOf(member), 1);
+  }
+
+  // Closes every members socket and resets #members to empty array.
+  purge() {
+    this.#members.forEach(member => member.socket?.close(1000, "purge"));
+    this.#members = [];
   }
 }
 
 // ChatRooms class
 export default class ChatRooms {
+  #rooms = [];
+
   /**
    * 
    * @param {Room[]} rooms 
    */
   constructor(rooms = []) {
-    this.rooms = rooms;
+    this.#rooms = rooms;
   }
 
   get(roomId) {
-    return this.rooms.find(r => r.id === roomId);
+    return this.#rooms.find(r => r.id === roomId);
   }
 
   /**
@@ -93,14 +104,20 @@ export default class ChatRooms {
    */
   add(room) {
     if (!room.id) {
-      console.log(`[ERROR][add] room id is missing! room id is required!`);
       return;
     }
+    // does and existing room have the same id as the room we are trying to add?
+    // obviously, we don't want to add it if so...
     const foundRoom = this.get(room.id);
     if (foundRoom && foundRoom.id === room.id) {
-      console.log(`[ERROR][add] room with that id already exists!`);
       return;
     }
-    this.rooms.push(room);
+    this.#rooms.push(room);
+  }
+
+  // Closes every socket for every member in every room and sets #rooms to an empty array.
+  purgeAll() {
+    this.#rooms.forEach(room => room.purge());
+    this.#rooms = [];
   }
 }
