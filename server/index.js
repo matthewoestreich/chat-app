@@ -2,6 +2,8 @@ import express from "express";
 import path from "path";
 import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
 import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
+import apiRouter from "./routers/api/apiRouter.js";
+import v2Router from "./v2.js";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
 
@@ -34,6 +36,9 @@ app.use((req, res, next) => {
 /**
  * ROUTES
  */
+
+app.use("/api", apiRouter);
+app.use("/v2", v2Router);
 
 /**
  * @route {GET} /
