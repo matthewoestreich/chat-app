@@ -162,10 +162,10 @@ function registerSocketToUser(roomId, userId, socket) {
 function broadcastToRoom(roomId, userId, data) {
 	const room = CHAT_ROOMS.get(roomId);
 	if (room) {
-		room.members.forEach(m => {
+		room.members.forEach((m) => {
 			if (m.socket && m.id !== userId) {
 				m.socket.send(JSON.stringify(data));
 			}
-		})
+		});
 	}
 }

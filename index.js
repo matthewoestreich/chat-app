@@ -1,11 +1,16 @@
 import "dotenv/config";
 import "./wss/index.js";
-import { CHAT_ROOMS } from "./server/index.js";
+import server, { CHAT_ROOMS } from "./server/index.js";
 
-// Only purge rooms if we are on a hosted platform.
-if (process.env.IS_RUNNING_LOCAL === "no") {
+process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
+
+if (process.env.WSS_URL.endsWith("onrender.com")) {
+	// Only purge rooms if we are on a hosted platform.
 	const twentyFourHoursInMinutes = 1440;
 	purgeRooms(twentyFourHoursInMinutes);
+} else {
+	// Add port to wss url if we are running local.
+	process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
 }
 
 /**
