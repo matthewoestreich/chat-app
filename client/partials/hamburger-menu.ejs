@@ -8,3 +8,16 @@
 		<li><button id="hamburger-menu-view-members-btn" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#members-modal">View Members</button></li>
 	</ul>
 </div>
+<script>
+	const hamburgerMenuViewMembersBtn = document.getElementById("hamburger-menu-view-members-btn");
+
+	// Handles viewing members on small devices
+	hamburgerMenuViewMembersBtn.addEventListener("click", (event) => {
+		if (members.length === 1) {
+			// We are the only member...
+			renderMembers(["No Members To Display"], membersListModal);
+			return;
+		}
+		renderMembers(members, membersListModal);
+	});
+</script>

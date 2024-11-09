@@ -116,7 +116,6 @@
 			const membersListModal = document.getElementById("members-list-modal");
 			const copyRoomUrlLink = document.getElementById("copy-room-url-link");
 			const toastContainer = document.getElementById("toast-container");
-			const hamburgerMenuViewMembersBtn = document.getElementById("hamburger-menu-view-members-btn");
 
 			const roomId = "<%= roomId %>";
 			const userId = "<%= userId %>";
@@ -217,17 +216,6 @@
 				scrollToBottomOfElement(chatDisplay);
 			});
 
-			// Handles viewing members on small devices
-			hamburgerMenuViewMembersBtn.addEventListener("click", (event) => {
-				console.log(members.length);
-				if (members.length === 1) {
-					// We are the only member...
-					renderMembers(["No Members To Display"], membersListModal);
-					return;
-				}
-				renderMembers(members, membersListModal);
-			});
-
 			/**
 			 *
 			 * FUNCTIONS
@@ -236,38 +224,6 @@
 
 			function scrollToBottomOfElement(element) {
 				element.scrollTop = element.scrollHeight;
-			}
-
-			function generateChatHTML(message, displayName, isSending = true, chatBubbleColor, isError = false) {
-				const messageDiv = document.createElement("div");
-				const messageBodyDiv = document.createElement("div");
-				const messageFooterSpan = document.createElement("span");
-
-				let senderOrRecieverClass = "message-to";
-				if (!isSending) {
-					senderOrRecieverClass = "message-from";
-					messageBodyDiv.style.backgroundColor = chatBubbleColor;
-				}
-				if (isError) {
-					messageBodyDiv.style.backgroundColor = chatBubbleColor;
-				}
-
-				let textColor = "black";
-				if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
-					textColor = "white";
-				}
-
-				messageDiv.classList.add("message");
-				messageDiv.classList.add(senderOrRecieverClass);
-				messageBodyDiv.classList.add("message-body");
-				messageBodyDiv.style.color = textColor;
-				messageBodyDiv.innerText = message;
-				messageFooterSpan.classList.add("message-footer");
-				messageFooterSpan.innerText = displayName;
-				messageDiv.appendChild(messageBodyDiv);
-				messageDiv.appendChild(messageFooterSpan);
-
-				return messageDiv;
 			}
 
 			function closeSocketAndInformServer(socket, roomId, userId, displayName) {
@@ -300,6 +256,22 @@
 				return luminance < 128; // Threshold of 128 is commonly used
 			}
 
+			// Copy to clipboard. Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
+			function copyToClipboard(el) {
+				try {
+					if (navigator.clipboard) {
+						navigator.clipboard.writeText(el.value || el.innerText);
+						return true;
+					}
+					el.focus();
+					el.select();
+					document.execCommand("copy");
+					return true;
+				} catch (e) {
+					return false;
+				}
+			}
+
 			function generateToastHTML(text) {
 				const toast = document.createElement("div");
 				const flexContainer = document.createElement("div");
@@ -327,21 +299,36 @@
 				return toast;
 			}
 
-			// Copy to clipboard
-			// Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
-			function copyToClipboard(el) {
-				try {
-					if (navigator.clipboard) {
-						navigator.clipboard.writeText(el.value || el.innerText);
-						return true;
-					}
-					el.focus();
-					el.select();
-					document.execCommand("copy");
-					return true;
-				} catch (e) {
-					return false;
+			function generateChatHTML(message, displayName, isSending = true, chatBubbleColor, isError = false) {
+				const messageDiv = document.createElement("div");
+				const messageBodyDiv = document.createElement("div");
+				const messageFooterSpan = document.createElement("span");
+
+				let senderOrRecieverClass = "message-to";
+				if (!isSending) {
+					senderOrRecieverClass = "message-from";
+					messageBodyDiv.style.backgroundColor = chatBubbleColor;
 				}
+				if (isError) {
+					messageBodyDiv.style.backgroundColor = chatBubbleColor;
+				}
+
+				let textColor = "black";
+				if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
+					textColor = "white";
+				}
+
+				messageDiv.classList.add("message");
+				messageDiv.classList.add(senderOrRecieverClass);
+				messageBodyDiv.classList.add("message-body");
+				messageBodyDiv.style.color = textColor;
+				messageBodyDiv.innerText = message;
+				messageFooterSpan.classList.add("message-footer");
+				messageFooterSpan.innerText = displayName;
+				messageDiv.appendChild(messageBodyDiv);
+				messageDiv.appendChild(messageFooterSpan);
+
+				return messageDiv;
 			}
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
