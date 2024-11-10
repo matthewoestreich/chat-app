@@ -1,7 +1,5 @@
 /*
-
   Auth Router
-
 */
 import express, { raw } from "express";
 import { v7 as uuidv7 } from "uuid";
@@ -18,14 +16,12 @@ const authRouter = express.Router();
 
 // Every request sent to this endpoint should have a JSON body containing
 // a "u" and "p" fields. "u" represents username, "p" represents password.
-// Optionally, on some requests, a field container the userId may be required.
-// This field is "ui".
+// Optionally, on some requests, a field containeing the userId, aka "ui", may be required.
 // In summary: { u: <required>username, p: <required>password, ui: <optional>userId }
-// This middleware attaches "u" and "p" to the "req" obj as "req.u" and "req.p".
+// This middleware attaches "u", "p", "ui" to the "req" obj as "req.u", "req.p", and "req.ui".
 authRouter.use((req, res, next) => {
   const { u, p, ui } = req.body;
   if (!u || !p) {
-    console.log(`[POST /auth][ERROR] missing required param!`, { u, p });
     res.status(400).send({ ok: false });
     return;
   }
@@ -50,6 +46,7 @@ authRouter.use((req, res, next) => {
 authRouter.post("/register", async (req, res) => {
   try {
     const result = await insertAccount(req.db, req.u, uuidv7(), req.p);
+    console.log({ result });
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });

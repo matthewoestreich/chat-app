@@ -26,7 +26,7 @@ async function getDbConnection(dbPath) {
  */
 export default async function (req, res, next) {
   try {
-    const db = await getDbConnection(path.resolve(import.meta.dirname, "../../../../../db/rtchat.db"));
+    const db = await getDbConnection(path.resolve(import.meta.dirname, "../../db/rtchat.db"));
     req.db = db;
   } catch (e) {
     console.log(`[router][useDatabase] error getting db handle`, { e });

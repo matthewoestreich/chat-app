@@ -1,4 +1,5 @@
 import express from "express";
+import morgan from "morgan";
 import path from "path";
 import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
 import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
@@ -23,13 +24,14 @@ app.set("views", path.resolve(import.meta.dirname, "../client"));
  * MIDDLEWARES
  */
 
+// Logging
+morgan.token("body", (req) => req.body && JSON.stringify(req.body));
+app.use(morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", { 
+  skip: (req, _res) => req.url === "/favicon.ico",
+}));
+
 // Middleware to parse json bodies
 app.use(express.json());
-// Put an ID on each request
-app.use((req, res, next) => {
-  req.reqId = uuidv7();
-  next();
-});
 
 /**
  * ROUTES

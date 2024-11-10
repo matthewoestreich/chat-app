@@ -1,0 +1,23 @@
+<div id="result-error-modal-dialog" class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h1 class="modal-title fs-5 text-danger">Error</h1>
+      <button id="close-results-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <p>Something went wrong while creating your account.</p>
+      <p>We apologize for the inconvenience.</p>
+      <p>Please try again.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+    </div>
+  </div>
+</div>
+<script>
+  const errModalDialog = document.getElementById("result-error-modal-dialog");
+  const errModal = errModalDialog.parentElement;
+  errModal.addEventListener("show.bs.modal", (event) => {
+    console.log("show.bs.modal", event);
+  });
+</script>

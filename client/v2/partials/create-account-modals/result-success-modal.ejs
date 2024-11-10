@@ -1,0 +1,45 @@
+<div id="result-success-modal-dialog" class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h1 class="modal-title fs-1 text-success">Success!</h1>
+      <button id="close-results-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body text-center">
+      <p><b class="fs-4">IMPORTANT</b></p>
+      <p class="fs-5 mb-0">We use "login strings" as usernames. A "login string" is in the format: <code>username#id</code>.</p>
+      <p class="fs-6 mb-3">We do this so you don't have to provide personal info, like an email address.</p>
+      <p class="fs-2"><b>Your login string is:</b></p>
+      <p id="login-string-value" class="fs-3">
+        <code id="login-string-un" style="color: blue"></code>
+        <code>#</code>
+        <code id="login-string-id" style="color: green"></code>
+      </p>
+      <p><b>It is very important that you save your login string/ID!</b></p>
+    </div>
+    <div class="modal-footer">
+      <button id="login-after-create-account-success-btn" type="button" class="btn btn-primary">Login</button>
+      <button id="copy-login-string" type="button" class="btn btn-success">Copy Login String</button>
+    </div>
+  </div>
+</div>
+<script>
+  const loginStringUsernameEl = document.getElementById("login-string-un");
+  const loginStringIdEl = document.getElementById("login-string-id");
+  const loginStringValue = document.getElementById("login-string-value");
+  const successModalDialog = document.getElementById("result-success-modal-dialog");
+  const successModal = successModalDialog.parentElement;
+
+  successModal.addEventListener("show.bs.modal", (event) => {
+    console.log("in 'show.bs.modal' event handler");
+    const instance = bootstrap.Modal.getOrCreateInstance(successModal);
+    if (!instance || !instance?._config?.account) {
+      console.log("instance does not exist")
+      return;
+    }
+    const user = instance._config.account;
+    console.log({instance, user})
+    loginStringValue.value = `${user.name}#${user.id}`;
+    loginStringUsernameEl.innerText = user.name;
+    loginStringIdEl.innerText = user.id;
+  });
+</script>

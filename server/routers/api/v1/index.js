@@ -1,12 +1,10 @@
 /*
-
   V1 Router
-
 */
 import express from "express";
 import userRouter from "./user/index.js";
 import authRouter from "./auth/index.js";
-import { useDatabase } from "./middleware/index.js";
+import { useDatabase } from "#server/middleware/index.js";
 
 const v1Router = express.Router();
 

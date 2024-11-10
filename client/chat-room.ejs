@@ -286,16 +286,12 @@
         const closeButton = document.createElement("button");
         const toastBody = document.createElement("div");
 
-        toast.classList.add("toast");
-        toast.classList.add("bg-primary-subtle");
-        toast.classList.add("align-items-center");
+        toast.classList.add("toast", "bg-primary-subtle", "align-items-center");
         toast.role = "alert";
         toast.setAttribute("data-bs-autohide", true);
         flexContainer.classList.add("d-flex");
         closeButton.type = "button";
-        closeButton.classList.add("btn-close");
-        closeButton.classList.add("me-2");
-        closeButton.classList.add("m-auto");
+        closeButton.classList.add("btn-close", "me-2", "m-auto");
         closeButton.setAttribute("data-bs-dismiss", "toast");
         toastBody.classList.add("toast-body");
         toastBody.innerText = text;
@@ -326,8 +322,7 @@
           textColor = "white";
         }
 
-        messageDiv.classList.add("message");
-        messageDiv.classList.add(senderOrRecieverClass);
+        messageDiv.classList.add("message", senderOrRecieverClass);
         messageBodyDiv.classList.add("message-body");
         messageBodyDiv.style.color = textColor;
         messageBodyDiv.innerText = message;

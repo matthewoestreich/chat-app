@@ -1,0 +1,137 @@
+<div>
+  <div class="modal fade" id="create-account-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5">Create Account</h1>
+          <button id="close-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <form id="form">
+              <div class="mb-3">
+                <label for="un-input" class="form-label">Username</label>
+                <input id="un-input" type="text" class="form-control" placeholder="" required />
+                <div class="invalid-feedback">Username is required!</div>
+              </div>
+              <div class="mb-3">
+                <label for="pw-input" class="form-label">Password</label>
+                <input id="pw-input" type="password" class="form-control" placeholder="Password" required />
+                <div class="invalid-feedback">Password is required!</div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancel-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+          <button id="create-btn" type="button" class="btn btn-primary">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade modal-lg" id="result-success-modal"><%- include("./result-success-modal.ejs") %></div>
+  <div class="modal fade" id="result-fail-modal"><%- include("./result-error-modal.ejs") %></div>
+</div>
+<script>
+  const createAccountModal = document.getElementById("create-account-modal");
+  const resultSuccessModal = document.getElementById("result-success-modal");
+  const resultErrorModal = document.getElementById("result-error-modal");
+  const closeCreateAccountModalBtn = document.getElementById("close-modal-btn");
+  const form = document.getElementById("form");
+  const createBtn = document.getElementById("create-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const unInput = document.getElementById("un-input");
+  const pwInput = document.getElementById("pw-input");
+
+  // Copy login string to clipboard handler
+  /*
+  copyLoginStringBtn.addEventListener("click", (e) => {
+    if (copyToClipboard(loginStrValueEl)) {
+      copyLoginStringBtn.innerText = "Copied to clipboard";
+    } else {
+      copyLoginStringBtn.innerText = "Error copying"
+    }
+    setTimeout(() => copyLoginStringBtn.innerText = "Copy Login String", 5000);
+  });
+  */
+
+  // Create account handler
+  createBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    form.isValid = form.checkValidity();
+    form.classList.add("was-validated");
+
+    if (!form.isValid) {
+      return;
+    }
+
+    // Don't let the user close the modal.
+    [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
+
+    // Make button a spinner for "loading" animation purposes
+    const originalText = createBtn.innerText;
+    const spinnerEl = document.createElement("span");
+    const statusEl = document.createElement("span");
+    spinnerEl.classList.add("spinner-border", "spinner-border-sm", "me-1");
+    statusEl.role = "status";
+    statusEl.innerText = "Creating Account...";
+    // Turn button into spinner
+    createBtn.replaceChildren(spinnerEl, statusEl);
+
+    const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        u: unInput.value,
+        p: pwInput.value,
+      }),
+    });
+
+    const accCreationResult = await accCreationResp.json();
+    console.log(accCreationResult);
+
+    // Change button back to normal from spinner/loading animation
+    createBtn.replaceChildren();
+    createBtn.innerText = originalText;
+    // Enable btns again.
+    [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
+
+    const createAccountBootstrapObj = bootstrap.Modal.getOrCreateInstance(createAccountModal);
+    createAccountBootstrapObj.hide();
+
+    // Error. Something went wrong creating account
+    if (!accCreationResult.ok) {
+      console.log("uh oh");
+      const errorModalBootstrapObj = new bootstrap.Modal(resultErrorModal);
+      errorModalBootstrapObj.show();
+      return;
+    }
+
+    // Pass account info to bootstrap object
+    const successModalBootstrapObj = new bootstrap.Modal(resultSuccessModal, { account: accCreationResult });
+    successModalBootstrapObj.show();
+    console.log("success!");
+  });
+
+  /**
+   * FUNCTIONS
+   */
+
+  // Copy to clipboard. Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
+  function copyToClipboard(el) {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(el.value || el.innerText);
+        return true;
+      }
+      el.focus();
+      el.select();
+      document.execCommand("copy");
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+</script>

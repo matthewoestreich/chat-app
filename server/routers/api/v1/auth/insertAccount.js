@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import selectAccount from "./selectAccount.js";
 
 /**
  * Adds new user to database.
@@ -18,11 +19,19 @@ export default async function (db, name, id, passwd, tableName = "user") {
 
       statement.run(id, name, hashedPw);
 
-      statement.finalize((err) => {
+      statement.finalize(async (err) => {
         if (err) {
           reject(err);
-        } else {
-          resolve({ id });
+          return;
+        }
+        try {
+          const addedUser = await selectAccount(db, name, id);
+          if (!addedUser || !addedUser?.name || !addedUser?.id) {
+            throw new Error("cannot get newly inserted user!");
+          }
+          resolve({ name: addedUser?.name, id: addedUser?.id });
+        } catch (e) {
+          resolve({ name: encodeURIComponent(name), id });
         }
       });
     } catch (e) {
