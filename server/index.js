@@ -26,9 +26,11 @@ app.set("views", path.resolve(import.meta.dirname, "../client"));
 
 // Logging
 morgan.token("body", (req) => req.body && JSON.stringify(req.body));
-app.use(morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", { 
-  skip: (req, _res) => req.url === "/favicon.ico",
-}));
+app.use(
+  morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
+    skip: (req, _res) => req.url === "/favicon.ico",
+  }),
+);
 
 // Middleware to parse json bodies
 app.use(express.json());

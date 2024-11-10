@@ -33,11 +33,11 @@
     console.log("in 'show.bs.modal' event handler");
     const instance = bootstrap.Modal.getOrCreateInstance(successModal);
     if (!instance || !instance?._config?.account) {
-      console.log("instance does not exist")
+      console.log("instance does not exist");
       return;
     }
     const user = instance._config.account;
-    console.log({instance, user})
+    console.log({ instance, user });
     loginStringValue.value = `${user.name}#${user.id}`;
     loginStringUsernameEl.innerText = user.name;
     loginStringIdEl.innerText = user.id;
