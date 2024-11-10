@@ -9,6 +9,7 @@
       html,
       body {
         height: 100%;
+        background-color: #eaeaea;
       }
 
       .min-vh-80 {
@@ -16,8 +17,8 @@
       }
     </style>
   </head>
-
   <body>
+    <%- include("partials/create-account-modal.ejs") %>
     <div class="container-fluid min-vh-80 d-flex flex-column">
       <div class="row flex-grow-1 justify-content-center align-items-center">
         <div class="col-md-6 col-xl-4 col-xs-12">
@@ -25,7 +26,7 @@
             <h1 class="display-5">Welcome to RTChat!</h1>
           </div>
           <div class="form-group">
-            <form id="form">
+            <form id="login-form">
               <div class="mb-3">
                 <label for="login-string-input" class="form-label">User Login String</label>
                 <input id="login-string-input" type="text" class="form-control" placeholder="Login using 'name#id' format" required />
@@ -37,7 +38,7 @@
                 <div class="invalid-feedback">Password is required!</div>
               </div>
               <div class="d-flex justify-content-end">
-                <button id="create-account-btn" class="btn btn-outline-success me-2">Create Account</button>
+                <button id="open-create-account-modal-btn" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#create-account-modal">Create Account</button>
                 <button id="login-btn" class="btn btn-primary">Login</button>
               </div>
             </form>
@@ -47,22 +48,10 @@
     </div>
     <script>
       const loginBtn = document.getElementById("login-btn");
-      const createAccountBtn = document.getElementById("create-account-btn");
+      const openCreateAccountModal = document.getElementById("open-create-account-modal-btn");
       const loginStringInput = document.getElementById("login-string-input");
-      const passwordInput = document.getElementById("login-password-input");
-      const form = document.getElementById("form");
-
-      createAccountBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        form.isValid = form.checkValidity();
-        form.classList.add("was-validated");
-
-        if (!form.isValid) {
-          return;
-        }
-      });
+      const loginPasswordInput = document.getElementById("login-password-input");
+      const loginForm = document.getElementById("login-form");
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   </body>

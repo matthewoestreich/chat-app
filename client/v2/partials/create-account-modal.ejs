@@ -1,0 +1,79 @@
+<div class="modal fade" id="create-account-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Create Account</h1>
+        <button id="close-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <form id="form">
+            <div class="mb-3">
+              <label for="un-input" class="form-label">Username</label>
+              <input id="un-input" type="text" class="form-control" placeholder="" required />
+              <div class="invalid-feedback">Username is required!</div>
+            </div>
+            <div class="mb-3">
+              <label for="pw-input" class="form-label">Password</label>
+              <input id="pw-input" type="password" class="form-control" placeholder="Password" required />
+              <div class="invalid-feedback">Password is required!</div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+        <button id="create-btn" type="button" class="btn btn-primary">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const closeModalBtn = document.getElementById("close-modal-btn");
+  const form = document.getElementById("form");
+  const createBtn = document.getElementById("create-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const unInput = document.getElementById("un-input");
+  const pwInput = document.getElementById("pw-input");
+
+  createBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    form.isValid = form.checkValidity();
+    form.classList.add("was-validated");
+
+    if (!form.isValid) {
+      return;
+    }
+
+    // Don't let the user close the modal.
+    [createBtn, closeModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
+
+    // Make button a spinner for "loading" animation purposes
+    const originalText = createBtn.innerText;
+    const spinnerEl = document.createElement("span");
+    const statusEl = document.createElement("span");
+    spinnerEl.classList.add("spinner-border", "spinner-border-sm", "me-1");
+    statusEl.role = "status";
+    statusEl.innerText = "Creating Account...";
+    createBtn.replaceChildren(spinnerEl, statusEl);
+
+    const accountCreationResult = await fetch(`${window.location.origin}/api/v1/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        u: unInput.value,
+        p: pwInput.value,
+      }),
+    });
+
+    console.log(accountCreationResult);
+
+    if (!accountCreationResult.ok) {
+      console.log("uh oh");
+      return;
+    }
+    console.log("success!");
+  });
+</script>
