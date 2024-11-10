@@ -1,70 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>RTChat</title>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
-		<style>
-			html,
-			body {
-				height: 100%;
-			}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RTChat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
 
-			.min-vh-80 {
-				min-height: 80vh;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container-fluid min-vh-80 d-flex flex-column">
-			<div class="row flex-grow-1 justify-content-center align-items-center">
-				<div class="col-md-6 col-xl-4 col-xs-12">
-					<div class="text-center mb-3">
-						<h1 class="display-5">Welcome to RTChat!</h1>
-					</div>
-					<div class="form-group">
-						<form id="form">
-							<div class="mb-3">
-								<label for="login-string-input" class="form-label">User Login String</label>
-								<input id="login-string-input" type="text" class="form-control" placeholder="Login using 'name#id' format" required />
-								<div class="invalid-feedback">Login string is required!</div>
-							</div>
-							<div class="mb-3">
-								<label for="login-password-input" class="form-label">Password</label>
-								<input id="login-password-input" type="password" class="form-control" placeholder="Password" required />
-								<div class="invalid-feedback">Password is required!</div>
-							</div>
-							<div class="d-flex justify-content-end">
-								<button id="create-account-btn" class="btn btn-outline-success me-2">Create Account</button>
-								<button id="login-btn" class="btn btn-primary">Login</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-		<script>
-			const loginBtn = document.getElementById("login-btn");
-			const createAccountBtn = document.getElementById("create-account-btn");
-			const loginStringInput = document.getElementById("login-string-input");
-			const passwordInput = document.getElementById("login-password-input");
-			const form = document.getElementById("form");
+      .min-vh-80 {
+        min-height: 80vh;
+      }
+    </style>
+  </head>
 
-			createAccountBtn.addEventListener("click", (event) => {
-				event.preventDefault();
-				event.stopPropagation();
+  <body>
+    <div class="container-fluid min-vh-80 d-flex flex-column">
+      <div class="row flex-grow-1 justify-content-center align-items-center">
+        <div class="col-md-6 col-xl-4 col-xs-12">
+          <div class="text-center mb-3">
+            <h1 class="display-5">Welcome to RTChat!</h1>
+          </div>
+          <div class="form-group">
+            <form id="form">
+              <div class="mb-3">
+                <label for="login-string-input" class="form-label">User Login String</label>
+                <input id="login-string-input" type="text" class="form-control" placeholder="Login using 'name#id' format" required />
+                <div class="invalid-feedback">Login string is required!</div>
+              </div>
+              <div class="mb-3">
+                <label for="login-password-input" class="form-label">Password</label>
+                <input id="login-password-input" type="password" class="form-control" placeholder="Password" required />
+                <div class="invalid-feedback">Password is required!</div>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button id="create-account-btn" class="btn btn-outline-success me-2">Create Account</button>
+                <button id="login-btn" class="btn btn-primary">Login</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const loginBtn = document.getElementById("login-btn");
+      const createAccountBtn = document.getElementById("create-account-btn");
+      const loginStringInput = document.getElementById("login-string-input");
+      const passwordInput = document.getElementById("login-password-input");
+      const form = document.getElementById("form");
 
-				form.isValid = form.checkValidity();
-				form.classList.add("was-validated");
+      createAccountBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-				if (!form.isValid) {
-					return;
-				}
+        form.isValid = form.checkValidity();
+        form.classList.add("was-validated");
 
-			});
-		</script>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-	</body>
+        if (!form.isValid) {
+          return;
+        }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
 </html>

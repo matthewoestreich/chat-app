@@ -1,16 +1,31 @@
 import "dotenv/config";
 import "./wss/index.js";
+import initDatabase from "./db/initDatabase.js";
 import server, { CHAT_ROOMS } from "./server/index.js";
+
+if (!process.env.JWT_SIGNATURE) {
+  console.log(
+    "[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.",
+  );
+  process.exit(1);
+}
+
+try {
+  await initDatabase();
+} catch (e) {
+  console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
+  process.exit(1);
+}
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
 
 if (process.env.WSS_URL.endsWith("onrender.com")) {
-	// Only purge rooms if we are on a hosted platform.
-	const twentyFourHoursInMinutes = 1440;
-	purgeRooms(twentyFourHoursInMinutes);
+  // Only purge rooms if we are on a hosted platform.
+  const twentyFourHoursInMinutes = 1440;
+  purgeRooms(twentyFourHoursInMinutes);
 } else {
-	// Add port to wss url if we are running local.
-	process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
+  // Add port to wss url if we are running local.
+  process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
 }
 
 /**
@@ -25,15 +40,18 @@ if (process.env.WSS_URL.endsWith("onrender.com")) {
  *
  */
 function purgeRooms(everyMinutes) {
-	console.log(`[INFO][WARN] Purging is active!`);
+  console.log(`[INFO][WARN] Purging is active!`);
 
-	setInterval(() => {
-		console.log(`\n*\n*\n*\n
+  setInterval(
+    () => {
+      console.log(`\n*\n*\n*\n
       ~~~~~~~~~~~~~~~~~~~~
       ~~ PURGING ROOMS ~~~
       ~~~~~~~~~~~~~~~~~~~~
       \n*\n*\n*\n`);
 
-		CHAT_ROOMS.purgeAll();
-	}, 1000 * 60 * everyMinutes);
+      CHAT_ROOMS.purgeAll();
+    },
+    1000 * 60 * everyMinutes,
+  );
 }

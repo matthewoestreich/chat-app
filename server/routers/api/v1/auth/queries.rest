@@ -1,0 +1,22 @@
+### CREATE ACCOUNT
+
+POST http://localhost:3000/api/v1/auth/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "u": "john",
+  "p": "test123"
+}
+
+### LOGIN WITH ACCOUNT
+
+POST http://localhost:3000/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "u": "john",
+  "ui": "01931324-00b1-764c-bad1-7e3dd8a4b9f7",
+  "p": "test123"
+}
+
+###
