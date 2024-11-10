@@ -4,9 +4,7 @@ import initDatabase from "./db/initDatabase.js";
 import server, { CHAT_ROOMS } from "./server/index.js";
 
 if (!process.env.JWT_SIGNATURE) {
-  console.log(
-    "[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.",
-  );
+  console.log("[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.");
   process.exit(1);
 }
 

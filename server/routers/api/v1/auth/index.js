@@ -87,11 +87,7 @@ authRouter.post("/login", async (req, res) => {
 
     const rawToken = { id: user.id };
     const jwtOptions = { expiresIn: "30m" };
-    const jwt = jsonwebtoken.sign(
-      rawToken,
-      process.env.JWT_SIGNATURE,
-      jwtOptions,
-    );
+    const jwt = jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, jwtOptions);
     res.status(200).send({ ok: true, token: jwt });
   } catch (e) {
     console.log(`[POST /login][ERROR]`, e);

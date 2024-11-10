@@ -1,10 +1,6 @@
 import express from "express";
 import path from "path";
-import {
-  v7 as uuidv7,
-  validate as uuidValidate,
-  version as uuidVersion,
-} from "uuid";
+import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
 import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
 import apiRouter from "./routers/api/index.js";
 import v2Router from "./v2.js";
@@ -109,10 +105,7 @@ app.get("/chat/:roomId", (req, res) => {
   // ~~~ NEED TO TEST THIS ~~ If someone tries to join roomId with existing userId. If (server.ROOMS[roomId][userId]) {
   if (member && member.displayName !== displayName) {
     // If the displayName is diff it's prob a duplicate userId...
-    console.log(
-      `[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`,
-      { roomId, userId, displayName },
-    );
+    console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
     res.render("error", { error: "Something went wrong!" });
     return;
   }

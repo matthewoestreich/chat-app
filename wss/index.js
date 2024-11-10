@@ -8,10 +8,7 @@ wss.on("connection", (ws, socket, request) => {
     const message = JSON.parse(data);
 
     if (!message || !message?.type) {
-      console.log(
-        `[ws][on('message')][ERROR] either message or message.type doesn't exit!`,
-        { message, messageType: message?.type },
-      );
+      console.log(`[ws][on('message')][ERROR] either message or message.type doesn't exit!`, { message, messageType: message?.type });
       return;
     }
 
@@ -55,14 +52,7 @@ function handleChatMessage(message, socket) {
   const { roomId, from, value, userId } = message;
   console.log(`[ws][message]`, { roomId, value, from, userId });
 
-  if (
-    !roomId ||
-    !from ||
-    !userId ||
-    !value ||
-    !socket.room ||
-    roomId !== socket.room
-  ) {
+  if (!roomId || !from || !userId || !value || !socket.room || roomId !== socket.room) {
     console.log(` [ws][message][ERROR] missing required param`, {
       userId,
       roomId,
@@ -78,10 +68,7 @@ function handleChatMessage(message, socket) {
   const foundMember = foundRoom.getMemberById(userId);
 
   if (!foundRoom || !foundMember) {
-    console.log(
-      ` [ws][message][ERROR] either roomm doesn't exist or user not in this room tried sending message!`,
-      { userId, displayName: from },
-    );
+    console.log(` [ws][message][ERROR] either roomm doesn't exist or user not in this room tried sending message!`, { userId, displayName: from });
     socket.close(1007, "Nonexistent room or user!");
     return;
   }

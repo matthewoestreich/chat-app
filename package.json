@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "fmt": "npx prettier --write \"**/*.js\" && npx prettier --parser \"angular\" --print-width 600 --write \"**/*.ejs\"",
+    "fmt": "npx prettier --print-width 300 --write \"**/*.{js,json}\" && npx prettier --parser \"angular\" --print-width 600 --write \"**/*.ejs\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
