@@ -5,12 +5,25 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "fmt": "npx prettier --print-width 300 --write \"**/*.{js,json}\" && npx prettier --parser \"angular\" --print-width 600 --write \"**/*.ejs\"",
+    "fmt": "npx prettier --write \"**/*.{js,json,ejs}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
   "keywords": [],
-  "author": "",
+  "author": "Matt Oestreich",
+  "prettier": {
+    "tabWidth": 2,
+    "useTabs": false,
+    "printWidth": 600,
+    "overrides": [
+      {
+        "files": "*.ejs",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
