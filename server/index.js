@@ -1,7 +1,9 @@
 import express from "express";
+import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
+import { useCookieParser, useCspNonce } from "./middleware/index.js";
 import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
 import apiRouter from "./routers/api/index.js";
 import v2Router from "./v2.js";
@@ -24,16 +26,31 @@ app.set("views", path.resolve(import.meta.dirname, "../client"));
  * MIDDLEWARES
  */
 
+// Serve static assets
+app.use("/public", express.static(path.resolve(import.meta.dirname, "../public")));
+// Parse req bodies into json (when Content-Type='application/json')
+app.use(express.json());
+// Set a nonce on scripts
+app.use(useCspNonce);
+// Tighten security
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+      },
+    },
+  }),
+);
+// Parses cookies into req.cookies
+app.use(useCookieParser);
 // Logging
-morgan.token("body", (req) => req.body && JSON.stringify(req.body));
+morgan.token("body", (req) => JSON.stringify(req.body || {}, null, 2));
 app.use(
   morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
     skip: (req, _res) => req.url === "/favicon.ico",
   }),
 );
-
-// Middleware to parse json bodies
-app.use(express.json());
 
 /**
  * ROUTES
@@ -46,7 +63,7 @@ app.use("/v2", v2Router);
  * @route {GET} /
  */
 app.get("/", (req, res) => {
-  res.render("index");
+  res.render("index", { nonce: res.locals.cspNonce });
 });
 
 /**
@@ -54,7 +71,7 @@ app.get("/", (req, res) => {
  */
 app.get("/join", (req, res) => {
   const userId = uuidv7();
-  res.render("join-existing-room", { userId });
+  res.render("join-existing-room", { userId, nonce: res.locals.cspNonce });
 });
 
 /**
@@ -67,7 +84,7 @@ app.get("/create", (req, res) => {
   // the user to the room when the user first hits the "/chat/:roomId" endpoint.
   // Adding them here would technically be premature.
   CHAT_ROOMS.add(new Room(roomId));
-  res.render("create-room", { roomId, userId });
+  res.render("create-room", { roomId, userId, nonce: res.locals.cspNonce });
 });
 
 /**
@@ -128,13 +145,7 @@ app.get("/chat/:roomId", (req, res) => {
     }
   });
 
-  res.render("chat-room", {
-    displayName,
-    roomId,
-    userId,
-    members,
-    websocketUrl: process.env.WSS_URL,
-  });
+  res.render("chat-room", { displayName, roomId, userId, members, websocketUrl: process.env.WSS_URL, nonce: res.locals.cspNonce });
 });
 
 /**

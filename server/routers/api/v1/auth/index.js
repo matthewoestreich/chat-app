@@ -5,6 +5,7 @@ import express, { raw } from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import jsonwebtoken from "jsonwebtoken";
+import { useUserParamsFromBody } from "../../../../middleware/index.js";
 import insertAccount from "./insertAccount.js";
 import { selectAccountByEmail } from "./selectAccount.js";
 
@@ -16,15 +17,7 @@ const authRouter = express.Router();
 
 // Add user specific properties to req object.
 // u=username, p=password, e=email, ui=userId
-authRouter.use((req, res, next) => {
-  const { u, p, e, ui } = req.body;
-  if (!u || !p || !e) {
-    res.status(400).send({ ok: false });
-    return;
-  }
-  req.user = { username: u, password: p, userId: ui, email: e };
-  next();
-});
+authRouter.use(useUserParamsFromBody("userBody"));
 
 /** ------------------------------------------------------------------------------
  * ROUTES
@@ -41,7 +34,13 @@ authRouter.use((req, res, next) => {
  */
 authRouter.post("/register", async (req, res) => {
   try {
-    const { username, password, email } = req.user;
+    const { username, password, email } = req.userBody;
+    if (!username) {
+      console.log(`[POST /register] missing username (as 'p') in request body!`, { user: req.userBody });
+      res.status(403).send({ ok: false });
+      return;
+    }
+
     const result = await insertAccount(req.db, username, uuidv7(), password, email);
     console.log({ result });
     res.status(200).send({ ok: true, ...result });
@@ -55,25 +54,29 @@ authRouter.post("/register", async (req, res) => {
  * @route {POST} /login
  * Content-Type: application/json
  * {
- *    u: string, // username
- *    ui: string, // userid - must be valid uuid version 7
+ *    e: string, // email
  *    p: string, // password
  * }
  */
 authRouter.post("/login", async (req, res) => {
   try {
-    const { username, password, email } = req.user;
-    console.log({ got: { username, password, email } });
+    const { password, email } = req.userBody;
+    if (!password || !email) {
+      console.log(`[POST /login] missing either email or password from body!`, { email, password });
+      res.status(403).send({ ok: false });
+      return;
+    }
+
     const foundUser = await selectAccountByEmail(req.db, email);
-    console.log({ foundUser });
-    if (!foundUser || !foundUser?.name || foundUser?.name !== username || !foundUser?.email || !foundUser?.password) {
+    if (!foundUser || !foundUser?.email || !foundUser?.password) {
+      console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
       res.status(403).send({ ok: false });
       return;
     }
 
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
-      console.log("invalid pw");
+      console.log(`[POST /login][ERROR] incorrect password!`);
       res.status(403).send({ ok: false });
       return;
     }

@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5">Create Account</h1>
-        <button id="close-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button id="close-modal-btn" tabindex="-1" type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -34,74 +34,3 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="result-success-modal"><%- include("./result-success-modal.ejs") %></div>
-<div class="modal fade" id="result-fail-modal"><%- include("./result-error-modal.ejs") %></div>
-<script>
-  const createAccountModal = document.getElementById("create-account-modal");
-  const resultSuccessModal = document.getElementById("result-success-modal");
-  const resultErrorModal = document.getElementById("result-error-modal");
-  const closeCreateAccountModalBtn = document.getElementById("close-modal-btn");
-  const form = document.getElementById("form");
-  const createBtn = document.getElementById("create-btn");
-  const cancelBtn = document.getElementById("cancel-btn");
-  const caUnInput = document.getElementById("ca-un-input");
-  const caEmailInput = document.getElementById("ca-email-input");
-  const caPwInput = document.getElementById("ca-pw-input");
-
-  createAccountModal.addEventListener("hidden.bs.modal", (event) => {
-    // have to remove '.was-validated' from form or else when it's reopened everything is red.
-    form.classList.remove("was-validated");
-    [caUnInput, caEmailInput, caPwInput].forEach((i) => (i.value = ""));
-  });
-
-  // Create account handler
-  createBtn.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    form.isValid = form.checkValidity();
-    form.classList.add("was-validated");
-
-    if (!form.isValid) {
-      return;
-    }
-
-    // Don't let the user close the modal.
-    [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
-    const removeSpinnerFromBtn = addSpinnerToButton(createBtn, "Creating Account...");
-
-    const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        u: caUnInput.value,
-        p: caPwInput.value,
-        e: caEmailInput.value,
-      }),
-    });
-
-    const accCreationResult = await accCreationResp.json();
-    console.log(accCreationResult);
-
-    // Change button back to normal from spinner/loading animation
-    removeSpinnerFromBtn();
-    // Enable btns again.
-    [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
-
-    const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
-    bsCreateAccountModal.hide();
-
-    // Error. Something went wrong creating account
-    if (!accCreationResult.ok) {
-      console.log("uh oh");
-      const errorModalBootstrapObj = new bootstrap.Modal(resultErrorModal);
-      errorModalBootstrapObj.show();
-      return;
-    }
-
-    // Pass account info to bootstrap object
-    const bsResultSuccessModal = new bootstrap.Modal(resultSuccessModal, { account: accCreationResult });
-    bsResultSuccessModal.show();
-    console.log("success!");
-  });
-</script>

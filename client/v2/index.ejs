@@ -4,12 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RTChat</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <link href="/public/bootstrap@5.3.3/css/bootstrap.min.css" rel="stylesheet" />
+    <%- include("./partials/bootstrap-icons.ejs") %>
     <style>
       html,
       body {
         height: 100%;
         background-color: #eaeaea;
+      }
+
+      .fs-2em {
+        font-size: 2em;
       }
 
       .min-w-16px {
@@ -63,15 +68,10 @@
         </div>
       </div>
       <div class="row" style="max-height: 400px">
-        <div class="col-lg-6 offset-lg-3 mh-100">
-          <div id="login-error-display" class="alert alert-danger d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill max-w-24px min-w-16px" viewBox="0 0 16 16">
-              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
-            </svg>
-            <div id="login-error-message" class="ms-3 mb-0 max-h-100px overf-scroll">
-              helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo,
-              worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello,
-            </div>
+        <div class="col mh-100">
+          <div id="alert-display" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
+            <i class=""></i>
+            <div id="alert-message" class="mb-0 max-h-100px overf-scroll"></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
         </div>
@@ -99,12 +99,13 @@
         </div>
       </div>
     </div>
-    <script>
-      const loginErrorDisplay = document.getElementById("login-error-display");
+    <script nonce="<%= nonce %>">
       const mainLoginBtn = document.getElementById("login-btn");
       const loginEmailInput = document.getElementById("login-email-input");
       const loginPasswordInput = document.getElementById("login-password-input");
       const loginForm = document.getElementById("login-form");
+      const alertDisplay = document.getElementById("alert-display");
+      const alertMessage = document.getElementById("alert-message");
 
       mainLoginBtn.addEventListener("click", async function (event) {
         event.preventDefault();
@@ -118,25 +119,36 @@
           return;
         }
 
-        const loginResponse = await fetch(``, {
+        const loginResponse = await fetch(`${window.location.origin}/api/v1/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify({
+            e: loginEmailInput.value,
+            p: loginPasswordInput.value,
+          }),
         });
+
+        revertSpinnerBtnState();
 
         const loginResult = await loginResponse.json();
         if (!loginResponse?.ok) {
-          revertSpinnerBtnState();
           return;
         }
 
-        revertSpinnerBtnState();
+        setCookie("bearer", loginResult.token, 1);
+        window.location.pathname = "/v2/chat";
       });
+
+      function setCookie(name, value, days, path = "/") {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=${path}`;
+      }
 
       // Returns a function that once called, revers button back to original state.
       function addSpinnerToButton(btnElement, btnText = "") {
         // Make button a spinner for "loading" animation purposes
-        const originalText = createBtn.innerText;
+        const originalText = btnElement.innerText;
         if (btnText === "") {
           btnText = originalText;
         }
@@ -152,6 +164,119 @@
         };
       }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script nonce="<%= nonce %>">
+      /*
+        Script for create-account-modal
+      */
+      const createAccountModal = document.getElementById("create-account-modal");
+      const closeCreateAccountModalBtn = document.getElementById("close-modal-btn");
+      const form = document.getElementById("form");
+      const createBtn = document.getElementById("create-btn");
+      const cancelBtn = document.getElementById("cancel-btn");
+      const caUnInput = document.getElementById("ca-un-input");
+      const caEmailInput = document.getElementById("ca-email-input");
+      const caPwInput = document.getElementById("ca-pw-input");
+      const statusAlert = new CustomAlert(alertDisplay, alertMessage);
+
+      createAccountModal.addEventListener("hidden.bs.modal", (event) => {
+        // have to remove '.was-validated' from form or else when it's reopened everything is red.
+        form.classList.remove("was-validated");
+        [caUnInput, caEmailInput, caPwInput].forEach((i) => (i.value = ""));
+      });
+
+      // Create account handler
+      createBtn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        form.isValid = form.checkValidity();
+        form.classList.add("was-validated");
+
+        if (!form.isValid) {
+          return;
+        }
+
+        // Don't let the user close the modal.
+        [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
+        const removeSpinnerFromBtn = addSpinnerToButton(createBtn, "Creating Account...");
+
+        const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            u: caUnInput.value,
+            p: caPwInput.value,
+            e: caEmailInput.value,
+          }),
+        });
+
+        const accCreationResult = await accCreationResp.json();
+        console.log(accCreationResult);
+
+        // Change button back to normal from spinner/loading animation
+        removeSpinnerFromBtn();
+        // Enable btns again.
+        [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
+
+        const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
+        bsCreateAccountModal.hide();
+
+        // Error. Something went wrong creating account
+        if (!accCreationResult.ok) {
+          console.log("uh oh");
+          statusAlert.showWithIcon("danger", "Something went wrong when creating account. Please try again.", "bi-exclamation-triangle-fill");
+          return;
+        }
+
+        statusAlert.showWithIcon("success", "Success! Account created successfully.", "bi-person-fill-check");
+        console.log("success!");
+      });
+
+      // Allows you to reuse a single alert element..Returns a function that lets you hide alert.
+      // Finds a button with data-bs-dismiss='alert' within alertEl, if found we use it to close alert.
+      // If showing with icon, we expect it to be a bootstrap-icon as well as an <i> tag to be within your alertEl.
+      function CustomAlert(alertEl, messageEl) {
+        this.isShown = false;
+        this.alertEl = alertEl;
+        this.messageEl = messageEl;
+        this.alertIconEl = undefined;
+        this.alertType = undefined;
+        this.closeButton = alertEl.querySelector("button[data-bs-dismiss='alert']");
+        if (this.closeButton) {
+          this.closeButton.addEventListener("click", this.close);
+        }
+        this.showWithIcon = function (alertType, message, icon) {
+          this.alertIconEl = alertEl.querySelector("i");
+          if (this.alertIconEl) {
+            this.alertIconEl.removeAttribute("class"); // clear classes before adding.
+            this.alertIconEl.classList.add("bi", icon);
+            this.messageEl.classList.add("ms-2"); // add margin since there will be an icon there now.
+          }
+          this.show(alertType, message);
+        };
+        this.show = function (alertType, message) {
+          this.messageEl.classList.remove("ms-2"); // remove just in case it exists..
+          if (this.isShown) {
+            // If already shown, close existing before showing new.
+            this.close();
+          }
+          this.alertType = `alert-${alertType}`;
+          this.alertEl.classList.add(this.alertType);
+          this.messageEl.innerText = message;
+          this.alertEl.classList.remove("d-none");
+          this.isShown = true;
+        };
+        this.close = function () {
+          if (this.closeButton) {
+            this.closeButton.removeEventListener("click", this.close);
+          }
+          this.alertEl.classList.remove(this.alertType);
+          this.messageEl.innerText = "";
+          this.alertEl.classList.add("d-none");
+          this.isShown = false;
+        };
+      }
+    </script>
+    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
