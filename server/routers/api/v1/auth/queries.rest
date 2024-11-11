@@ -5,7 +5,8 @@ Content-Type: application/json
 
 {
   "u": "john",
-  "p": "test123"
+  "p": "test123",
+  "e": "mo@mo.com"
 }
 
 ### LOGIN WITH ACCOUNT
@@ -15,7 +16,7 @@ Content-Type: application/json
 
 {
   "u": "john",
-  "ui": "01931324-00b1-764c-bad1-7e3dd8a4b9f7",
+  "e": "mo@mo.com",
   "p": "test123"
 }
 

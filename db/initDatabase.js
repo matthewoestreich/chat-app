@@ -11,6 +11,7 @@ export default async function () {
           id TEXT NOT NULL,
           name TEXT NOT NULL, 
           password TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
           CONSTRAINT user_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);

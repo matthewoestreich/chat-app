@@ -12,29 +12,82 @@
         background-color: #eaeaea;
       }
 
+      .min-w-16px {
+        min-width: 16px;
+      }
+
+      .max-w-24px {
+        max-width: 24px;
+      }
+
+      .max-h-100px {
+        max-height: 100px;
+      }
+
+      .max-h-400px {
+        max-height: 400px;
+      }
+
+      .max-w-600px {
+        max-width: 600px;
+      }
+
       .min-vh-80 {
         min-height: 80vh;
       }
+
+      .min-h-0 {
+        min-height: 0;
+      }
+
+      .overf-y-scroll {
+        overflow-y: scroll;
+      }
+
+      .overf-x-scroll {
+        overflow-x: scroll;
+      }
+
+      .overf-scroll {
+        overflow: scroll;
+      }
     </style>
   </head>
+
   <body>
     <%- include("partials/create-account-modals/create-account-modal.ejs") %>
-    <div class="container-fluid min-vh-80 d-flex flex-column">
-      <div class="row flex-grow-1 justify-content-center align-items-center">
-        <div class="col-md-6 col-xl-4 col-xs-12">
-          <div class="text-center mb-3">
-            <h1 class="display-5">Welcome to RTChat!</h1>
+    <div class="container d-flex flex-column h-100 justify-content-center align-items-center">
+      <div class="row">
+        <div class="text-center mb-3">
+          <h1 class="display-5">Welcome to RTChat!</h1>
+        </div>
+      </div>
+      <div class="row" style="max-height: 400px">
+        <div class="col-lg-6 offset-lg-3 mh-100">
+          <div id="login-error-display" class="alert alert-danger d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill max-w-24px min-w-16px" viewBox="0 0 16 16">
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
+            </svg>
+            <div id="login-error-message" class="ms-3 mb-0 max-h-100px overf-scroll">
+              helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo,
+              worlo,hello, helllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello, worldhelllo, worlo,hello,
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
+        </div>
+      </div>
+      <div class="row w-100">
+        <div class="col-lg-6 offset-lg-3">
           <div class="form-group">
             <form id="login-form">
-              <div class="mb-3">
-                <label for="login-string-input" class="form-label">User Login String</label>
-                <input id="login-string-input" type="text" class="form-control" placeholder="Login using 'name#id' format" required />
-                <div class="invalid-feedback">Login string is required!</div>
+              <div class="form-floating mb-3">
+                <input id="login-email-input" type="text" class="form-control" placeholder="Email Address" required />
+                <label for="login-email-input" class="form-label">Email</label>
+                <div class="invalid-feedback">Email is required!</div>
               </div>
-              <div class="mb-3">
-                <label for="login-password-input" class="form-label">Password</label>
+              <div class="form-floating mb-3">
                 <input id="login-password-input" type="password" class="form-control" placeholder="Password" required />
+                <label for="login-password-input" class="form-label">Password</label>
                 <div class="invalid-feedback">Password is required!</div>
               </div>
               <div class="d-flex justify-content-end">
@@ -47,11 +100,57 @@
       </div>
     </div>
     <script>
-      const loginBtn = document.getElementById("login-btn");
-      const openCreateAccountModal = document.getElementById("open-create-account-modal-btn");
-      const loginStringInput = document.getElementById("login-string-input");
+      const loginErrorDisplay = document.getElementById("login-error-display");
+      const mainLoginBtn = document.getElementById("login-btn");
+      const loginEmailInput = document.getElementById("login-email-input");
       const loginPasswordInput = document.getElementById("login-password-input");
       const loginForm = document.getElementById("login-form");
+
+      mainLoginBtn.addEventListener("click", async function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const revertSpinnerBtnState = addSpinnerToButton(mainLoginBtn, "Logging in...");
+
+        loginForm.isValid = loginForm.checkValidity();
+        if (!loginForm.isValid) {
+          revertSpinnerBtnState();
+          return;
+        }
+
+        const loginResponse = await fetch(``, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+
+        const loginResult = await loginResponse.json();
+        if (!loginResponse?.ok) {
+          revertSpinnerBtnState();
+          return;
+        }
+
+        revertSpinnerBtnState();
+      });
+
+      // Returns a function that once called, revers button back to original state.
+      function addSpinnerToButton(btnElement, btnText = "") {
+        // Make button a spinner for "loading" animation purposes
+        const originalText = createBtn.innerText;
+        if (btnText === "") {
+          btnText = originalText;
+        }
+        const spinnerEl = document.createElement("span");
+        const statusEl = document.createElement("span");
+        spinnerEl.classList.add("spinner-border", "spinner-border-sm", "me-1");
+        statusEl.role = "status";
+        statusEl.innerText = btnText;
+        // Turn button into spinner
+        btnElement.replaceChildren(spinnerEl, statusEl);
+        return () => {
+          btnElement.innerText = originalText;
+        };
+      }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   </body>

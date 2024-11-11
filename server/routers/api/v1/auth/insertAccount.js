@@ -1,5 +1,5 @@
-import bcrypt from "bcrypt";
-import selectAccount from "./selectAccount.js";
+import bcrypt, { hash } from "bcrypt";
+import { selectAccountByEmail } from "./selectAccount.js";
 
 /**
  * Adds new user to database.
@@ -8,31 +8,22 @@ import selectAccount from "./selectAccount.js";
  * @param {string} name
  * @param {string} passwd
  * @param {string} id
+ * @param {string} email
  * @param {string} tableName
  */
-export default async function (db, name, id, passwd, tableName = "user") {
+export default async function (db, name, id, passwd, email, tableName = "user") {
   return new Promise(async (resolve, reject) => {
     try {
-      const statement = db.prepare(`INSERT INTO ${tableName} (id, name, password) VALUES (?, ?, ?)`);
       const salt = await bcrypt.genSalt(10);
       const hashedPw = await bcrypt.hash(passwd, salt);
+      const query = `INSERT INTO ${tableName} (id, name, password, email) VALUES (?, ?, ?, ?)`;
 
-      statement.run(id, name, hashedPw);
-
-      statement.finalize(async (err) => {
+      db.run(query, [id, name, hashedPw, email], (err) => {
         if (err) {
           reject(err);
           return;
         }
-        try {
-          const addedUser = await selectAccount(db, name, id);
-          if (!addedUser || !addedUser?.name || !addedUser?.id) {
-            throw new Error("cannot get newly inserted user!");
-          }
-          resolve({ name: addedUser?.name, id: addedUser?.id });
-        } catch (e) {
-          resolve({ name: encodeURIComponent(name), id });
-        }
+        resolve({ name, id, email });
       });
     } catch (e) {
       reject(e);

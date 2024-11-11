@@ -5,7 +5,7 @@
       <button id="close-results-modal-btn" type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body">
-      <p>Something went wrong while creating your account.</p>
+      <p>Something went wrong!</p>
       <p>We apologize for the inconvenience.</p>
       <p>Please try again.</p>
     </div>
@@ -17,7 +17,7 @@
 <script>
   const errModalDialog = document.getElementById("result-error-modal-dialog");
   const errModal = errModalDialog.parentElement;
-  errModal.addEventListener("show.bs.modal", (event) => {
+  errModal.addEventListener("show.bs.modal", function (event) {
     console.log("show.bs.modal", event);
   });
 </script>

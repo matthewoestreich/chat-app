@@ -6,7 +6,7 @@ import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import jsonwebtoken from "jsonwebtoken";
 import insertAccount from "./insertAccount.js";
-import selectAccount from "./selectAccount.js";
+import { selectAccountByEmail } from "./selectAccount.js";
 
 const authRouter = express.Router();
 
@@ -14,20 +14,15 @@ const authRouter = express.Router();
  * MIDDLEWARE
  ------------------------------------------------------------------------------ */
 
-// Every request sent to this endpoint should have a JSON body containing
-// a "u" and "p" fields. "u" represents username, "p" represents password.
-// Optionally, on some requests, a field containeing the userId, aka "ui", may be required.
-// In summary: { u: <required>username, p: <required>password, ui: <optional>userId }
-// This middleware attaches "u", "p", "ui" to the "req" obj as "req.u", "req.p", and "req.ui".
+// Add user specific properties to req object.
+// u=username, p=password, e=email, ui=userId
 authRouter.use((req, res, next) => {
-  const { u, p, ui } = req.body;
-  if (!u || !p) {
+  const { u, p, e, ui } = req.body;
+  if (!u || !p || !e) {
     res.status(400).send({ ok: false });
     return;
   }
-  req.u = u;
-  req.p = p;
-  req.ui = ui; // Add "ui" regardless. If it does not exist it will just show as 'undefined'.
+  req.user = { username: u, password: p, userId: ui, email: e };
   next();
 });
 
@@ -41,11 +36,13 @@ authRouter.use((req, res, next) => {
  * {
  *    u: string, // username
  *    p: string, // password
+ *    e: email,  // email
  * }
  */
 authRouter.post("/register", async (req, res) => {
   try {
-    const result = await insertAccount(req.db, req.u, uuidv7(), req.p);
+    const { username, password, email } = req.user;
+    const result = await insertAccount(req.db, username, uuidv7(), password, email);
     console.log({ result });
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
@@ -64,25 +61,24 @@ authRouter.post("/register", async (req, res) => {
  * }
  */
 authRouter.post("/login", async (req, res) => {
-  if (!req.ui) {
-    console.log(`[POST /login][ERROR] missing user id param!`);
-    res.status(400).send({ ok: false });
-    return;
-  }
   try {
-    const user = await selectAccount(req.db, req.u, req.ui);
-    if (!user || !user?.name || user?.name !== req.u) {
+    const { username, password, email } = req.user;
+    console.log({ got: { username, password, email } });
+    const foundUser = await selectAccountByEmail(req.db, email);
+    console.log({ foundUser });
+    if (!foundUser || !foundUser?.name || foundUser?.name !== username || !foundUser?.email || !foundUser?.password) {
       res.status(403).send({ ok: false });
       return;
     }
 
-    const isValidPassword = await bcrypt.compare(req.p, user.password);
+    const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
+      console.log("invalid pw");
       res.status(403).send({ ok: false });
       return;
     }
 
-    const rawToken = { id: user.id };
+    const rawToken = { id: foundUser.id };
     const jwtOptions = { expiresIn: "30m" };
     const jwt = jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, jwtOptions);
     res.status(200).send({ ok: true, token: jwt });
