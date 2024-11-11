@@ -255,8 +255,8 @@
           this.show(alertType, message);
         };
         this.show = function (alertType, message) {
-          this.messageEl.classList.remove("ms-2"); // remove just in case it exists..
           if (this.isShown) {
+            this.messageEl.classList.remove("ms-2"); // remove just in case it exists..
             // If already shown, close existing before showing new.
             this.close();
           }
