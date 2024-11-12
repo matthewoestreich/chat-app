@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "start:nodemon": "npx nodemon index.js",
-    "fmt": "npx prettier --write \"**/*.{js,json,ejs}\"",
+    "start:nodemon": "nodemon index.js",
+    "fmt": "prettier --write \"**/*.{js,json,ejs}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
@@ -23,7 +23,7 @@
       {
         "files": "*.ejs",
         "options": {
-          "parser": "angular"
+          "parser": "html"
         }
       }
     ]
@@ -51,6 +51,8 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.7",
+    "prettier": "^3.3.3"
   }
 }
