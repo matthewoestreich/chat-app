@@ -32,7 +32,8 @@ authRouter.use(useUserParamsFromBody("userBody"));
  * }
  */
 authRouter.post("/register", async (req, res) => {
-  try {
+  try 
+  {
     const { username, password, email } = req.userBody;
     if (!username) {
       console.log(`[POST /register] missing username (as 'p') in request body!`, { user: req.userBody });
