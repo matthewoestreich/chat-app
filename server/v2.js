@@ -12,7 +12,7 @@ router.get("/", (req, res) => {
 });
 
 router.get("/chat", [useJWT], (req, res) => {
-  console.log("at /chat")
+  console.log("at /chat");
   res.render("v2/chat", { nonce: res.locals.cspNonce });
 });
 

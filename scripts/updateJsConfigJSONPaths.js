@@ -6,8 +6,8 @@ try {
   const jsconfigjsonPath = path.resolve(import.meta.dirname, "../jsconfig.json");
   const packagejsonPath = path.resolve(import.meta.dirname, "../package.json");
 
-  const packagejsonRaw = await fs.readFileSync(packagejsonPath, 'utf-8');
-  const jsconfigjsonRaw = await fs.readFileSync(jsconfigjsonPath, 'utf-8');
+  const packagejsonRaw = await fs.readFileSync(packagejsonPath, "utf-8");
+  const jsconfigjsonRaw = await fs.readFileSync(jsconfigjsonPath, "utf-8");
   const packagejson = JSON.parse(packagejsonRaw);
   const jsconfigjson = JSON.parse(jsconfigjsonRaw);
 

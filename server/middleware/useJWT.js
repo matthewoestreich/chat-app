@@ -9,7 +9,7 @@ function verifyJWTAsync(token, signature) {
         return;
       }
       resolve(token);
-    })
+    });
   });
 }
 

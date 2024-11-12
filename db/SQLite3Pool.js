@@ -3,7 +3,7 @@ sqlite3.verbose();
 
 export default class SQLitePool {
   /**
-   * 
+   *
    * @param {string} dbPath : ABSOLUTE PATH to database file
    * @param {*} maxConnections : int
    */
