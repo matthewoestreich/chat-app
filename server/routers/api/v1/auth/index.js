@@ -68,9 +68,10 @@ authRouter.post("/login", async (req, res) => {
 
     const db = await req.dbPool.getConnection();
     const foundUser = await selectAccountByEmail(db, email);
+    req.dbPool.releaseConnection(db);
+
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
-      req.dbPool.releaseConnection(db);
       res.status(403).send({ ok: false });
       return;
     }
@@ -78,7 +79,6 @@ authRouter.post("/login", async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
       console.log(`[POST /login][ERROR] incorrect password!`);
-      req.dbPool.releaseConnection(db);
       res.status(403).send({ ok: false });
       return;
     }
@@ -86,10 +86,8 @@ authRouter.post("/login", async (req, res) => {
     const rawToken = { id: foundUser.id };
     const jwtOptions = { expiresIn: "30m" };
     const jwt = jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, jwtOptions);
-    req.dbPool.releaseConnection(db);
     res.status(200).send({ ok: true, token: jwt });
   } catch (e) {
-    req.dbPool.releaseConnection(db);
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
   }
