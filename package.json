@@ -29,7 +29,7 @@
     ]
   },
   "nodemonConfig": {
-    "delay": 2500,
+    "delay": 1500,
     "ext": "*",
     "watch": [
       "server/**",
