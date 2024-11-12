@@ -41,7 +41,8 @@ authRouter.post("/register", async (req, res) => {
     }
     const db = await req.dbPool.getConnection();
     const result = await insertAccount(db, username, uuidv7(), password, email);
-    console.log({ result });
+    req.dbPool.releaseConnection(db);
+    
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
