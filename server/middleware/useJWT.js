@@ -75,13 +75,16 @@ export default function (req, res, next) {
       // Update new refresh token in db.
       await refreshTokenQueries.update(db, decodedRefreshToken?.id, refreshToken);
       req.dbPool.releaseConnection(db);
+
       // update request object
       req.access_token = accessToken;
       req.refresh_token = refreshToken;
+
       // Update client side cookie
       res.cookie("access_token", accessToken, { maxAge: ONE_DAY });
       res.cookie("refresh_token", refreshToken, { maxAge: ONE_DAY });
       console.log(`[useJWT][SUCCESS] Generated new access and refresh tokens`);
+
       return next();
     });
   });
