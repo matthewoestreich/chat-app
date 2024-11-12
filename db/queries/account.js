@@ -1,6 +1,16 @@
 import bcrypt from "bcrypt";
 
 /**
+ *
+ * EXPORT FUNCTIONS AS OBJECT
+ *
+ */
+export default {
+  insert: insertAccount,
+  selectByEmail: selectAccountByEmail,
+};
+
+/**
  * Adds new user to database.
  * Salts and hashes password.
  * @param {sqlite3.Database} db
@@ -10,7 +20,7 @@ import bcrypt from "bcrypt";
  * @param {string} email
  * @param {string} tableName
  */
-export default async function (db, name, id, passwd, email, tableName = "user") {
+function insertAccount(db, name, id, passwd, email, tableName = "user") {
   return new Promise(async (resolve, reject) => {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -19,13 +29,23 @@ export default async function (db, name, id, passwd, email, tableName = "user") 
 
       db.run(query, [id, name, hashedPw, email], (err) => {
         if (err) {
-          reject(err);
-          return;
+          return reject(err);
         }
-        resolve({ name, id, email });
+        return resolve({ name, id, email });
       });
     } catch (e) {
-      reject(e);
+      return reject(e);
     }
+  });
+}
+
+function selectAccountByEmail(db, email, tableName = "user") {
+  return new Promise((resolve, reject) => {
+    db.get(`SELECT * FROM ${tableName} WHERE email = ?`, [email], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(row);
+    });
   });
 }

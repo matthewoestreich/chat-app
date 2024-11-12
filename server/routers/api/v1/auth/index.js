@@ -4,9 +4,9 @@
 import express, { raw } from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
-import jsonwebtoken from "jsonwebtoken";
+import generateTokens from "#@/server/generateTokens.js";
 import { useUserParamsFromBody } from "#@/server/middleware/index.js";
-import { insertAccount, selectAccountByEmail } from "#@/db/queries/index.js";
+import { accountQueries, refreshTokenQueries } from "#@/db/queries/index.js";
 
 const authRouter = express.Router();
 
@@ -40,7 +40,7 @@ authRouter.post("/register", async (req, res) => {
       return;
     }
     const db = await req.dbPool.getConnection();
-    const result = await insertAccount(db, username, uuidv7(), password, email);
+    const result = await accountQueries.insert(db, username, uuidv7(), password, email);
     req.dbPool.releaseConnection(db);
 
     res.status(200).send({ ok: true, ...result });
@@ -67,9 +67,9 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const db = await req.dbPool.getConnection();
-    const foundUser = await selectAccountByEmail(db, email);
-    req.dbPool.releaseConnection(db);
+    const dbHandleSelect = await req.dbPool.getConnection();
+    const foundUser = await accountQueries.selectByEmail(dbHandleSelect, email);
+    req.dbPool.releaseConnection(dbHandleSelect);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
@@ -84,10 +84,12 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const rawToken = { id: foundUser.id };
-    const jwtOptions = { expiresIn: "30m" };
-    const jwt = jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, jwtOptions);
-    res.status(200).send({ ok: true, token: jwt });
+    const { accessToken, refreshToken } = generateTokens(foundUser.id);
+    const dbHandleInsert = await req.dbPool.getConnection();
+    await refreshTokenQueries.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
+    req.dbPool.releaseConnection(dbHandleInsert);
+
+    res.status(200).send({ ok: true, accessToken, refreshToken });
   } catch (e) {
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });

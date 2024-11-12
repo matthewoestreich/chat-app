@@ -2,8 +2,8 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
-import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
-import { useCookieParser, useCspNonce, useSQLite3Pool } from "#@/server/middleware/index.js";
+import { v7 as uuidv7 } from "uuid";
+import { useCookieParser, useCspNonce, useSQLite3Pool, useErrorCatchall } from "#@/server/middleware/index.js";
 import ChatRooms, { Room, RoomMember } from "#@/db/ChatRooms.js";
 import apiRouter from "#@/server/routers/api/index.js";
 import v2Router from "./v2.js";
@@ -50,7 +50,7 @@ app.use(useCookieParser);
 morgan.token("body", (req) => JSON.stringify(req.body || {}, null, 2));
 app.use(
   morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
-    skip: (req, _res) => req.url === "/favicon.ico",
+    skip: (req, _res) => req.url === "/favicon.ico" || req.url.startsWith("/public"),
   }),
 );
 
@@ -107,15 +107,6 @@ app.get("/chat/:roomId", (req, res) => {
     res.render("error", { error: "Something went wrong!" });
     return;
   }
-  // Room ID and User ID must be valid UUIDv7
-  if (!isValidUUID(roomId, 7) || !isValidUUID(userId, 7)) {
-    console.log(`[/chat][ERROR] either roomId or userId isn't valid UUIDv7!`, {
-      roomId,
-      userId,
-    });
-    res.render("error", { error: "Something went wrong!" });
-    return;
-  }
 
   const existingRoom = CHAT_ROOMS.get(roomId);
   if (!existingRoom) {
@@ -161,10 +152,7 @@ app.get("*", (req, res) => {
 /**
  * Catch-all error handler
  */
-app.use(function (error, req, res, next) {
-  console.log(error.name);
-  res.render("error", { error: error.message || ":(" });
-});
+app.use(useErrorCatchall);
 
 /**
  * START SERVER
@@ -177,22 +165,6 @@ export default app.listen(process.env.EXPRESS_PORT, () => {
 /**
  * MISC FUNCTIONS
  */
-
-/**
- *
- * Validates UUID format and optionally it's version
- *
- * @param {string} uuid
- * @param {*} expectedVersion
- *
- */
-function isValidUUID(uuid, expectedVersion = null) {
-  const isGoodUUID = uuidValidate(uuid);
-  if (expectedVersion && parseInt(expectedVersion) !== NaN) {
-    return isGoodUUID && uuidVersion(uuid) === parseInt(expectedVersion);
-  }
-  return isGoodUUID;
-}
 
 /**
  *

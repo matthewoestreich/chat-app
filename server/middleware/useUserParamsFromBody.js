@@ -13,11 +13,6 @@
 export default function (as = "user") {
   return function (req, res, next) {
     const { u, p, e, ui } = req.body;
-    if (!p || !e) {
-      console.log(`[MIDDLEWARE][useUserParamsFromBody] missing either password (as 'p') or email (as 'e') from body!`, { "req.body": req.body });
-      res.status(400).send({ ok: false });
-      return;
-    }
     req[as] = { username: u, password: p, userId: ui, email: e };
     next();
   };

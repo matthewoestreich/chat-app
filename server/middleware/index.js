@@ -3,3 +3,4 @@ export { default as useUserParamsFromBody } from "./useUserParamsFromBody.js";
 export { default as useCspNonce } from "./useCspNonce.js";
 export { default as useSQLite3Pool } from "./useSQLite3Pool.js";
 export { default as useJWT } from "./useJWT.js";
+export { default as useErrorCatchall } from "./useErrorCatchall.js";

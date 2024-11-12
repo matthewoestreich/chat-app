@@ -136,7 +136,8 @@
           return;
         }
 
-        setCookie("jwt", loginResult.token, 1);
+        setCookie("access_token", loginResult.accessToken, 1);
+        setCookie("refresh_token", loginResult.refreshToken, 1);
         window.location.pathname = "/v2/chat";
       });
 

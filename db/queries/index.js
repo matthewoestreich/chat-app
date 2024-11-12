@@ -1,2 +1,2 @@
-export { default as insertAccount } from "./insertAccount.js";
-export { selectAccountByEmail } from "./selectAccount.js";
+export { default as accountQueries } from "./account.js";
+export { default as refreshTokenQueries } from "./refreshToken.js";

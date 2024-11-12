@@ -1,6 +1,7 @@
 {
   "exclude": ["node_modules/*", "node_modules"],
   "compilerOptions": {
+    "maxNodeModuleJsDepth": 0,
     "baseUrl": ".",
     "paths": {
       "#@/*": ["./*"]
