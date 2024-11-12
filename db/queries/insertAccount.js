@@ -1,5 +1,4 @@
 import bcrypt, { hash } from "bcrypt";
-import { selectAccountByEmail } from "./selectAccount.js";
 
 /**
  * Adds new user to database.

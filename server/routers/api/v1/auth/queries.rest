@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "e": "mo@mo.com",
-  "p": "test123"
+  "p": "mo"
 }
 
 ###

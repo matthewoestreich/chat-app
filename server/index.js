@@ -3,9 +3,9 @@ import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import { v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from "uuid";
-import { useCookieParser, useCspNonce } from "./middleware/index.js";
-import ChatRooms, { Room, RoomMember } from "../db/ChatRooms.js";
-import apiRouter from "./routers/api/index.js";
+import { useCookieParser, useCspNonce, useSQLite3Pool } from "#@/server/middleware/index.js";
+import ChatRooms, { Room, RoomMember } from "#@/db/ChatRooms.js";
+import apiRouter from "#@/server/routers/api/index.js";
 import v2Router from "./v2.js";
 
 const app = express();
@@ -30,6 +30,8 @@ app.set("views", path.resolve(import.meta.dirname, "../client"));
 app.use("/public", express.static(path.resolve(import.meta.dirname, "../public")));
 // Parse req bodies into json (when Content-Type='application/json')
 app.use(express.json());
+// Create database pool
+app.use(useSQLite3Pool);
 // Set a nonce on scripts
 app.use(useCspNonce);
 // Tighten security
@@ -154,6 +156,14 @@ app.get("/chat/:roomId", (req, res) => {
  */
 app.get("*", (req, res) => {
   res.send("<h1>404 Not Found</h1>");
+});
+
+/**
+ * Catch-all error handler
+ */
+app.use(function (error, req, res, next) {
+  console.log(error.name);
+  res.render("error", { error: error.message || ":(" });
 });
 
 /**

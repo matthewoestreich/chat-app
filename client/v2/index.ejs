@@ -132,10 +132,11 @@
 
         const loginResult = await loginResponse.json();
         if (!loginResponse?.ok) {
+          statusAlert.showWithIcon("danger", "Something went wrong!", "bi-exclamation-triangle-fill");
           return;
         }
 
-        setCookie("bearer", loginResult.token, 1);
+        setCookie("jwt", loginResult.token, 1);
         window.location.pathname = "/v2/chat";
       });
 

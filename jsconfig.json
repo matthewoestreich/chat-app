@@ -1,0 +1,14 @@
+{
+  "exclude": [
+    "node_modules/*",
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#@/*": [
+        "./*"
+      ]
+    }
+  }
+}

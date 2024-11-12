@@ -5,9 +5,8 @@ import express, { raw } from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import jsonwebtoken from "jsonwebtoken";
-import { useUserParamsFromBody } from "../../../../middleware/index.js";
-import insertAccount from "./insertAccount.js";
-import { selectAccountByEmail } from "./selectAccount.js";
+import { useUserParamsFromBody } from "#@/server/middleware/index.js";
+import { insertAccount, selectAccountByEmail } from "#@/db/queries/index.js";
 
 const authRouter = express.Router();
 
@@ -40,8 +39,8 @@ authRouter.post("/register", async (req, res) => {
       res.status(403).send({ ok: false });
       return;
     }
-
-    const result = await insertAccount(req.db, username, uuidv7(), password, email);
+    const db = await req.dbPool.getConnection();
+    const result = await insertAccount(db, username, uuidv7(), password, email);
     console.log({ result });
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
@@ -67,9 +66,11 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const foundUser = await selectAccountByEmail(req.db, email);
+    const db = await req.dbPool.getConnection();
+    const foundUser = await selectAccountByEmail(db, email);
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
+      req.dbPool.releaseConnection(db);
       res.status(403).send({ ok: false });
       return;
     }
@@ -77,6 +78,7 @@ authRouter.post("/login", async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
       console.log(`[POST /login][ERROR] incorrect password!`);
+      req.dbPool.releaseConnection(db);
       res.status(403).send({ ok: false });
       return;
     }
@@ -84,8 +86,10 @@ authRouter.post("/login", async (req, res) => {
     const rawToken = { id: foundUser.id };
     const jwtOptions = { expiresIn: "30m" };
     const jwt = jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, jwtOptions);
+    req.dbPool.releaseConnection(db);
     res.status(200).send({ ok: true, token: jwt });
   } catch (e) {
+    req.dbPool.releaseConnection(db);
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
   }

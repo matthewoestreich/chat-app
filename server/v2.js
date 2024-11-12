@@ -1,4 +1,5 @@
 import express from "express";
+import { useJWT } from "#@/server/middleware/index.js";
 
 const router = express.Router();
 
@@ -10,8 +11,9 @@ router.get("/", (req, res) => {
   res.render("v2/index", { nonce: res.locals.cspNonce });
 });
 
-router.get("/chat", [], (req, res) => {
-  res.send(`<code>${JSON.stringify(req.cookies, null, 2)}</code>`);
+router.get("/chat", [useJWT], (req, res) => {
+  console.log("at /chat")
+  res.render("v2/chat", { nonce: res.locals.cspNonce });
 });
 
 export default router;

@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -54,23 +54,91 @@
     </style>
   </head>
   <body>
+    <!-- Toast alerts -->
+    <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
+    <!-- Hamburger Menu (on small devices) and toggle theme buttons -->
+    <div class="position-fixed" style="z-index: 1">
+      <div class="position-fixed top-0"><%- include("../partials/hamburger-menu.ejs") %></div>
+      <div class="position-fixed top-0 end-0"><%- include("../partials/dark-mode-toggle.ejs") %></div>
+    </div>
+    <!-- Modal that is shown via `show members` button (from within the hamburger menu)-->
+    <div><%- include("../partials/display-members-modal.ejs") %></div>
+    <!-- Navbar -->
+    <nav class="navbar fixed-top bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Sticky top</a>
+      </div>
+    </nav>
     <!-- MAIN CONTENT -->
-    <div class="container-fluid h-100 d-flex flex-column">
-      <!-- Content Row (main row) -->
-      <div class="row flex-fill min-h-0">
-        <!-- Members List Content / Left Col -->
-        <div class="col-xl-2 d-xl-block d-none mh-100 border overf-y-scroll">
-          <div id="members-list" class="list-group list-group-flush"></div>
+    <div class="container h-100 d-flex flex-column" style="padding-top:4em;">
+      <div class="row text-center">
+        <div class="col">
+          <h1>Hello, world!</h1>
         </div>
+      </div>
+      <!-- Content Row (main row) -->
+      <div class="row g-0 flex-fill min-h-0">
+        <div class="col-2 d-flex flex-column rounded-start-3 h-90pct border min-h-0">
+          <div><h1 class="fs-1">Members</h1></div>
+          <div id="members-list" class="list-group list-group-flush overf-y-scroll">
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            
+          </div>
+        </div>
+        <!-- Chat Col Content / Right Col -->
+        <!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
         <div class="col mh-100 overf-y-scroll">
           <!-- Nested container to hold chart card -->
           <!-- This mirrors the main structure, but nested in a col -->
-          <div class="container-fluid h-100 d-flex flex-column">
-            <div class="row flex-fill min-h-0">
+          <div class="container-fluid g-0 h-100 d-flex flex-column">
+            <div class="row g-0 flex-fill min-h-0">
               <!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
-              <div class="col-xl-6 offset-xl-3 col-md-8 offset-md-2 mh-100">
+              <div class="col-12">
                 <!-- Main Card For Chat Window -->
-                <div class="card mh-100 h-90pct mt-3">
+                <div class="card mh-100 h-90pct">
                   <div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
                   <div class="card-footer">
                     <div class="input-group">
@@ -83,9 +151,59 @@
             </div>
           </div>
         </div>
+        <div class="col-2 d-flex flex-column rounded-start-3 h-90pct border min-h-0">
+          <div><h1 class="fs-1">Members</h1></div>
+          <div id="members-list" class="list-group list-group-flush overf-y-scroll">
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            
+          </div>
+        </div>
       </div>
     </div>
-    <script></script>
+    <script nonce="<%= nonce %>"></script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

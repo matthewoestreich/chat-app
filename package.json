@@ -12,13 +12,14 @@
   "type": "module",
   "keywords": [],
   "author": "Matt Oestreich",
+  
   "imports": {
-    "#server/*": "./server/*"
+    "#@/*": "./*"
   },
   "prettier": {
     "tabWidth": 2,
     "useTabs": false,
-    "printWidth": 800,
+    "printWidth": 10000,
     "overrides": [
       {
         "files": "*.ejs",
