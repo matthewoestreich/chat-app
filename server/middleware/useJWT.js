@@ -91,7 +91,7 @@ export default function (req, res, next) {
       // Even though refresh token is valid, we still want to verify it exists in our db. Otherwise,
       // it means the "session" has been revoked, or someone is trying to replace an old refresh token, etc..
       const db = await req.dbPool.getConnection();
-      const existingRefresh = await refreshTokenQueries.selectByUserId(db, userId);
+      const existingRefresh = await refreshTokenQueries.selectByUserId(db, decodedRefreshToken?.id);
       req.dbPool.releaseConnection(db);
 
       // If no existing token, or existing token missing "token" column, or mismatch between token from db and token we

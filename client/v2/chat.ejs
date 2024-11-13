@@ -80,51 +80,10 @@
       <div class="row g-0 flex-fill min-h-0">
         <div class="col-2 d-flex flex-column rounded-start-3 h-90pct border min-h-0">
           <div><h1 class="fs-1">Members</h1></div>
-          <div id="members-list" class="list-group list-group-flush overf-y-scroll">
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
+          <div id="left-column-container" class="h-100 overf-y-scroll d-flex justify-content-center align-items-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
           </div>
         </div>
         <!-- Chat Col Content / Right Col -->
@@ -151,57 +110,67 @@
           </div>
         </div>
         <div class="col-2 d-flex flex-column rounded-start-3 h-90pct border min-h-0">
-          <div><h1 class="fs-1">Members</h1></div>
-          <div id="members-list" class="list-group list-group-flush overf-y-scroll">
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
-            <li class="list-group-item">content</li>
+          <div><h1 class="fs-1">Rooms</h1></div>
+          <div id="right-column-container" class="h-100 overf-y-scroll">
+            <div class="d-flex justify-content-center align-content-center">
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <script nonce="<%= nonce %>"></script>
+    <script nonce="<%= nonce %>">
+      const fakeContent = `
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+            <li class="list-group-item">content</li>
+      `;
+      const rightColumnContainer = document.getElementById("right-column-container");
+      //rightColumnContainer.innerHTML = `<div id="members-list" class="list-group list-group-flush overf-y-scroll">${fakeContent}</div>`;
+    </script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
