@@ -1,5 +1,5 @@
 import jsonwebtoken from "jsonwebtoken";
-import { refreshTokenQueries } from "#@/db/queries/index.js";
+import { refreshTokenService } from "#@/db/services/index.js";
 import generateTokenPair, { generateAccessToken } from "#@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -59,7 +59,7 @@ export default function (req, res, next) {
 
         // Get existing refresh token from db.
         const dbHandleRefresh = await req.dbPool.getConnection();
-        const existingRefresh = await refreshTokenQueries.selectByUserId(dbHandleRefresh, decodedRefreshToken?.id);
+        const existingRefresh = await refreshTokenService.selectByUserId(dbHandleRefresh, decodedRefreshToken?.id);
 
         // If no existing token, or existing token missing "token" column, or mismatch between token from db and token we
         // received (req.cookies.refresh_token), force user to log-in again.
@@ -72,7 +72,7 @@ export default function (req, res, next) {
         const { accessToken, refreshToken } = generateTokenPair(decodedRefreshToken?.id);
 
         // Update refresh token in db to newly generated refresh token.
-        await refreshTokenQueries.update(dbHandleRefresh, decodedRefreshToken?.id, refreshToken);
+        await refreshTokenService.update(dbHandleRefresh, decodedRefreshToken?.id, refreshToken);
         req.dbPool.releaseConnection(dbHandleRefresh);
 
         // update request object
@@ -91,7 +91,7 @@ export default function (req, res, next) {
       // Even though refresh token is valid, we still want to verify it exists in our db. Otherwise,
       // it means the "session" has been revoked, or someone is trying to replace an old refresh token, etc..
       const db = await req.dbPool.getConnection();
-      const existingRefresh = await refreshTokenQueries.selectByUserId(db, decodedRefreshToken?.id);
+      const existingRefresh = await refreshTokenService.selectByUserId(db, decodedRefreshToken?.id);
       req.dbPool.releaseConnection(db);
 
       // If no existing token, or existing token missing "token" column, or mismatch between token from db and token we

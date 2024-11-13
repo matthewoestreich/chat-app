@@ -6,7 +6,7 @@ import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import generateTokenPair from "#@/server/generateTokens.js";
 import { useUserParamsFromBody } from "#@/server/middleware/index.js";
-import { accountQueries, refreshTokenQueries } from "#@/db/queries/index.js";
+import { accountService, refreshTokenService } from "#@/db/services/index.js";
 
 const authRouter = express.Router();
 
@@ -40,7 +40,7 @@ authRouter.post("/register", async (req, res) => {
       return;
     }
     const db = await req.dbPool.getConnection();
-    const result = await accountQueries.insert(db, username, uuidv7(), password, email);
+    const result = await accountService.insert(db, username, uuidv7(), password, email);
     req.dbPool.releaseConnection(db);
 
     res.status(200).send({ ok: true, ...result });
@@ -68,7 +68,7 @@ authRouter.post("/login", async (req, res) => {
     }
 
     const dbHandleSelect = await req.dbPool.getConnection();
-    const foundUser = await accountQueries.selectByEmail(dbHandleSelect, email);
+    const foundUser = await accountService.selectByEmail(dbHandleSelect, email);
     req.dbPool.releaseConnection(dbHandleSelect);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
@@ -86,7 +86,7 @@ authRouter.post("/login", async (req, res) => {
 
     const { accessToken, refreshToken } = generateTokenPair(foundUser.id);
     const dbHandleInsert = await req.dbPool.getConnection();
-    await refreshTokenQueries.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
+    await refreshTokenService.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
     req.dbPool.releaseConnection(dbHandleInsert);
 
     res.status(200).send({ ok: true, accessToken, refreshToken });
