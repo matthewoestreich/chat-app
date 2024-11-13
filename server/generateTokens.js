@@ -9,7 +9,7 @@ const EXPIRATION_TIMES = {
  *
  * @param {string} userId
  */
-export default function generateTokens(userId) {
+export default function generateTokenPair(userId) {
   return {
     accessToken: generateAccessToken(userId),
     refreshToken: generateRefreshToken(userId),

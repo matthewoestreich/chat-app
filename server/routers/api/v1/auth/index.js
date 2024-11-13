@@ -4,7 +4,7 @@
 import express, { raw } from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
-import generateTokens from "#@/server/generateTokens.js";
+import generateTokenPair from "#@/server/generateTokens.js";
 import { useUserParamsFromBody } from "#@/server/middleware/index.js";
 import { accountQueries, refreshTokenQueries } from "#@/db/queries/index.js";
 
@@ -84,7 +84,7 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const { accessToken, refreshToken } = generateTokens(foundUser.id);
+    const { accessToken, refreshToken } = generateTokenPair(foundUser.id);
     const dbHandleInsert = await req.dbPool.getConnection();
     await refreshTokenQueries.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
     req.dbPool.releaseConnection(dbHandleInsert);
