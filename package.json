@@ -31,6 +31,9 @@
   "nodemonConfig": {
     "delay": 1500,
     "ext": "*",
+    "ignore": [
+      "**/*.db"
+    ],
     "watch": [
       "server/**",
       "wss/**",

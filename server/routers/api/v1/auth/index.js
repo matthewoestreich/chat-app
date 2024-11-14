@@ -1,22 +1,13 @@
 /*
   Auth Router
 */
-import express, { raw } from "express";
+import express from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import generateTokenPair from "#@/server/generateTokens.js";
-import { useUserParamsFromBody } from "#@/server/middleware/index.js";
 import { accountService, refreshTokenService } from "#@/db/services/index.js";
 
 const authRouter = express.Router();
-
-/** ------------------------------------------------------------------------------
- * MIDDLEWARE
- ------------------------------------------------------------------------------ */
-
-// Add user specific properties to req object.
-// u=username, p=password, e=email, ui=userId
-authRouter.use(useUserParamsFromBody("userBody"));
 
 /** ------------------------------------------------------------------------------
  * ROUTES
@@ -33,9 +24,9 @@ authRouter.use(useUserParamsFromBody("userBody"));
  */
 authRouter.post("/register", async (req, res) => {
   try {
-    const { username, password, email } = req.userBody;
+    const { u: username, p: password, e: email } = req.body;
     if (!username) {
-      console.log(`[POST /register] missing username (as 'p') in request body!`, { user: req.userBody });
+      console.log(`[POST /register] missing username (as 'p') in request body!`, { user: req.body });
       res.status(403).send({ ok: false });
       return;
     }
@@ -60,7 +51,7 @@ authRouter.post("/register", async (req, res) => {
  */
 authRouter.post("/login", async (req, res) => {
   try {
-    const { password, email } = req.userBody;
+    const { p: password, e: email } = req.body;
     if (!password || !email) {
       console.log(`[POST /login] missing either email or password from body!`, { email, password });
       res.status(403).send({ ok: false });
@@ -84,7 +75,8 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const { accessToken, refreshToken } = generateTokenPair(foundUser.id);
+    const { name, id, email: foundEmail } = foundUser;
+    const { accessToken, refreshToken } = generateTokenPair(name, id, foundEmail);
     const dbHandleInsert = await req.dbPool.getConnection();
     await refreshTokenService.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
     req.dbPool.releaseConnection(dbHandleInsert);

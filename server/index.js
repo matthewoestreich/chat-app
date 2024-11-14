@@ -3,7 +3,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import { v7 as uuidv7 } from "uuid";
-import { useCookieParser, useCspNonce, useSQLite3Pool, useErrorCatchall } from "#@/server/middleware/index.js";
+import { useCookieParser, useCspNonce, useErrorCatchall, useDbPool } from "#@/server/middleware/index.js";
 import ChatRooms, { Room, RoomMember } from "#@/db/ChatRooms.js";
 import apiRouter from "#@/server/routers/api/index.js";
 import v2Router from "./v2.js";
@@ -31,7 +31,7 @@ app.use("/public", express.static(path.resolve(import.meta.dirname, "../public")
 // Parse req bodies into json (when Content-Type='application/json')
 app.use(express.json());
 // Create database pool
-app.use(useSQLite3Pool);
+app.use(useDbPool);
 // Set a nonce on scripts
 app.use(useCspNonce);
 // Tighten security
@@ -58,8 +58,8 @@ app.use(
  * ROUTES
  */
 
-app.use("/api", apiRouter);
 app.use("/v2", v2Router);
+app.use("/api", apiRouter);
 
 /**
  * @route {GET} /

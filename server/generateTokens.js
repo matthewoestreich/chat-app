@@ -1,29 +1,27 @@
 import jsonwebtoken from "jsonwebtoken";
 
 const EXPIRATION_TIMES = {
-  accessToken: "1m",
-  refreshToken: "90s",
+  accessToken: "15m",
+  refreshToken: "24h",
 };
 
 /**
  *
- * @param {string} userId
+ * @param {{}} user
  */
-export default function generateTokenPair(userId) {
+export default function generateTokenPair(name, id, email) {
   return {
-    accessToken: generateAccessToken(userId),
-    refreshToken: generateRefreshToken(userId),
+    accessToken: generateAccessToken(name, id, email),
+    refreshToken: generateRefreshToken(name, id, email),
   };
 }
 
-export function generateAccessToken(userId) {
-  const rawToken = { id: userId };
+export function generateAccessToken(name, id, email) {
   const accessTokenOptions = { expiresIn: EXPIRATION_TIMES.accessToken };
-  return jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, accessTokenOptions);
+  return jsonwebtoken.sign({ name, id, email }, process.env.JWT_SIGNATURE, accessTokenOptions);
 }
 
-export function generateRefreshToken(userId) {
-  const rawToken = { id: userId };
+export function generateRefreshToken(name, id, email) {
   const refreshTokenOptions = { expiresIn: EXPIRATION_TIMES.refreshToken };
-  return jsonwebtoken.sign(rawToken, process.env.JWT_SIGNATURE, refreshTokenOptions);
+  return jsonwebtoken.sign({ name, id, email }, process.env.JWT_SIGNATURE, refreshTokenOptions);
 }

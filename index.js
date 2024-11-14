@@ -1,6 +1,6 @@
 import "dotenv/config";
 import "./wss/index.js";
-import initDatabase from "./db/initDatabase.js";
+import initDatabase from "./scripts/initDatabase.js";
 import server, { CHAT_ROOMS } from "./server/index.js";
 
 if (!process.env.JWT_SIGNATURE) {

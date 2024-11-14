@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 export default {
   insert: insertAccount,
   selectByEmail: selectAccountByEmail,
+  selectById: selectAccountById,
 };
 
 /**
@@ -42,6 +43,17 @@ function insertAccount(db, name, id, passwd, email, tableName = "user") {
 function selectAccountByEmail(db, email, tableName = "user") {
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM ${tableName} WHERE email = ?`, [email], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(row);
+    });
+  });
+}
+
+function selectAccountById(db, userId, tableName = "user") {
+  return new Promise((resolve, reject) => {
+    db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }

@@ -6,6 +6,8 @@
 export default {
   insert: insertRefreshToken,
   update: updateRefreshToken,
+  delete: deleteRefreshToken,
+  deleteByUserId: deleteRefreshTokenByUserId,
   updateOrInsert: updateOrInsertRefreshToken,
   selectByUserId: selectRefreshTokenByUserID,
 };
@@ -66,5 +68,37 @@ function updateOrInsertRefreshToken(db, userId, token, tableName = "refresh_toke
     } catch (e) {
       return reject(e);
     }
+  });
+}
+
+function deleteRefreshTokenByUserId(db, userId, tableName = "refresh_token") {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run(`DELETE FROM ${tableName} WHERE userId = ?`, userId, function (err) {
+        if (err) {
+          return reject(err);
+        }
+        if (this.changes !== 1) {
+          return reject(new Error("unable to remove refresh token!"));
+        }
+        return resolve();
+      });
+    });
+  });
+}
+
+function deleteRefreshToken(db, token, tableName = "refresh_token") {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run(`DELETE FROM ${tableName} WHERE token = ?`, token, function (err) {
+        if (err) {
+          return reject(err);
+        }
+        if (this.changes !== 1) {
+          return reject(new Error("unable to remove refresh token!"));
+        }
+        return resolve();
+      });
+    });
   });
 }
