@@ -72,29 +72,52 @@
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
-      <nav class="container-xxl bd-gutter flex-wrap flex-lg-nowrap">
+      <nav class="container bd-gutter flex-wrap flex-lg-nowrap">
         <a class="navbar-brand p-0 me-0 me-lg-2" href="/"> RTChat </a>
-        <div class="offcanvas-lg offcanvas-end flex-grow-1">
+        <div class="d-flex">
+          <button class="navbar-toggler d-flex d-lg-none order-3 p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#bdNavbar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-list fs-3" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
+            </svg>
+          </button>
+        </div>
+        <div id="bdNavbar" class="offcanvas-lg offcanvas-end flex-grow-1">
+          <div class="offcanvas-header px-4 pb-0">
+            <h5 class="offcanvas-title" id="bdNavbarOffcanvasLabel">RTChat</h5>
+            <button type="button" class="btn-close btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-bs-target="#bdNavbar"></button>
+          </div>
           <div class="offcanvas-body p-4 pt-0 p-lg-0">
-            <ul class="navbar-nav flex-row flex-wrap bd-navbar-nav">
-              <li class="nav-item col-6 col-lg-auto">
-                <a class="nav-link py-2 px-0 px-lg-2 active"> First </a>
+            <hr class="d-lg-none text-50" />
+            <ul class="navbar-nav d-lg-none flex-row flex-wrap bd-navbar-nav text-center">
+              <li class="nav-item col-6 col-lg-auto d-flex">
+                <button class="nav-link btn btn-outline-dark flex-fill">Members</button>
               </li>
-              <li class="nav-item col-6 col-lg-auto">
-                <a class="nav-link py-2 px-0 px-lg-2"> Second </a>
+              <li class="nav-item col-6 col-lg-auto d-flex">
+                <button class="nav-link btn btn-outline-dark flex-fill">Rooms</button>
               </li>
             </ul>
-            <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
-              <li class="nav-item col-6 col-lg-auto">
-                <a class="nav-link py-2 px-0 px-lg-2">
-                  <svg id="enable-dark-mode-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-moon fs-3" viewBox="0 0 16 16">
-                    <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286" />
-                  </svg>
+            <hr class="d-lg-none text-50" />
+            <ul class="navbar-nav flex-lg-row flex-lg-wrap ms-md-auto">
+              <li class="nav-item col-lg-6 col-12 col-lg-auto">
+                <a id="toggle-theme" class="nav-link d-flex" style="cursor: pointer" title="Toggle theme">
+                  <button class="btn btn-outline-secondary flex-fill">
+                    <svg id="dark-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="d-none bi bi-moon" viewBox="0 0 16 16">
+                      <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286" />
+                    </svg>
+                    <svg id="light-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sun-fill fs-3 d-none" viewBox="0 0 16 16">
+                      <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
+                    </svg>
+                  </button>
                 </a>
               </li>
-              <li class="nav-item col-6 col-lg-auto">
-                <a class="nav-link py-2 px-0 px-lg-2" href="logout">
-                  <button class="btn btn-sm btn-outline-primary" type="button">Logout</button>
+              <li class="nav-item col-lg-6 col-12 col-lg-auto">
+                <a class="nav-link d-flex" href="logout">
+                  <button class="btn btn-outline-secondary flex-fill" type="button" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+                      <path d="M7.5 1v7h1V1z" />
+                      <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812" />
+                    </svg>
+                  </button>
                 </a>
               </li>
             </ul>
@@ -103,7 +126,7 @@
       </nav>
     </header>
     <!-- MAIN CONTENT -->
-    <div class="container h-100 d-flex flex-column" style="padding-top: 4em">
+    <div class="container-xl h-100 d-flex flex-column" style="padding-top: 4em">
       <div class="row text-center">
         <div class="col">
           <h1><%= name %></h1>
@@ -111,7 +134,7 @@
       </div>
       <!-- Content Row (main row) -->
       <div class="row g-0 flex-fill min-h-0">
-        <div class="col-2 d-flex flex-column rounded-start-5 h-90pct border min-h-0">
+        <div class="col-3 d-lg-flex d-none flex-column rounded-start-5 h-90pct border min-h-0">
           <div class="d-flex justify-content-center align-items-center">
             <p class="fs-2">Members</p>
           </div>
@@ -123,13 +146,13 @@
         </div>
         <!-- Chat Col Content / Right Col -->
         <!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
-        <div class="col mh-100 overf-y-scroll">
+        <div class="col-lg-6 mh-100 overf-y-scroll">
           <!-- Nested container to hold chart card -->
           <!-- This mirrors the main structure, but nested in a col -->
           <div class="container-fluid g-0 h-100 d-flex flex-column">
             <div class="row g-0 flex-fill min-h-0">
               <!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
-              <div class="col-12">
+              <div class="col-lg-12 offset-lg-0 col-md-10 offset-md-1">
                 <!-- Main Card For Chat Window -->
                 <div class="card mh-100 h-90pct">
                   <div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
@@ -144,7 +167,7 @@
             </div>
           </div>
         </div>
-        <div class="col-2 d-flex flex-column rounded-end-5 h-90pct border min-h-0">
+        <div class="col-3 d-lg-flex d-none flex-column rounded-end-5 h-90pct border min-h-0">
           <div class="d-flex justify-content-center align-items-center">
             <p class="fs-2">Rooms</p>
           </div>
@@ -159,44 +182,70 @@
       </div>
     </div>
     <script nonce="<%= nonce %>">
-      (async () => {
-        const ws = new WebSocket("<%= websocketUrl %>");
+      // Script to handle theme toggling
+      // localStorage is source of truth for current theme.
+      const toggleThemeBtn = document.getElementById("toggle-theme");
+      const darkThemeIcon = document.getElementById("dark-theme-icon");
+      const lightThemeIcon = document.getElementById("light-theme-icon");
 
-        const sendChatBtn = document.getElementById("send-chat-btn");
+      let currentTheme = localStorage.getItem("theme");
+      if (!currentTheme) {
+        currentTheme = "light";
+        localStorage.setItem("theme", currentTheme);
+      }
+      document.documentElement.setAttribute("data-bs-theme", currentTheme);
 
-        ws.onopen = () => {
-          console.log(`ws connected`);
-        };
+      if (currentTheme === "dark") {
+        lightThemeIcon.classList.remove("d-none");
+      } else {
+        darkThemeIcon.classList.remove("d-none");
+      }
 
-        ws.onmessage = (message) => {
-          const data = JSON.parse(message.data);
-          if (!data?.type) {
-            console.log(`socket message from server missing type!`);
-            return;
-          }
+      toggleThemeBtn.addEventListener("click", (e) => {
+        // Update current to be opposite since we are toggling...
+        const updated = localStorage.getItem("theme") === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", updated);
+        document.documentElement.setAttribute("data-bs-theme", updated);
 
-          switch (data.type) {
-            default: {
-              console.log(data);
-              break;
-            }
-          }
-        };
-
-        sendChatBtn.addEventListener("click", (e) => {
-          ws.send(JSON.stringify({ type: "test" }));
-        });
-
-        function setCookie(name, value, days) {
-          let expires = "";
-          if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-            expires = "; expires=" + date.toUTCString();
-          }
-          document.cookie = name + "=" + value + expires + "; path=/";
+        if (updated === "dark") {
+          lightThemeIcon.classList.remove("d-none");
+          darkThemeIcon.classList.add("d-none");
+        } else {
+          lightThemeIcon.classList.add("d-none");
+          darkThemeIcon.classList.remove("d-none");
         }
-      })();
+      });
+    </script>
+    <script nonce="<%= nonce %>">
+      const ws = new WebSocket("<%= websocketUrl %>");
+      const sendChatBtn = document.getElementById("send-chat-btn");
+
+      ws.onopen = () => {
+        console.log(`ws connected`);
+      };
+
+      ws.onclose = (ws, event) => {
+        console.log({ socket: "closed", ws, event });
+      };
+
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (!data?.type) {
+          console.log(`socket message from server missing type!`);
+          return;
+        }
+
+        switch (data.type) {
+          default: {
+            console.log(data);
+            break;
+          }
+        }
+      };
+
+      sendChatBtn.addEventListener("click", (e) => {
+        ws.send(JSON.stringify({ type: "test" }));
+      });
     </script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
