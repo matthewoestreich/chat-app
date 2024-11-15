@@ -1,8 +1,8 @@
 import jsonwebtoken from "jsonwebtoken";
 
 const EXPIRATION_TIMES = {
-  accessToken: "15m",
-  refreshToken: "24h",
+  accessToken: "20s",
+  refreshToken: "1m",
 };
 
 /**

@@ -1,7 +1,6 @@
 import jsonwebtoken from "jsonwebtoken";
 import { refreshTokenService } from "#@/db/services/index.js";
-import generateTokenPair, { generateAccessToken } from "#@/server/generateTokens.js";
-import { json } from "express";
+import generateTokenPair from "#@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 

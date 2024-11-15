@@ -21,8 +21,7 @@ router.get("/", [useHasValidSessionCookie], (req, res) => {
 
 router.get("/chat", [jwtMiddleware], (req, res) => {
   const { name, email } = jsonwebtoken.decode(req.cookies.access_token);
-  console.log({ from: "/v2/chat", "req.user": { name, email } });
-  res.render("v2/chat", { nonce: res.locals.cspNonce, name, email });
+  res.render("v2/chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
 });
 
 router.get("/logout", async (req, res) => {

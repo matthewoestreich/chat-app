@@ -159,83 +159,43 @@
       </div>
     </div>
     <script nonce="<%= nonce %>">
-      function readCookies() {
-        const cookies = {}; // Initialize an empty cookie object
-        if (document.cookie) {
-          document.cookie.split(";").forEach((cookie) => {
-            const [name, value] = cookie.trim().split("=");
-            cookies[name] = value;
-          });
-        }
-        return cookies;
-      }
-
-      const cookies = readCookies();
-      console.log(cookies);
-
-      async function getRooms() {
-        try {
-          const resp = await fetch(`${window.location.origin}/api/v1/user/rooms`, {
-            method: "POST",
-          });
-
-          console.log(resp);
-        } catch (e) {
-          console.log(e);
-        }
-      }
-
       (async () => {
-        getRooms();
+        const ws = new WebSocket("<%= websocketUrl %>");
 
-        const fakeContent = `
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-                  <li class="list-group-item">content</li>
-            `;
-        const rightColumnContainer = document.getElementById("right-column-container");
-        //rightColumnContainer.innerHTML = `<div id="members-list" class="list-group list-group-flush overf-y-scroll">${fakeContent}</div>`;
+        const sendChatBtn = document.getElementById("send-chat-btn");
+
+        ws.onopen = () => {
+          console.log(`ws connected`);
+        };
+
+        ws.onmessage = (message) => {
+          const data = JSON.parse(message.data);
+          if (!data?.type) {
+            console.log(`socket message from server missing type!`);
+            return;
+          }
+
+          switch (data.type) {
+            default: {
+              console.log(data);
+              break;
+            }
+          }
+        };
+
+        sendChatBtn.addEventListener("click", (e) => {
+          ws.send(JSON.stringify({ type: "test" }));
+        });
+
+        function setCookie(name, value, days) {
+          let expires = "";
+          if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+            expires = "; expires=" + date.toUTCString();
+          }
+          document.cookie = name + "=" + value + expires + "; path=/";
+        }
       })();
     </script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
