@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0" />
@@ -66,7 +66,6 @@
       }
     </style>
   </head>
-
   <body>
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
@@ -182,8 +181,16 @@
       </div>
     </div>
     <script nonce="<%= nonce %>">
-      // Script to handle theme toggling
-      // localStorage is source of truth for current theme.
+      /**
+       *
+       * TO PREVENT SCREEN FLICKERING, THIS GOES AT THE TOP OF BODY!!
+       *
+       * Script to handle theme toggling
+       *
+       * localStorage is source of truth for current theme!
+       *
+       */
+
       const toggleThemeBtn = document.getElementById("toggle-theme");
       const darkThemeIcon = document.getElementById("dark-theme-icon");
       const lightThemeIcon = document.getElementById("light-theme-icon");
