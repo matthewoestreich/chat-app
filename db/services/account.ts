@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import sqlite3 from "sqlite3";
 
 /**
  *
@@ -21,7 +22,7 @@ export default {
  * @param {string} email
  * @param {string} tableName
  */
-function insertAccount(db, name, id, passwd, email, tableName = "user") {
+function insertAccount(db: sqlite3.Database, name: string, id: string, passwd: string, email: string, tableName = "user") {
   return new Promise(async (resolve, reject) => {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -40,24 +41,24 @@ function insertAccount(db, name, id, passwd, email, tableName = "user") {
   });
 }
 
-function selectAccountByEmail(db, email, tableName = "user") {
+function selectAccountByEmail(db: sqlite3.Database, email: string, tableName = "user"): Promise<Account> {
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM ${tableName} WHERE email = ?`, [email], (err, row) => {
       if (err) {
         return reject(err);
       }
-      return resolve(row);
+      return resolve(row as Account);
     });
   });
 }
 
-function selectAccountById(db, userId, tableName = "user") {
+function selectAccountById(db: sqlite3.Database, userId: string, tableName = "user"): Promise<Account> {
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }
-      return resolve(row);
+      return resolve(row as Account);
     });
   });
 }

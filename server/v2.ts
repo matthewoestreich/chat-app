@@ -1,12 +1,12 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware/index.js";
-import { refreshTokenService, sessionService } from "@/db/services/index.js";
+import { sessionService } from "@/db/services/index.js";
 
 const router = express.Router();
 
 const jwtMiddleware = useJwtSession({
-  onError: (_req, res) => {
+  onError: (_req: Request, res: Response) => {
     return res.redirect("/v2");
   },
 });
@@ -15,16 +15,16 @@ const jwtMiddleware = useJwtSession({
  * "GET" ROUTES
  */
 
-router.get("/", [useHasValidSessionCookie], (req, res) => {
+router.get("/", [useHasValidSessionCookie], (_req: Request, res: Response) => {
   res.render("v2/index", { nonce: res.locals.cspNonce });
 });
 
-router.get("/chat", [jwtMiddleware], (req, res) => {
-  const { name, email } = jsonwebtoken.decode(req.cookies.session);
+router.get("/chat", [jwtMiddleware], (req: Request, res: Response) => {
+  const { name, email } = jsonwebtoken.decode(req.cookies.session) as SessionToken;
   res.render("v2/chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
 });
 
-router.get("/logout", async (req, res) => {
+router.get("/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies.session;
     if (!session) {

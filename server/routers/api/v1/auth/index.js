@@ -5,7 +5,7 @@ import express from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import generateTokenPair, { generateSessionToken } from "@/server/generateTokens.js";
-import { accountService, refreshTokenService, sessionService } from "@/db/services/index.js";
+import { accountService, sessionService } from "@/db/services/index.js";
 
 const authRouter = express.Router();
 

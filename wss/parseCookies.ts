@@ -1,5 +1,5 @@
-export default function (rawCookie) {
-  const cookies = {}; // Initialize an empty cookie object
+export default function (rawCookie: string): WsCookies {
+  const cookies: WsCookies = { session: "" }; // Initialize an empty cookie object
 
   if (rawCookie) {
     rawCookie.split(";").forEach((cookie) => {

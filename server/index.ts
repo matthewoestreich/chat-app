@@ -11,7 +11,7 @@ import v2Router from "@/server/v2.js";
 
 const app = express();
 // For db pool middleware
-const dbFilePath = path.resolve(import.meta.dirname, "../../db/rtchat.db");
+const dbFilePath = path.resolve(import.meta.dirname, "../db/rtchat.db");
 const sqlitePool = new SQLitePool(dbFilePath, 5);
 
 /**

@@ -1,8 +1,10 @@
+import sqlite3 from "sqlite3";
+
 export default {
   insert: insertRoom,
 };
 
-function insertRoom(db, roomName, id, tableName = "room") {
+function insertRoom(db: sqlite3.Database, roomName: string, id: string, tableName = "room") {
   return new Promise(async (resolve, reject) => {
     try {
       const query = `INSERT INTO ${tableName} (id, name) VALUES (?, ?)`;

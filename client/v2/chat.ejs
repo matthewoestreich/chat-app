@@ -320,15 +320,20 @@
 
         switch (data.type) {
           default: {
-            console.log(data);
+            console.log(`got message from server :`, data);
             break;
           }
         }
       };
 
       sendChatBtn.addEventListener("click", (e) => {
-        ws.send(JSON.stringify({ type: "test" }));
+        ws.send(createMessage("ping", { more: "datas" }));
+        ws.send(createMessage("get_rooms"));
       });
+
+      function createMessage(type = "", data = {}) {
+        return JSON.stringify({ type, ...data });
+      }
     </script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>

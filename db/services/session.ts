@@ -1,3 +1,5 @@
+import sqlite3 from "sqlite3";
+
 /**
  *
  * EXPORT FUNCTIONS AS OBJECT
@@ -12,15 +14,15 @@ export default {
   selectByUserId: selectSessionTokenByUserID,
 };
 
-function insertSessionToken(db, userId, refreshToken, tableName = "session") {
+function insertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session") {
   return new Promise(async (resolve, reject) => {
     try {
       const query = `INSERT INTO ${tableName} (userId, token) VALUES (?, ?)`;
-      db.run(query, [userId, refreshToken], (err) => {
+      db.run(query, [userId, sessionToken], (err) => {
         if (err) {
           return reject(err);
         }
-        return resolve();
+        return resolve(true);
       });
     } catch (e) {
       return reject(e);
@@ -28,14 +30,14 @@ function insertSessionToken(db, userId, refreshToken, tableName = "session") {
   });
 }
 
-function updateSessionToken(db, userId, token, tableName = "session") {
+function updateSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session"): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
-      db.run(`UPDATE ${tableName} SET token = ? WHERE userId = ?`, [token, userId], (err) => {
+      db.run(`UPDATE ${tableName} SET token = ? WHERE userId = ?`, [sessionToken, userId], (err) => {
         if (err) {
           return reject(err);
         }
-        return resolve();
+        return resolve(true);
       });
     } catch (e) {
       return reject(e);
@@ -43,35 +45,35 @@ function updateSessionToken(db, userId, token, tableName = "session") {
   });
 }
 
-function selectSessionTokenByUserID(db, userId, tableName = "refresh_token") {
+function selectSessionTokenByUserID(db: sqlite3.Database, userId: string, tableName = "session"): Promise<Session> {
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM ${tableName} WHERE userId = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }
-      return resolve(row);
+      return resolve(row as Session);
     });
   });
 }
 
-function updateOrInsertSessionToken(db, userId, token, tableName = "session") {
+function updateOrInsertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session"): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
       const existing = await selectSessionTokenByUserID(db, userId);
       if (existing && existing?.token) {
         // If already exists, just update it.
-        await updateSessionToken(db, userId, token, tableName);
-        return resolve();
+        await updateSessionToken(db, userId, sessionToken, tableName);
+        return resolve(true);
       }
-      await insertSessionToken(db, userId, token, tableName);
-      return resolve();
+      await insertSessionToken(db, userId, sessionToken, tableName);
+      return resolve(true);
     } catch (e) {
       return reject(e);
     }
   });
 }
 
-function deleteSessionTokenByUserId(db, userId, tableName = "session") {
+function deleteSessionTokenByUserId(db: sqlite3.Database, userId: string, tableName = "session"): Promise<boolean> {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       db.run(`DELETE FROM ${tableName} WHERE userId = ?`, userId, function (err) {
@@ -81,23 +83,23 @@ function deleteSessionTokenByUserId(db, userId, tableName = "session") {
         if (this.changes !== 1) {
           return reject(new Error("unable to remove refresh token!"));
         }
-        return resolve();
+        return resolve(true);
       });
     });
   });
 }
 
-function deleteSessionToken(db, token, tableName = "session") {
+function deleteSessionToken(db: sqlite3.Database, sessionToken: string, tableName = "session"): Promise<boolean> {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      db.run(`DELETE FROM ${tableName} WHERE token = ?`, token, function (err) {
+      db.run(`DELETE FROM ${tableName} WHERE token = ?`, sessionToken, function (err) {
         if (err) {
           return reject(err);
         }
         if (this.changes !== 1) {
           return reject(new Error("unable to remove refresh token!"));
         }
-        return resolve();
+        return resolve(true);
       });
     });
   });
