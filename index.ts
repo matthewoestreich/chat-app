@@ -1,5 +1,5 @@
 import "dotenv/config";
-import "./wss/index.js";
+import "./server/wss/index.js";
 import initDatabase from "./scripts/initDatabase.js";
 import { CHAT_ROOMS } from "./server/index.js";
 

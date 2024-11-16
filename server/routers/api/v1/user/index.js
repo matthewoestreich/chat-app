@@ -1,6 +1,6 @@
 import express from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { chatService } from "@/db/services/index.js";
+import { chatService } from "@/server/db/services/index.js";
 
 const router = express.Router();
 

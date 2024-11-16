@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { sessionService } from "@/db/services/index.js";
+import { sessionService } from "@/server/db/services/index.js";
 
 /**
  * If request has a refresh token, we check if that matches what we have in our database.

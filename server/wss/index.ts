@@ -2,14 +2,14 @@ import { WebSocketServer, WebSocket } from "ws";
 import path from "path";
 import parseCookies from "./parseCookies.js";
 import verifyTokenAsync from "./verifyTokenAsync.js";
-import server from "../server/index.js";
+import server from "../index.js";
 import websocketApp from "./websocketApp.js";
-import SQLitePool from "@/db/SQLitePool.js";
-import { chatService } from "@/db/services/index.js";
+import SQLitePool from "@/server/db/SQLitePool.js";
+import { chatService } from "@/server/db/services/index.js";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes.js";
 
 const wss = new WebSocketServer({ server });
-const dbpath = path.resolve(import.meta.dirname, "../db/rtchat.db");
+const dbpath = path.resolve(import.meta.dirname, "../server/db/rtchat.db");
 const dbpool = new SQLitePool(dbpath, 5);
 
 // kind of like the "root" app

@@ -17,4 +17,4 @@ for (const dir of DIRS_TO_COPY) {
 }
 
 //console.log(`\n** COPYING DB\n`);
-//fs.copyFileSync(path.resolve(import.meta.dirname, "../db/rtchat.db"), `${DESTINATION}/db/rtchat.db`);
+//fs.copyFileSync(path.resolve(import.meta.dirname, "../server/db/rtchat.db"), `${DESTINATION}/server/db/rtchat.db`);
