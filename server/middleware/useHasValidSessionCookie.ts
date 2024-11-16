@@ -28,7 +28,7 @@ export default async function (req: Request, res: Response, next: NextFunction) 
           }
           return res.redirect("/v2/chat");
         })
-        .catch((e) => next());
+        .catch(() => next());
     })
-    .catch((e) => next());
+    .catch(() => next());
 }
