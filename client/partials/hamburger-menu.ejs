@@ -1,23 +1,25 @@
 <div id="hamburger-container" class="position-fixed d-xl-none m-3 dropdown">
-	<button type="button" class="btn btn-primary" type="button" data-bs-toggle="dropdown">
-		<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-list fs-3" viewBox="0 0 16 16">
-			<path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
-		</svg>
-	</button>
-	<ul id="hamburger-menu" class="dropdown-menu p-3">
-		<li><button id="hamburger-menu-view-members-btn" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#members-modal">View Members</button></li>
-	</ul>
+  <button type="button" class="btn btn-primary" type="button" data-bs-toggle="dropdown">
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-list fs-3" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
+    </svg>
+  </button>
+  <ul id="hamburger-menu" class="dropdown-menu p-3">
+    <li>
+      <button id="hamburger-menu-view-members-btn" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#members-modal">View Members</button>
+    </li>
+  </ul>
 </div>
 <script>
-	const hamburgerMenuViewMembersBtn = document.getElementById("hamburger-menu-view-members-btn");
+  const hamburgerMenuViewMembersBtn = document.getElementById("hamburger-menu-view-members-btn");
 
-	// Handles viewing members on small devices
-	hamburgerMenuViewMembersBtn.addEventListener("click", (event) => {
-		if (members.length === 1) {
-			// We are the only member...
-			renderMembers(["No Members To Display"], membersListModal);
-			return;
-		}
-		renderMembers(members, membersListModal);
-	});
+  // Handles viewing members on small devices
+  hamburgerMenuViewMembersBtn.addEventListener("click", (event) => {
+    if (members.length === 1) {
+      // We are the only member...
+      renderMembers(["No Members To Display"], membersListModal);
+      return;
+    }
+    renderMembers(members, membersListModal);
+  });
 </script>

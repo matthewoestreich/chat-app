@@ -1,336 +1,339 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0" />
-		<title>RTChat | Room</title>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
-		<style>
-			html,
-			body {
-				height: 100%;
-			}
-			.min-h-0 {
-				min-height: 0;
-			}
-			.h-90pct {
-				height: 90%;
-			}
-			.overf-y-scroll {
-				overflow-y: scroll;
-			}
-			.message {
-				display: flex;
-				flex-direction: column;
-				margin-bottom: 20px;
-			}
-			.message.message-from {
-				align-items: start;
-			}
-			.message.message-to {
-				align-items: end;
-			}
-			.message-from > .message-footer {
-				margin-left: 12px;
-			}
-			.message-to > .message-footer {
-				margin-right: 5px;
-			}
-			.message > .message-body {
-				margin-top: auto;
-				margin-bottom: auto;
-				margin-left: 10px;
-				position: relative;
-				padding: 10px;
-				border-radius: 10px;
-			}
-			.message.message-to > .message-body {
-				background-color: #78e08f;
-			}
-			.message > .message-footer {
-				color: var(--bs-secondary-color); /*rgba(42, 41, 41, 0.5);*/
-				font-size: 10px;
-			}
-		</style>
-	</head>
-	<body>
-		<!-- Toast alerts -->
-		<div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
-		<!-- Hamburger Menu (on small devices) and toggle theme buttons -->
-		<div class="position-fixed" style="z-index: 1">
-			<div class="position-fixed top-0"><%- include("partials/hamburger-menu.ejs") %></div>
-			<div class="position-fixed top-0 end-0"><%- include("partials/dark-mode-toggle.ejs") %></div>
-		</div>
-		<!-- Modal that is shown via `show members` button (from within the hamburger menu)-->
-		<div><%- include("partials/display-members-modal.ejs") %></div>
-		<!-- MAIN CONTENT -->
-		<div class="container-fluid h-100 d-flex flex-column">
-			<!-- Header Row -->
-			<div class="row flex-shrink-0">
-				<div class="col-xl-2 d-xl-flex d-none border d-flex justify-content-center align-items-center">
-					<h1>Members</h1>
-				</div>
-				<div class="col-lg-12 col-xl-10 d-flex flex-column align-items-center mt-2">
-					<h1><%= displayName %></h1>
-					<small role="button">
-						<a id="copy-room-url-link" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"> Copy room URL to invite others! </a>
-					</small>
-				</div>
-			</div>
-			<!-- Content Row (main row) -->
-			<div class="row flex-fill min-h-0">
-				<!-- Members List Content / Left Col -->
-				<div class="col-xl-2 d-xl-block d-none mh-100 border overf-y-scroll">
-					<div id="members-list" class="list-group list-group-flush"></div>
-				</div>
-				<!-- Chat Col Content / Right Col -->
-				<!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
-				<div class="col mh-100 overf-y-scroll">
-					<!-- Nested container to hold chart card -->
-					<!-- This mirrors the main structure, but nested in a col -->
-					<div class="container-fluid h-100 d-flex flex-column">
-						<div class="row flex-fill min-h-0">
-							<!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
-							<div class="col-xl-6 offset-xl-3 col-md-8 offset-md-2 mh-100">
-								<!-- Main Card For Chat Window -->
-								<div class="card mh-100 h-90pct mt-3">
-									<div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
-									<div class="card-footer">
-										<div class="input-group">
-											<textarea id="chat-text-input" class="form-control custom-control" rows="3" style="resize: none"></textarea>
-											<button id="send-chat-btn" class="input-group-addon btn btn-lg btn-primary">Send</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<script>
-			const chatTextInput = document.getElementById("chat-text-input");
-			const sendChatButton = document.getElementById("send-chat-btn");
-			const chatDisplay = document.getElementById("chat-display");
-			const membersList = document.getElementById("members-list");
-			const membersListModal = document.getElementById("members-list-modal");
-			const copyRoomUrlLink = document.getElementById("copy-room-url-link");
-			const toastContainer = document.getElementById("toast-container");
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0" />
+    <title>RTChat | Room</title>
+    <link href="/public/bootstrap@5.3.3/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      .min-h-0 {
+        min-height: 0;
+      }
+      .h-90pct {
+        height: 90%;
+      }
+      .overf-y-scroll {
+        overflow-y: scroll;
+      }
+      .message {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+      }
+      .message.message-from {
+        align-items: start;
+      }
+      .message.message-to {
+        align-items: end;
+      }
+      .message-from > .message-footer {
+        margin-left: 12px;
+      }
+      .message-to > .message-footer {
+        margin-right: 5px;
+      }
+      .message > .message-body {
+        margin-top: auto;
+        margin-bottom: auto;
+        margin-left: 10px;
+        position: relative;
+        padding: 10px;
+        border-radius: 10px;
+      }
+      .message.message-to > .message-body {
+        background-color: #78e08f;
+      }
+      .message > .message-footer {
+        color: var(--bs-secondary-color); /*rgba(42, 41, 41, 0.5);*/
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Toast alerts -->
+    <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
+    <!-- Hamburger Menu (on small devices) and toggle theme buttons -->
+    <div class="position-fixed" style="z-index: 1">
+      <div class="position-fixed top-0"><%- include("partials/hamburger-menu.ejs") %></div>
+      <div class="position-fixed top-0 end-0"><%- include("partials/dark-mode-toggle.ejs") %></div>
+    </div>
+    <!-- Modal that is shown via `show members` button (from within the hamburger menu)-->
+    <div><%- include("partials/display-members-modal.ejs") %></div>
+    <!-- MAIN CONTENT -->
+    <div class="container-fluid h-100 d-flex flex-column">
+      <!-- Header Row -->
+      <div class="row flex-shrink-0">
+        <div class="col-xl-2 d-xl-flex d-none border d-flex justify-content-center align-items-center">
+          <h1>Members</h1>
+        </div>
+        <div class="col-lg-12 col-xl-10 d-flex flex-column align-items-center mt-2">
+          <h1><%= displayName %></h1>
+          <small role="button">
+            <a id="copy-room-url-link" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"> Copy room URL to invite others! </a>
+          </small>
+        </div>
+      </div>
+      <!-- Content Row (main row) -->
+      <div class="row flex-fill min-h-0">
+        <!-- Members List Content / Left Col -->
+        <div class="col-xl-2 d-xl-block d-none mh-100 border overf-y-scroll">
+          <div id="members-list" class="list-group list-group-flush"></div>
+        </div>
+        <!-- Chat Col Content / Right Col -->
+        <!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
+        <div class="col mh-100 overf-y-scroll">
+          <!-- Nested container to hold chart card -->
+          <!-- This mirrors the main structure, but nested in a col -->
+          <div class="container-fluid h-100 d-flex flex-column">
+            <div class="row flex-fill min-h-0">
+              <!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
+              <div class="col-xl-6 offset-xl-3 col-md-8 offset-md-2 mh-100">
+                <!-- Main Card For Chat Window -->
+                <div class="card mh-100 h-90pct mt-3">
+                  <div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
+                  <div class="card-footer">
+                    <div class="input-group">
+                      <textarea id="chat-text-input" class="form-control custom-control" rows="3" style="resize: none"></textarea>
+                      <button id="send-chat-btn" class="input-group-addon btn btn-lg btn-primary">Send</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script nonce="<%= nonce %>">
+      const chatTextInput = document.getElementById("chat-text-input");
+      const sendChatButton = document.getElementById("send-chat-btn");
+      const chatDisplay = document.getElementById("chat-display");
+      const membersList = document.getElementById("members-list");
+      const membersListModal = document.getElementById("members-list-modal");
+      const copyRoomUrlLink = document.getElementById("copy-room-url-link");
+      const toastContainer = document.getElementById("toast-container");
 
-			const roomId = "<%= roomId %>";
-			const userId = "<%= userId %>";
-			const displayName = "<%= displayName %>";
-			const renderedMembers = "<%= members %>";
-			const members = renderedMembers.split(",").map((m) => m);
+      const roomId = "<%= roomId %>";
+      const userId = "<%= userId %>";
+      const displayName = "<%= displayName %>";
+      const renderedMembers = "<%= members %>";
+      const members = renderedMembers.split(",").map((m) => m);
 
-			const socket = new WebSocket(`<%= websocketUrl %>`);
-			// When this browser window is closed, alert the server that we left.
-			window.onbeforeunload = () => closeSocketAndInformServer(socket, roomId, userId, displayName);
+      const socket = new WebSocket(`<%= websocketUrl %>`);
+      // When this browser window is closed, alert the server that we left.
+      window.onbeforeunload = () => closeSocketAndInformServer(socket, roomId, userId, displayName);
 
-			socket.onopen = (ws, event) => {
-				// Register a socket for this user on the backend after we first connect/open.
-				socket.send(JSON.stringify({ type: "register", roomId, userId, displayName }));
-				renderMembers(members, membersList);
-			};
+      socket.onopen = (ws, event) => {
+        // Register a socket for this user on the backend after we first connect/open.
+        socket.send(JSON.stringify({ type: "register", roomId, userId, displayName }));
+        renderMembers(members, membersList);
+      };
 
-			socket.onclose = (ws, event) => {
-				console.log(`closing socket...reason=${ws.reason}`, { ws, event });
-				closeSocketAndInformServer(socket, roomId, userId, displayName);
-			};
+      socket.onclose = (ws, event) => {
+        console.log(`closing socket...reason=${ws.reason}`, { ws, event });
+        closeSocketAndInformServer(socket, roomId, userId, displayName);
+      };
 
-			// Recieved socket message
-			socket.onmessage = (event) => {
-				const message = JSON.parse(event.data);
-				if (!message || !message.type) {
-					return;
-				}
+      // Recieved socket message
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (!message || !message.type) {
+          return;
+        }
 
-				switch (message?.type) {
-					case "join": {
-						if (!message?.displayName) {
-							return;
-						}
-						addToastAndShow(toastContainer, generateToastHTML(`${message.displayName} has joined!`));
-						members.push(message.displayName);
-						renderMembers(members, membersList);
-						break;
-					}
+        switch (message?.type) {
+          case "join": {
+            if (!message?.displayName) {
+              return;
+            }
+            addToastAndShow(toastContainer, generateToastHTML(`${message.displayName} has joined!`));
+            members.push(message.displayName);
+            renderMembers(members, membersList);
+            break;
+          }
 
-					case "message": {
-						const { value, from, chatBubbleColor } = message;
-						const isSending = false; // This is a variable for readability when used as a param in the func directly below.
-						chatDisplay.appendChild(generateChatHTML(value, from, isSending, chatBubbleColor));
-						scrollToBottomOfElement(chatDisplay);
-						break;
-					}
+          case "message": {
+            const { value, from, chatBubbleColor } = message;
+            const isSending = false; // This is a variable for readability when used as a param in the func directly below.
+            chatDisplay.appendChild(generateChatHTML(value, from, isSending, chatBubbleColor));
+            scrollToBottomOfElement(chatDisplay);
+            break;
+          }
 
-					case "close": {
-						const { displayName } = message;
-						members.splice(members.indexOf(displayName), 1);
-						renderMembers(members, membersList);
-						break;
-					}
+          case "close": {
+            const { displayName } = message;
+            members.splice(members.indexOf(displayName), 1);
+            renderMembers(members, membersList);
+            break;
+          }
 
-					default: {
-						break;
-					}
-				}
-			};
+          default: {
+            break;
+          }
+        }
+      };
 
-			/**
-			 * EVENT HANDLERS
-			 */
+      /**
+       * EVENT HANDLERS
+       */
 
-			// Handles copying URL to clipboard
-			copyRoomUrlLink.addEventListener("click", (event) => {
-				// Generate URL for copying to clipboard (for sharing rooms).
-				copyRoomUrlLink.value = `${window.location.host}/join?id=${roomId}`;
-				if (copyToClipboard(copyRoomUrlLink)) {
-					addToastAndShow(toastContainer, generateToastHTML("Copied!"));
-				}
-			});
+      // Handles copying URL to clipboard
+      copyRoomUrlLink.addEventListener("click", (event) => {
+        // Generate URL for copying to clipboard (for sharing rooms).
+        copyRoomUrlLink.value = `${window.location.host}/join?id=${roomId}`;
+        if (copyToClipboard(copyRoomUrlLink)) {
+          addToastAndShow(toastContainer, generateToastHTML("Copied!"));
+        }
+      });
 
-			// Handles enter key press to invoke sending a message
-			chatTextInput.addEventListener("keydown", (event) => {
-				if (event.key !== "Enter") {
-					return;
-				}
-				event.preventDefault();
-				sendChatButton.click();
-			});
+      // Handles enter key press to invoke sending a message
+      chatTextInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") {
+          return;
+        }
+        event.preventDefault();
+        sendChatButton.click();
+      });
 
-			// Handles chat button click
-			sendChatButton.addEventListener("click", (event) => {
-				if (!chatTextInput.value) {
-					return;
-				}
-				if (socket.readyState !== socket.OPEN) {
-					chatDisplay.appendChild(generateChatHTML("Unable to send message", displayName, true, "red", true));
-					scrollToBottomOfElement(chatDisplay);
-					return;
-				}
-				socket.send(JSON.stringify({ type: "message", from: displayName, value: chatTextInput.value, roomId, userId }));
-				const msgHTML = generateChatHTML(chatTextInput.value, displayName, true);
-				chatTextInput.value = "";
-				chatDisplay.appendChild(msgHTML);
-				scrollToBottomOfElement(chatDisplay);
-			});
+      // Handles chat button click
+      sendChatButton.addEventListener("click", (event) => {
+        if (!chatTextInput.value) {
+          return;
+        }
+        if (socket.readyState !== socket.OPEN) {
+          chatDisplay.appendChild(generateChatHTML("Unable to send message", displayName, true, "red", true));
+          scrollToBottomOfElement(chatDisplay);
+          return;
+        }
+        socket.send(
+          JSON.stringify({
+            type: "message",
+            from: displayName,
+            value: chatTextInput.value,
+            roomId,
+            userId,
+          }),
+        );
+        const msgHTML = generateChatHTML(chatTextInput.value, displayName, true);
+        chatTextInput.value = "";
+        chatDisplay.appendChild(msgHTML);
+        scrollToBottomOfElement(chatDisplay);
+      });
 
-			/**
-			 *
-			 * FUNCTIONS
-			 *
-			 */
+      /**
+       *
+       * FUNCTIONS
+       *
+       */
 
-			function scrollToBottomOfElement(element) {
-				element.scrollTop = element.scrollHeight;
-			}
+      function scrollToBottomOfElement(element) {
+        element.scrollTop = element.scrollHeight;
+      }
 
-			function closeSocketAndInformServer(socket, roomId, userId, displayName) {
-				socket.send(JSON.stringify({ type: "close", roomId, userId, displayName }));
-			}
+      function closeSocketAndInformServer(socket, roomId, userId, displayName) {
+        socket.send(JSON.stringify({ type: "close", roomId, userId, displayName }));
+      }
 
-			// Update members display
-			function renderMembers(mems = [], displayElement) {
-				displayElement.innerHTML = "";
-				mems.forEach((m) => m && (displayElement.innerHTML += `<div class="list-group-item">${m}</div>`));
-			}
+      // Update members display
+      function renderMembers(mems = [], displayElement) {
+        displayElement.innerHTML = "";
+        mems.forEach((m) => m && (displayElement.innerHTML += `<div class="list-group-item">${m}</div>`));
+      }
 
-			function addToastAndShow(toastContainer, toastElement) {
-				toastContainer.appendChild(toastElement);
-				const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastElement);
-				toastBootstrap.show();
-			}
+      function addToastAndShow(toastContainer, toastElement) {
+        toastContainer.appendChild(toastElement);
+        const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastElement);
+        toastBootstrap.show();
+      }
 
-			// Determines if a color, in hex, is dark or not.
-			// Returns ture if it's dark, false otherwise.
-			function isDarkColor(hex) {
-				hex = hex.replace(/^#/, "");
-				// Convert hex to RGB
-				let r = parseInt(hex.substring(0, 2), 16);
-				let g = parseInt(hex.substring(2, 4), 16);
-				let b = parseInt(hex.substring(4, 6), 16);
-				// Calculate luminance using the standard formula
-				const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-				// If luminance is below a certain threshold, the color is dark
-				return luminance < 128; // Threshold of 128 is commonly used
-			}
+      // Determines if a color, in hex, is dark or not.
+      // Returns ture if it's dark, false otherwise.
+      function isDarkColor(hex) {
+        hex = hex.replace(/^#/, "");
+        // Convert hex to RGB
+        let r = parseInt(hex.substring(0, 2), 16);
+        let g = parseInt(hex.substring(2, 4), 16);
+        let b = parseInt(hex.substring(4, 6), 16);
+        // Calculate luminance using the standard formula
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        // If luminance is below a certain threshold, the color is dark
+        return luminance < 128; // Threshold of 128 is commonly used
+      }
 
-			// Copy to clipboard. Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
-			function copyToClipboard(el) {
-				try {
-					if (navigator.clipboard) {
-						navigator.clipboard.writeText(el.value || el.innerText);
-						return true;
-					}
-					el.focus();
-					el.select();
-					document.execCommand("copy");
-					return true;
-				} catch (e) {
-					return false;
-				}
-			}
+      // Copy to clipboard. Copies element value to clipboard. If no value property exists on provided element, we fallback to innerText.
+      function copyToClipboard(el) {
+        try {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(el.value || el.innerText);
+            return true;
+          }
+          el.focus();
+          el.select();
+          document.execCommand("copy");
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
 
-			function generateToastHTML(text) {
-				const toast = document.createElement("div");
-				const flexContainer = document.createElement("div");
-				const closeButton = document.createElement("button");
-				const toastBody = document.createElement("div");
+      function generateToastHTML(text) {
+        const toast = document.createElement("div");
+        const flexContainer = document.createElement("div");
+        const closeButton = document.createElement("button");
+        const toastBody = document.createElement("div");
 
-				toast.classList.add("toast");
-				toast.classList.add("bg-primary-subtle");
-				toast.classList.add("align-items-center");
-				toast.role = "alert";
-				toast.setAttribute("data-bs-autohide", true);
-				flexContainer.classList.add("d-flex");
-				closeButton.type = "button";
-				closeButton.classList.add("btn-close");
-				closeButton.classList.add("me-2");
-				closeButton.classList.add("m-auto");
-				closeButton.setAttribute("data-bs-dismiss", "toast");
-				toastBody.classList.add("toast-body");
-				toastBody.innerText = text;
+        toast.classList.add("toast", "bg-primary-subtle", "align-items-center");
+        toast.role = "alert";
+        toast.setAttribute("data-bs-autohide", true);
+        flexContainer.classList.add("d-flex");
+        closeButton.type = "button";
+        closeButton.classList.add("btn-close", "me-2", "m-auto");
+        closeButton.setAttribute("data-bs-dismiss", "toast");
+        toastBody.classList.add("toast-body");
+        toastBody.innerText = text;
 
-				flexContainer.appendChild(toastBody);
-				flexContainer.appendChild(closeButton);
-				toast.appendChild(flexContainer);
+        flexContainer.appendChild(toastBody);
+        flexContainer.appendChild(closeButton);
+        toast.appendChild(flexContainer);
 
-				return toast;
-			}
+        return toast;
+      }
 
-			function generateChatHTML(message, displayName, isSending = true, chatBubbleColor, isError = false) {
-				const messageDiv = document.createElement("div");
-				const messageBodyDiv = document.createElement("div");
-				const messageFooterSpan = document.createElement("span");
+      function generateChatHTML(message, displayName, isSending = true, chatBubbleColor, isError = false) {
+        const messageDiv = document.createElement("div");
+        const messageBodyDiv = document.createElement("div");
+        const messageFooterSpan = document.createElement("span");
 
-				let senderOrRecieverClass = "message-to";
-				if (!isSending) {
-					senderOrRecieverClass = "message-from";
-					messageBodyDiv.style.backgroundColor = chatBubbleColor;
-				}
-				if (isError) {
-					messageBodyDiv.style.backgroundColor = chatBubbleColor;
-				}
+        let senderOrRecieverClass = "message-to";
+        if (!isSending) {
+          senderOrRecieverClass = "message-from";
+          messageBodyDiv.style.backgroundColor = chatBubbleColor;
+        }
+        if (isError) {
+          messageBodyDiv.style.backgroundColor = chatBubbleColor;
+        }
 
-				let textColor = "black";
-				if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
-					textColor = "white";
-				}
+        let textColor = "black";
+        if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
+          textColor = "white";
+        }
 
-				messageDiv.classList.add("message");
-				messageDiv.classList.add(senderOrRecieverClass);
-				messageBodyDiv.classList.add("message-body");
-				messageBodyDiv.style.color = textColor;
-				messageBodyDiv.innerText = message;
-				messageFooterSpan.classList.add("message-footer");
-				messageFooterSpan.innerText = displayName;
-				messageDiv.appendChild(messageBodyDiv);
-				messageDiv.appendChild(messageFooterSpan);
+        messageDiv.classList.add("message", senderOrRecieverClass);
+        messageBodyDiv.classList.add("message-body");
+        messageBodyDiv.style.color = textColor;
+        messageBodyDiv.innerText = message;
+        messageFooterSpan.classList.add("message-footer");
+        messageFooterSpan.innerText = displayName;
+        messageDiv.appendChild(messageBodyDiv);
+        messageDiv.appendChild(messageFooterSpan);
 
-				return messageDiv;
-			}
-		</script>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-	</body>
+        return messageDiv;
+      }
+    </script>
+    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
