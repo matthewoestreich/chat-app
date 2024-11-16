@@ -96,9 +96,6 @@ function deleteSessionToken(db: sqlite3.Database, sessionToken: string, tableNam
         if (err) {
           return reject(err);
         }
-        if (this.changes !== 1) {
-          return reject(new Error("unable to remove refresh token!"));
-        }
         return resolve(true);
       });
     });

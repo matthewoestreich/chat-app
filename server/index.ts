@@ -1,78 +1,35 @@
-import express, { Request, Response } from "express";
-import helmet from "helmet";
-import morgan from "morgan";
+import express from "express";
 import path from "path";
 import { v7 as uuidv7 } from "uuid";
-import { useCookieParser, useCspNonce, useErrorCatchall, useDbPool } from "@/server/middleware/index.js";
-import ChatRooms, { Room, RoomMember } from "@/db/ChatRooms.js";
-import SQLitePool from "@/db/SQLitePool.js";
+import { useErrorCatchall } from "@/server/middleware/index.js";
+import attachMiddleware from "./attachMiddleware";
+import ChatRooms, { Room, RoomMember } from "@/server/db/ChatRooms.js";
 import apiRouter from "@/server/routers/api/index.js";
 import v2Router from "@/server/v2.js";
 
 const app = express();
-// For db pool middleware
-const dbFilePath = path.resolve(import.meta.dirname, "../db/rtchat.db");
-const sqlitePool = new SQLitePool(dbFilePath, 5);
 
 /**
- * This is how we store room related data
+ * [LEGACY] This is how we store room related data
  */
 export const CHAT_ROOMS = new ChatRooms();
 
-/**
- * VIEW ENGINE
- */
-
+/** VIEW ENGINE */
 app.set("view engine", "ejs");
-app.set("views", path.resolve(import.meta.dirname, "../client"));
+app.set("views", path.resolve(import.meta.dirname, "../www"));
 
-/**
- * MIDDLEWARES
- */
+/**  MIDDLEWARES */
 
-// Serve static assets
-app.use("/public", express.static(path.resolve(import.meta.dirname, "../public")));
-// Parse req bodies into json (when Content-Type='application/json')
-app.use(express.json());
-// Create database pool
-app.use(useDbPool(sqlitePool));
-// Set a nonce on scripts
-app.use(useCspNonce);
-// Tighten security
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        // @ts-ignore
-        scriptSrc: ["'self'", (_req: Request, res: Response) => `'nonce-${res.locals.cspNonce}'`],
-      },
-    },
-  }),
-);
-// Parses cookies into req.cookies
-app.use(useCookieParser);
-// Logging
-morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2));
-app.use(
-  morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
-    skip: (req, _res) => {
-      const condition = req.url === "/favicon.ico";
-      if (req.url) {
-        return condition || req.url.startsWith("/public");
-      }
-      return condition;
-    },
-  }),
-);
+app.use("/public", express.static(path.resolve(import.meta.dirname, "../www/public"))); // Serve static assets
+app.use(express.json()); // Parse req bodies into json (when Content-Type='application/json')
+attachMiddleware(app); // Attach "third party"/"internal"/"non-standard" middleware.
 
-/**
- * ROUTES
- */
-
+/** ATTACH ROUTERS */
 app.use("/v2", v2Router);
 app.use("/api", apiRouter);
 
 /**
+ * LEGACY
  * @route {GET} /
  */
 app.get("/", (_req, res) => {
@@ -80,6 +37,7 @@ app.get("/", (_req, res) => {
 });
 
 /**
+ * LEGACY
  * @route {GET} /join
  */
 app.get("/join", (_req, res) => {
@@ -88,6 +46,7 @@ app.get("/join", (_req, res) => {
 });
 
 /**
+ * LEGACY
  * @route {GET} /create
  */
 app.get("/create", (_req, res) => {
@@ -101,8 +60,8 @@ app.get("/create", (_req, res) => {
 });
 
 /**
+ * LEGACY
  * Handles chat room(s)..
- *
  * @route {GET} /chat/:roomId?:userId=_&:displayName=_
  */
 app.get("/chat/:roomId", (req, res) => {

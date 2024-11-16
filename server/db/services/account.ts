@@ -15,12 +15,6 @@ export default {
 /**
  * Adds new user to database.
  * Salts and hashes password.
- * @param {sqlite3.Database} db
- * @param {string} name
- * @param {string} passwd
- * @param {string} id
- * @param {string} email
- * @param {string} tableName
  */
 function insertAccount(db: sqlite3.Database, name: string, id: string, passwd: string, email: string, tableName = "user") {
   return new Promise(async (resolve, reject) => {

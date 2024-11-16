@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware/index.js";
-import { sessionService } from "@/db/services/index.js";
+import { sessionService } from "@/server/db/services/index.js";
 
 const router = express.Router();
 
@@ -27,15 +27,17 @@ router.get("/chat", [jwtMiddleware], (req: Request, res: Response) => {
 router.get("/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies.session;
-    if (!session) {
-      return res.render("v2/logout");
-    }
+    console.log({ "req.cookies": req.cookies, sessionBeforeRemove: session });
     const db = await req.databasePool.getConnection();
-    await sessionService.delete(db, session);
+    console.log({ sessionAfterRemove: session });
+    if (await sessionService.delete(db, session)) {
+      console.log("successfully removed session token from db.");
+    }
     req.databasePool.releaseConnection(db);
     res.clearCookie("session");
     return res.render("v2/logout");
   } catch (e) {
+    console.log({ logoutError: e });
     return res.render("error", { error: "Error logging you out." });
   }
 });
