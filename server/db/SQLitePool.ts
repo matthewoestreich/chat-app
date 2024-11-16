@@ -22,6 +22,7 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
       } else if (this.pool.length + this.pendingRequests.length < this.maxConnections) {
         const db = new sqlite3.Database(this.databasePath, (err) => {
           if (err) {
+            console.log({ from: "SQLitePool.ts", "this.databasePath": this.databasePath });
             reject(err);
           } else {
             resolve(db);

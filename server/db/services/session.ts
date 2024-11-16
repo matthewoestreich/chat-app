@@ -91,13 +91,18 @@ function deleteSessionTokenByUserId(db: sqlite3.Database, userId: string, tableN
 
 function deleteSessionToken(db: sqlite3.Database, sessionToken: string, tableName = "session"): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run(`DELETE FROM ${tableName} WHERE token = ?`, sessionToken, function (err) {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(true);
+    try {
+      db.serialize(() => {
+        db.run(`DELETE FROM ${tableName} WHERE token = ?`, sessionToken, function (err) {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
       });
-    });
+    } catch (e) {
+      console.log(`[sessionService][deleteSessionToken][ERROR]`, e);
+      reject(e);
+    }
   });
 }
