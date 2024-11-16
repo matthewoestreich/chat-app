@@ -4,17 +4,17 @@
   "description": "Real time chat app built with websockets",
   "main": "index.js",
   "scripts": {
+    "prebuild": "rm -rf dist",
+    "build": "tsc && node scripts/_build.js",
+    "postbuild": "tsc-alias -p tsconfig.json",
     "start": "node index.js",
-    "start:nodemon": "nodemon --verbose index.js",
-    "fmt": "prettier --write \"**/*.{js,json,ejs}\"",
+    "start:nodemon": "nodemon --verbose",
+    "fmt": "prettier --write \"**/*.{ts,js,json,ejs}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
   "keywords": [],
   "author": "Matt Oestreich",
-  "imports": {
-    "#@/*": "./*"
-  },
   "prettier": {
     "tabWidth": 2,
     "useTabs": false,
@@ -32,14 +32,16 @@
     "delay": 1500,
     "ext": "*",
     "ignore": [
-      "**/*.db"
+      "**/*.db",
+      "./dist/**"
     ],
     "watch": [
       "server/**",
       "wss/**",
       "db/**",
       "index.js"
-    ]
+    ],
+    "exec": "npm run build && node dist/index.js"
   },
   "license": "CC",
   "dependencies": {
@@ -50,12 +52,20 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "sqlite3": "^5.1.7",
+    "typescript": "^5.6.3",
     "uuid": "^11.0.2",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/helmet": "^4.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.9.0",
+    "@types/sqlite3": "^3.1.11",
+    "@types/uuid": "^10.0.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.7",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "tsc-alias": "^1.8.10"
   }
 }

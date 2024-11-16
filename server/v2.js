@@ -1,7 +1,7 @@
 import express from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { useJwtSession, useHasValidSessionCookie } from "#@/server/middleware/index.js";
-import { refreshTokenService, sessionService } from "#@/db/services/index.js";
+import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware/index.js";
+import { refreshTokenService, sessionService } from "@/db/services/index.js";
 
 const router = express.Router();
 
@@ -30,9 +30,9 @@ router.get("/logout", async (req, res) => {
     if (!session) {
       return res.render("v2/logout");
     }
-    const db = await req.dbPool.getConnection();
+    const db = await req.databasePool.getConnection();
     await sessionService.delete(db, session);
-    req.dbPool.releaseConnection(db);
+    req.databasePool.releaseConnection(db);
     res.clearCookie("session");
     return res.render("v2/logout");
   } catch (e) {

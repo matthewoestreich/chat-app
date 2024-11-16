@@ -1,32 +1,26 @@
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-// You can use a different database/storage if you "implement" this class.
-// Your class would need to have all properties and methods of this one.
-// From there, modify each method for each service (within the "services" directory)
-// to fit your database.
-// From there all you have to do is modify the `useDbPool` middleware to include your
-// newly crated pool.
-export default class SQLitePool {
-  /**
-   *
-   * @param {string} dbPath : ABSOLUTE PATH to database file
-   * @param {*} maxConnections : int
-   */
-  constructor(dbPath, maxConnections = 5) {
-    this.dbPath = dbPath;
+export default class SQLitePool implements DatabasePool<sqlite3.Database> {
+  databasePath: string;
+  maxConnections: number;
+  pool: sqlite3.Database[];
+  pendingRequests: DatabasePoolPendingRequest<sqlite3.Database>[];
+
+  constructor(dbPath: string, maxConnections: number = 5) {
+    this.databasePath = dbPath;
     this.maxConnections = maxConnections;
     this.pool = [];
     this.pendingRequests = [];
   }
 
-  getConnection() {
+  getConnection(): Promise<sqlite3.Database> {
     return new Promise((resolve, reject) => {
       if (this.pool.length > 0) {
         const db = this.pool.pop();
-        resolve(db);
+        if (db) resolve(db);
       } else if (this.pool.length + this.pendingRequests.length < this.maxConnections) {
-        const db = new sqlite3.Database(this.dbPath, (err) => {
+        const db = new sqlite3.Database(this.databasePath, (err) => {
           if (err) {
             reject(err);
           } else {
@@ -39,16 +33,16 @@ export default class SQLitePool {
     });
   }
 
-  releaseConnection(db) {
+  releaseConnection(db: sqlite3.Database) {
     if (this.pendingRequests.length > 0) {
       const request = this.pendingRequests.shift();
-      request.resolve(db);
+      request?.resolve(db);
     } else {
       this.pool.push(db);
     }
   }
 
-  async query(sql, params) {
+  async query(sql: string, params: any) {
     const db = await this.getConnection();
     return new Promise((resolve, reject) => {
       db.all(sql, params, (err, rows) => {

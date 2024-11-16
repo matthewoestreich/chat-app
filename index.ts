@@ -1,7 +1,7 @@
 import "dotenv/config";
 import "./wss/index.js";
 import initDatabase from "./scripts/initDatabase.js";
-import server, { CHAT_ROOMS } from "./server/index.js";
+import { CHAT_ROOMS } from "./server/index.js";
 
 if (!process.env.JWT_SIGNATURE) {
   console.log("[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.");
@@ -15,7 +15,8 @@ try {
   process.exit(1);
 }
 
-process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || 3000;
+process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
+process.env.WSS_URL = process.env.WSS_URL || "";
 
 if (process.env.WSS_URL.endsWith("onrender.com")) {
   // Only purge rooms if we are on a hosted platform.
@@ -37,7 +38,7 @@ if (process.env.WSS_URL.endsWith("onrender.com")) {
  * @param {number} everyMinutes every N minutes we purge (where N=everyMinutes)
  *
  */
-function purgeRooms(everyMinutes) {
+function purgeRooms(everyMinutes: number) {
   console.log(`[INFO][WARN] Purging is active!`);
 
   setInterval(

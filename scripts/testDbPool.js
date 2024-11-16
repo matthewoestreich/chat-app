@@ -1,4 +1,4 @@
-import SQLite3Pool from "#@/db/SQLite3Pool.js";
+import SQLite3Pool from "@/db/SQLitePool.js";
 import path from "path";
 
 const dbpath = path.resolve(import.meta.dirname, "../db/rtchat.db");

@@ -1,6 +1,6 @@
 import path from "path";
 import { v7 as uuidV7 } from "uuid";
-import { roomService } from "#@/db/services/index.js";
+import { roomService } from "@/db/services/index.js";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 

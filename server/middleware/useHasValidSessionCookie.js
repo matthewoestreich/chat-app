@@ -1,5 +1,5 @@
 import jsonwebtoken from "jsonwebtoken";
-import { refreshTokenService, sessionService } from "#@/db/services/index.js";
+import { refreshTokenService, sessionService } from "@/db/services/index.js";
 
 /**
  * If request has a refresh token, we check if that matches what we have in our database.
@@ -14,7 +14,7 @@ export default async function (req, res, next) {
 
   const decodedToken = jsonwebtoken.decode(session);
 
-  return req.dbPool
+  return req.databasePool
     .getConnection()
     .then((db) => {
       return sessionService

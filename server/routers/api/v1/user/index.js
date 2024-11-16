@@ -1,6 +1,6 @@
 import express from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { chatService } from "#@/db/services/index.js";
+import { chatService } from "@/db/services/index.js";
 
 const router = express.Router();
 
@@ -15,9 +15,9 @@ router.post("/rooms", async (req, res) => {
       console.log("no userid");
       return res.status(400).send({ ok: false, message: "missing required parameter" });
     }
-    const db = await req.dbPool.getConnection();
+    const db = await req.databasePool.getConnection();
     const rooms = await chatService.selectRoomsByUserId(db, userId);
-    req.dbPool.releaseConnection(db);
+    req.databasePool.releaseConnection(db);
     res.status(200).send({ ok: true, rooms });
   } catch (e) {
     console.log(e);

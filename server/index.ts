@@ -1,14 +1,18 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import { v7 as uuidv7 } from "uuid";
-import { useCookieParser, useCspNonce, useErrorCatchall, useDbPool } from "#@/server/middleware/index.js";
-import ChatRooms, { Room, RoomMember } from "#@/db/ChatRooms.js";
-import apiRouter from "#@/server/routers/api/index.js";
-import v2Router from "./v2.js";
+import { useCookieParser, useCspNonce, useErrorCatchall, useDbPool } from "@/server/middleware/index.js";
+import ChatRooms, { Room, RoomMember } from "@/db/ChatRooms.js";
+import SQLitePool from "../db/SQLitePool.js";
+import apiRouter from "@/server/routers/api/index.js";
+import v2Router from "@/server/v2.js";
 
 const app = express();
+// For db pool middleware
+const dbFilePath = path.resolve(import.meta.dirname, "../../db/rtchat.db");
+const sqlitePool = new SQLitePool(dbFilePath, 5);
 
 /**
  * This is how we store room related data
@@ -31,7 +35,7 @@ app.use("/public", express.static(path.resolve(import.meta.dirname, "../public")
 // Parse req bodies into json (when Content-Type='application/json')
 app.use(express.json());
 // Create database pool
-app.use(useDbPool);
+app.use(useDbPool(sqlitePool));
 // Set a nonce on scripts
 app.use(useCspNonce);
 // Tighten security
@@ -39,7 +43,8 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+        // @ts-ignore
+        scriptSrc: ["'self'", (_req: Request, res: Response) => `'nonce-${res.locals.cspNonce}'`],
       },
     },
   }),
@@ -47,10 +52,16 @@ app.use(
 // Parses cookies into req.cookies
 app.use(useCookieParser);
 // Logging
-morgan.token("body", (req) => JSON.stringify(req.body || {}, null, 2));
+morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2));
 app.use(
   morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
-    skip: (req, _res) => req.url === "/favicon.ico" || req.url.startsWith("/public"),
+    skip: (req, _res) => {
+      const condition = req.url === "/favicon.ico";
+      if (req.url) {
+        return condition || req.url.startsWith("/public");
+      }
+      return condition;
+    },
   }),
 );
 
@@ -64,14 +75,14 @@ app.use("/api", apiRouter);
 /**
  * @route {GET} /
  */
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.render("index", { nonce: res.locals.cspNonce });
 });
 
 /**
  * @route {GET} /join
  */
-app.get("/join", (req, res) => {
+app.get("/join", (_req, res) => {
   const userId = uuidv7();
   res.render("join-existing-room", { userId, nonce: res.locals.cspNonce });
 });
@@ -79,13 +90,13 @@ app.get("/join", (req, res) => {
 /**
  * @route {GET} /create
  */
-app.get("/create", (req, res) => {
+app.get("/create", (_req, res) => {
   const roomId = uuidv7();
   const userId = uuidv7();
   // Only create the room here, don't add the user to it yet. We will add
   // the user to the room when the user first hits the "/chat/:roomId" endpoint.
   // Adding them here would technically be premature.
-  CHAT_ROOMS.add(new Room(roomId));
+  CHAT_ROOMS.add(new Room(roomId, ""));
   res.render("create-room", { roomId, userId, nonce: res.locals.cspNonce });
 });
 
@@ -132,7 +143,7 @@ app.get("/chat/:roomId", (req, res) => {
 
   // TODO:
   // I dont really like this being here.. Is it a good idea to pass existing room members this way?
-  const members = existingRoom.members.map((m) => {
+  const members = existingRoom.members.map((m: RoomMember) => {
     if (m.id !== member.id) {
       return m.displayName;
     }
@@ -145,7 +156,7 @@ app.get("/chat/:roomId", (req, res) => {
  * 404 route
  * @route {GET} *
  */
-app.get("*", (req, res) => {
+app.get("*", (_req, res) => {
   res.send("<h1>404 Not Found</h1>");
 });
 

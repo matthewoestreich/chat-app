@@ -1,6 +1,6 @@
 import jsonwebtoken from "jsonwebtoken";
-import { refreshTokenService, sessionService } from "#@/db/services/index.js";
-import generateTokenPair, { generateSessionToken } from "#@/server/generateTokens.js";
+import { refreshTokenService, sessionService } from "@/db/services/index.js";
+import generateTokenPair, { generateSessionToken } from "@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -70,13 +70,13 @@ async function handleSessionRefresh(receivedSessionToken, req, res) {
     console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
 
     // Get existing session token from db.
-    const db = await req.dbPool.getConnection();
+    const db = await req.databasePool.getConnection();
     const existingSession = await sessionService.selectByUserId(db, decodedToken?.id);
 
     // If no existing token, or existing token missing "token" column, or mismatch force user to reauth.
     if (!existingSession || !existingSession?.token || existingSession.token !== receivedSessionToken) {
       console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
-      req.dbPool.releaseConnection(db);
+      req.databasePool.releaseConnection(db);
       return false;
     }
 
@@ -87,7 +87,7 @@ async function handleSessionRefresh(receivedSessionToken, req, res) {
 
     // Update refresh token in db to newly generated refresh token.
     await sessionService.update(db, decodedToken?.id, sessionToken);
-    req.dbPool.releaseConnection(db);
+    req.databasePool.releaseConnection(db);
 
     // update request object
     req.sessionToken = sessionToken;
@@ -143,14 +143,14 @@ async function handleRefresh(refresh_token, req, res) {
     console.log(`[useJwt][INFO][id:${decodedRefreshToken?.id}] access_token is expired. refresh_token has id. Checking if received refresh_token is the same as refreshToken we have in database.`);
 
     // Get existing refresh token from db.
-    const dbHandleRefresh = await req.dbPool.getConnection();
+    const dbHandleRefresh = await req.databasePool.getConnection();
     const existingRefresh = await refreshTokenService.selectByUserId(dbHandleRefresh, decodedRefreshToken?.id);
 
     // If no existing token, or existing token missing "token" column, or mismatch between token from db and token we
     // received (req.cookies.refresh_token), force user to log-in again.
     if (!existingRefresh || !existingRefresh?.token || existingRefresh.token !== refresh_token) {
       console.log(`[useJwt][ERROR] either no existing refreshToken is stored in our DB or there is a token mismatch!`, { existing: existingRefresh?.token, received: refresh_token });
-      req.dbPool.releaseConnection(dbHandleRefresh);
+      req.databasePool.releaseConnection(dbHandleRefresh);
       return false;
     }
 
@@ -161,7 +161,7 @@ async function handleRefresh(refresh_token, req, res) {
 
     // Update refresh token in db to newly generated refresh token.
     await refreshTokenService.update(dbHandleRefresh, decodedRefreshToken?.id, refreshToken);
-    req.dbPool.releaseConnection(dbHandleRefresh);
+    req.databasePool.releaseConnection(dbHandleRefresh);
 
     // update request object
     req.access_token = accessToken;

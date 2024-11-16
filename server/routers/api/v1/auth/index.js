@@ -4,8 +4,8 @@
 import express from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
-import generateTokenPair, { generateSessionToken } from "#@/server/generateTokens.js";
-import { accountService, refreshTokenService, sessionService } from "#@/db/services/index.js";
+import generateTokenPair, { generateSessionToken } from "@/server/generateTokens.js";
+import { accountService, refreshTokenService, sessionService } from "@/db/services/index.js";
 
 const authRouter = express.Router();
 
@@ -30,9 +30,9 @@ authRouter.post("/register", async (req, res) => {
       res.status(403).send({ ok: false });
       return;
     }
-    const db = await req.dbPool.getConnection();
+    const db = await req.databasePool.getConnection();
     const result = await accountService.insert(db, username, uuidv7(), password, email);
-    req.dbPool.releaseConnection(db);
+    req.databasePool.releaseConnection(db);
 
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
@@ -58,9 +58,9 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const dbHandleSelect = await req.dbPool.getConnection();
+    const dbHandleSelect = await req.databasePool.getConnection();
     const foundUser = await accountService.selectByEmail(dbHandleSelect, email);
-    req.dbPool.releaseConnection(dbHandleSelect);
+    req.databasePool.releaseConnection(dbHandleSelect);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
@@ -77,9 +77,9 @@ authRouter.post("/login", async (req, res) => {
 
     const { name, id, email: foundEmail } = foundUser;
     const sessionToken = generateSessionToken(name, id, foundEmail);
-    const dbHandleInsert = await req.dbPool.getConnection();
+    const dbHandleInsert = await req.databasePool.getConnection();
     await sessionService.updateOrInsert(dbHandleInsert, foundUser.id, sessionToken);
-    req.dbPool.releaseConnection(dbHandleInsert);
+    req.databasePool.releaseConnection(dbHandleInsert);
 
     res.status(200).send({ ok: true, session: sessionToken });
   } catch (e) {
