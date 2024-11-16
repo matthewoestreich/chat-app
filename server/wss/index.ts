@@ -9,7 +9,7 @@ import { chatService } from "@/server/db/services/index.js";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes.js";
 
 const wss = new WebSocketServer({ server });
-const dbpath = path.resolve(import.meta.dirname, "../server/db/rtchat.db");
+const dbpath = path.resolve(import.meta.dirname, "../db/rtchat.db");
 const dbpool = new SQLitePool(dbpath, 5);
 
 // kind of like the "root" app

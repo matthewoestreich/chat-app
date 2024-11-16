@@ -7,7 +7,7 @@ import SQLitePool from "@/server/db/SQLitePool.js";
 
 export default function (app: Application) {
   // Create database pool
-  const dbFilePath = path.resolve(import.meta.dirname, "./db/rtchat.db");
+  const dbFilePath = path.resolve(import.meta.dirname, "../server/db/rtchat.db");
   const sqlitePool = new SQLitePool(dbFilePath, 5);
   app.use(useDatabasePool(sqlitePool));
 

@@ -27,14 +27,15 @@ router.get("/chat", [jwtMiddleware], (req: Request, res: Response) => {
 router.get("/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies.session;
-    console.log({ "req.cookies": req.cookies, sessionBeforeRemove: session });
+    console.log({ "req.cookies": req.cookies, sessionBeforeRemove: req.cookies.session });
     const db = await req.databasePool.getConnection();
-    console.log({ sessionAfterRemove: session });
     if (await sessionService.delete(db, session)) {
       console.log("successfully removed session token from db.");
+      req.databasePool.releaseConnection(db);
+      req.cookies.session = "";
+      res.clearCookie("session");
+      console.log({ sessionAfterRemove: req.cookies.session });
     }
-    req.databasePool.releaseConnection(db);
-    res.clearCookie("session");
     return res.render("v2/logout");
   } catch (e) {
     console.log({ logoutError: e });
