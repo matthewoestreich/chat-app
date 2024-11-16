@@ -5,7 +5,7 @@ import path from "path";
 import { v7 as uuidv7 } from "uuid";
 import { useCookieParser, useCspNonce, useErrorCatchall, useDbPool } from "@/server/middleware/index.js";
 import ChatRooms, { Room, RoomMember } from "@/db/ChatRooms.js";
-import SQLitePool from "../db/SQLitePool.js";
+import SQLitePool from "@/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api/index.js";
 import v2Router from "@/server/v2.js";
 
