@@ -1,6 +1,6 @@
 import jsonwebtoken from "jsonwebtoken";
-import { refreshTokenService } from "#@/db/services/index.js";
-import generateTokenPair from "#@/server/generateTokens.js";
+import { refreshTokenService, sessionService } from "#@/db/services/index.js";
+import generateTokenPair, { generateSessionToken } from "#@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -21,7 +21,86 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
  * token matches what we have in our database. Otherwise, it means the "session" was revoked, or
  * logged out, or even someone trying to replay an old refresh token.
  */
-export default function ({ onError = (req, res, next) => {} } = {}) {
+export default function useJwtSession({ onError = (req, res, next) => {} } = {}) {
+  return async function (req, res, next) {
+    try {
+      const { session } = req.cookies;
+      if (!session) {
+        return onError(req, res, next);
+      }
+
+      const decodedToken = await verifyJwtAsync(session, process.env.JWT_SIGNATURE);
+      if (decodedToken) {
+        return next();
+      }
+
+      // Here session is expired. Check DB to see if it matches with current session, if
+      // it does, refresh it.
+      if (await handleSessionRefresh(session, req, res)) {
+        return next();
+      }
+      return onError(req, res, next);
+    } catch (e) {}
+  };
+}
+
+async function verifyJwtAsync(token, secret) {
+  return new Promise((resolve, reject) => {
+    jsonwebtoken.verify(token, secret, (err, decoded) => {
+      if (err) {
+        if (err.name === "TokenExpiredError") {
+          return resolve(null);
+        }
+        return reject(err);
+      } else {
+        return resolve(decoded);
+      }
+    });
+  });
+}
+
+async function handleSessionRefresh(receivedSessionToken, req, res) {
+  try {
+    const decodedToken = jsonwebtoken.decode(receivedSessionToken);
+    if (!decodedToken?.id) {
+      console.log(`[useJwt][ERROR] no id found in decoded session token`);
+      return false;
+    }
+
+    console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
+
+    // Get existing session token from db.
+    const db = await req.dbPool.getConnection();
+    const existingSession = await sessionService.selectByUserId(db, decodedToken?.id);
+
+    // If no existing token, or existing token missing "token" column, or mismatch force user to reauth.
+    if (!existingSession || !existingSession?.token || existingSession.token !== receivedSessionToken) {
+      console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
+      req.dbPool.releaseConnection(db);
+      return false;
+    }
+
+    console.log(`[useJwt][INFO][id:${decodedToken?.id}] it is the same, generating new token`);
+
+    // Now we have the "OK" to generate a new token..
+    const sessionToken = generateSessionToken(decodedToken?.name, decodedToken?.id, decodedToken?.email);
+
+    // Update refresh token in db to newly generated refresh token.
+    await sessionService.update(db, decodedToken?.id, sessionToken);
+    req.dbPool.releaseConnection(db);
+
+    // update request object
+    req.sessionToken = sessionToken;
+    // Update client side cookie
+    res.cookie("session", sessionToken, { maxAge: ONE_DAY });
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function useJwt({ onError = (req, res, next) => {} } = {}) {
   return async function (req, res, next) {
     try {
       const { access_token, refresh_token } = req.cookies;
@@ -48,21 +127,6 @@ export default function ({ onError = (req, res, next) => {} } = {}) {
       return onError(req, res, next);
     }
   };
-}
-
-async function verifyJwtAsync(token, secret) {
-  return new Promise((resolve, reject) => {
-    jsonwebtoken.verify(token, secret, (err, decoded) => {
-      if (err) {
-        if (err.name === "TokenExpiredError") {
-          return resolve(null);
-        }
-        return reject(err);
-      } else {
-        return resolve(decoded);
-      }
-    });
-  });
 }
 
 async function handleRefresh(refresh_token, req, res) {

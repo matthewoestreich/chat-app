@@ -1,11 +1,11 @@
 import express from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { useJwt, useHasValidSessionCookie } from "#@/server/middleware/index.js";
-import { refreshTokenService } from "#@/db/services/index.js";
+import { useJwtSession, useHasValidSessionCookie } from "#@/server/middleware/index.js";
+import { refreshTokenService, sessionService } from "#@/db/services/index.js";
 
 const router = express.Router();
 
-const jwtMiddleware = useJwt({
+const jwtMiddleware = useJwtSession({
   onError: (_req, res) => {
     return res.redirect("/v2");
   },
@@ -20,17 +20,20 @@ router.get("/", [useHasValidSessionCookie], (req, res) => {
 });
 
 router.get("/chat", [jwtMiddleware], (req, res) => {
-  const { name, email } = jsonwebtoken.decode(req.cookies.access_token);
+  const { name, email } = jsonwebtoken.decode(req.cookies.session);
   res.render("v2/chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
 });
 
 router.get("/logout", async (req, res) => {
   try {
+    const { session } = req.cookies.session;
+    if (!session) {
+      return res.render("v2/logout");
+    }
     const db = await req.dbPool.getConnection();
-    await refreshTokenService.delete(db, req.cookies.refresh_token);
+    await sessionService.delete(db, session);
     req.dbPool.releaseConnection(db);
-    res.clearCookie("access_token");
-    res.clearCookie("refresh_token");
+    res.clearCookie("session");
     return res.render("v2/logout");
   } catch (e) {
     return res.render("error", { error: "Error logging you out." });

@@ -27,8 +27,8 @@ const wss = new WebSocketServer({ server });
 // when a socket connects, this only fires one time.
 // on every subsequent message, the `socket.on("message", ...)` handler kicks in
 wss.on("connection", async (socket, req) => {
-  const { access_token } = parseCookies(req.headers.cookie);
-  const authenticated = await isAuthenticated(access_token);
+  const { session } = parseCookies(req.headers.cookie);
+  const authenticated = await isAuthenticated(session);
 
   if (!authenticated) {
     socket.close(WEBSOCKET_ERROR_CODE.Unauthorized, "unauthorized");
@@ -46,12 +46,12 @@ wss.on("connection", async (socket, req) => {
   wsapp.on("chat", (socket, data) => {});
 });
 
-async function isAuthenticated(accessToken) {
-  if (!accessToken) {
+async function isAuthenticated(token) {
+  if (!token) {
     return false;
   }
   try {
-    const isValidToken = await verifyTokenAsync(accessToken, process.env.JWT_SIGNATURE);
+    const isValidToken = await verifyTokenAsync(token, process.env.JWT_SIGNATURE);
     if (!isValidToken) {
       socket.close(WEBSOCKET_ERROR_CODE.Unauthorized, "unauthorized");
       return false;

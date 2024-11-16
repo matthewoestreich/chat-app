@@ -21,7 +21,11 @@
       }
 
       .overf-y-scroll {
-        overflow-y: scroll;
+        overflow-y: scroll !important;
+      }
+
+      .overf-hide {
+        overflow: hidden;
       }
 
       .message {
@@ -89,10 +93,10 @@
             <hr class="d-lg-none text-50" />
             <ul class="navbar-nav d-lg-none flex-row flex-wrap bd-navbar-nav text-center">
               <li class="nav-item col-6 col-lg-auto d-flex">
-                <button class="nav-link btn btn-outline-dark flex-fill">Members</button>
+                <button class="nav-link btn btn-outline-dark flex-fill" data-bs-toggle="offcanvas" data-bs-target="#members-offcanvas">Members</button>
               </li>
               <li class="nav-item col-6 col-lg-auto d-flex">
-                <button class="nav-link btn btn-outline-dark flex-fill">Rooms</button>
+                <button class="nav-link btn btn-outline-dark flex-fill" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">Rooms</button>
               </li>
             </ul>
             <hr class="d-lg-none text-50" />
@@ -133,13 +137,45 @@
       </div>
       <!-- Content Row (main row) -->
       <div class="row g-0 flex-fill min-h-0">
-        <div class="col-3 d-lg-flex d-none flex-column rounded-start-5 h-90pct border min-h-0">
-          <div class="d-flex justify-content-center align-items-center">
-            <p class="fs-2">Members</p>
+        <div id="members-offcanvas" class="col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
+          <div class="d-flex justify-content-center align-items-center offcanvas-header">
+            <p class="fs-2 offcanvas-title">Members</p>
+            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
           </div>
-          <div id="left-column-container" class="h-100 overf-y-scroll d-flex justify-content-center align-items-center">
-            <div id="loading-members" class="d-none spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
+          <div id="left-column-container" class="overf-y-scroll">
+            <div class="d-flex flex-column justify-content-center align-items-center offcanvas-body">
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
+              <h6>Member</h6>
             </div>
           </div>
         </div>
@@ -166,15 +202,55 @@
             </div>
           </div>
         </div>
-        <div class="col-3 d-lg-flex d-none flex-column rounded-end-5 h-90pct border min-h-0">
-          <div class="d-flex justify-content-center align-items-center">
-            <p class="fs-2">Rooms</p>
+        <div id="rooms-offcanvas" class="col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
+          <div class="d-flex justify-content-center align-items-center offcanvas-header">
+            <p class="fs-2 offcanvas-title">Rooms</p>
+            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
           </div>
-          <div id="right-column-container" class="h-100 overf-y-scroll">
-            <div class="d-flex h-100 justify-content-center align-items-center">
-              <div id="loading-rooms" class="d-none spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+          <div id="right-column-container" class="overf-y-scroll">
+            <div class="d-flex flex-column justify-content-center align-items-center offcanvas-body">
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+              <h6>General</h6>
+            </div>
+          </div>
+          <div class="">
+            <div class="input-group p-3">
+              <input type="text" class="form-control" placeholder="Create Room" />
+              <button class="btn btn-outline-secondary" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

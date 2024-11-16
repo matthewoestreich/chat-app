@@ -1,6 +1,12 @@
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
+// You can use a different database/storage if you "implement" this class.
+// Your class would need to have all properties and methods of this one.
+// From there, modify each method for each service (within the "services" directory)
+// to fit your database.
+// From there all you have to do is modify the `useDbPool` middleware to include your
+// newly crated pool.
 export default class SQLitePool {
   /**
    *

@@ -1,6 +1,7 @@
 import jsonwebtoken from "jsonwebtoken";
 
 const EXPIRATION_TIMES = {
+  session: "30m",
   accessToken: "30m",
   refreshToken: "120m",
 };
@@ -14,6 +15,11 @@ export default function generateTokenPair(name, id, email) {
     accessToken: generateAccessToken(name, id, email),
     refreshToken: generateRefreshToken(name, id, email),
   };
+}
+
+export function generateSessionToken(name, id, email) {
+  const sessionTokenOptions = { expiresIn: EXPIRATION_TIMES.session };
+  return jsonwebtoken.sign({ name, id, email }, process.env.JWT_SIGNATURE, sessionTokenOptions);
 }
 
 export function generateAccessToken(name, id, email) {

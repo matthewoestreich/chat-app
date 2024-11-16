@@ -4,8 +4,8 @@
 import express from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
-import generateTokenPair from "#@/server/generateTokens.js";
-import { accountService, refreshTokenService } from "#@/db/services/index.js";
+import generateTokenPair, { generateSessionToken } from "#@/server/generateTokens.js";
+import { accountService, refreshTokenService, sessionService } from "#@/db/services/index.js";
 
 const authRouter = express.Router();
 
@@ -76,12 +76,12 @@ authRouter.post("/login", async (req, res) => {
     }
 
     const { name, id, email: foundEmail } = foundUser;
-    const { accessToken, refreshToken } = generateTokenPair(name, id, foundEmail);
+    const sessionToken = generateSessionToken(name, id, foundEmail);
     const dbHandleInsert = await req.dbPool.getConnection();
-    await refreshTokenService.updateOrInsert(dbHandleInsert, foundUser.id, refreshToken);
+    await sessionService.updateOrInsert(dbHandleInsert, foundUser.id, sessionToken);
     req.dbPool.releaseConnection(dbHandleInsert);
 
-    res.status(200).send({ ok: true, accessToken, refreshToken });
+    res.status(200).send({ ok: true, session: sessionToken });
   } catch (e) {
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
