@@ -1,4 +1,6 @@
-export default function (req, res, next) {
+import { Request, Response, NextFunction } from "express";
+
+export default function useCookieParser(req: Request, _res: Response, next: NextFunction) {
   req.cookies = {}; // Initialize an empty cookie object
 
   if (req.headers.cookie) {

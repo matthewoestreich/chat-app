@@ -11,8 +11,15 @@ interface DatabasePool<T> {
   query(sqlQuery: string, params: any): Promise<unknown>;
 }
 
+interface SessionToken {
+  id: string;
+  name: string;
+  email: string;
+}
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;
+    cookies: {};
   }
 }
