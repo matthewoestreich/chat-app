@@ -11,16 +11,20 @@ const router = express.Router();
 router.post("/rooms", async (req, res) => {
   try {
     const { id: userId } = jsonwebtoken.decode(req.cookies.session);
+
     if (!userId) {
       console.log("no userid");
       return res.status(400).send({ ok: false, message: "missing required parameter" });
     }
-    const db = await req.databasePool.getConnection();
+
+    const { db, release } = await req.databasePool.getConnection();
     const rooms = await chatService.selectRoomsByUserId(db, userId);
-    req.databasePool.releaseConnection(db);
+    release();
+
     res.status(200).send({ ok: true, rooms });
   } catch (e) {
     console.log(e);
+    release();
     return res.status(500).send({ ok: false, message: "error", error: e.message });
   }
 });

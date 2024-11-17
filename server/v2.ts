@@ -38,7 +38,7 @@ router.get("/logout", async (req: Request, res: Response) => {
 
     if (await sessionService.delete(connection.db, session)) {
       console.log("successfully removed session token from db.");
-      req.databasePool.releaseConnection(connection.db);
+      connection.release();
       req.cookies.session = "";
       res.clearCookie("session");
       console.log({ sessionAfterRemove: req.cookies.session });

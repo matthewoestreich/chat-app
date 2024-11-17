@@ -31,21 +31,29 @@ wss.on("connection", async (socket: WebSocket, req) => {
     databasePool: dbpool,
     cookies,
     onConnected: async (self: IWsApp) => {
-      self.socket.send(JSON.stringify({ ok: true }));
-      self.sendMessage("type_z", {});
-      const connection = await self.databasePool.getConnection();
-      const rooms = await chatService.selectRoomsByUserId(connection.db, self.account.id);
-      connection.release();
-      self.sendMessage("rooms", { rooms: rooms as WsMessageData });
+      const { db, release } = await self.databasePool.getConnection();
+      try {
+        self.socket.send(JSON.stringify({ ok: true }));
+        self.sendMessage("type_z", {});
+        const rooms = await chatService.selectRoomsByUserId(db, self.account.id);
+        release();
+        self.sendMessage("rooms", { rooms: rooms as WsMessageData });
+      } catch (e) {
+        release();
+      }
     },
   });
 
   wsapp.on("get_rooms", async (self: IWsApp, _data) => {
-    self.socket.send(JSON.stringify({ ok: true }));
-    const connection = await self.databasePool.getConnection();
-    const rooms = await chatService.selectRoomsByUserId(connection.db, self.account.id);
-    connection.release();
-    self.sendMessage("rooms", { rooms: rooms as WsMessageData });
+    const { db, release } = await self.databasePool.getConnection();
+    try {
+      self.socket.send(JSON.stringify({ ok: true }));
+      const rooms = await chatService.selectRoomsByUserId(db, self.account.id);
+      release();
+      self.sendMessage("rooms", { rooms: rooms as WsMessageData });
+    } catch (e) {
+      release();
+    }
   });
 
   wsapp.on("ping", async (self: IWsApp, data, reqst) => {

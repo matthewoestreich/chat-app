@@ -33,24 +33,16 @@ interface WsCookies {
 
 type WsAppOnInitialConnectionHandler = (self: IWsApp) => void;
 
-interface DatabasePoolPendingRequest<T> {
-  resolve: (value: DatabasePoolConnection | PromiseLike<DatabasePoolConnection>) => void;
-  reject: (reason?: any) => void;
-}
-
 interface DatabasePoolConnection<T> {
   db: T;
   release(): void;
 }
 
 interface DatabasePool<T> {
-  databasePath?: string;
-  maxConnections: number;
-  pool: T[];
-  pendingRequests: DatabasePoolPendingRequest<T>[];
-  getConnection(): Promise<DatabasePoolConnection>;
+  getConnection(): Promise<DatabasePoolConnection<T>>;
   releaseConnection(connection: DatabasePoolConnection<T>): void;
-  query(sqlQuery: string, params: any): Promise<unknown>;
+  query(sql: string, params: any): Promise<unknown>;
+  closeAll(): Promise<void>;
 }
 
 interface SessionToken {

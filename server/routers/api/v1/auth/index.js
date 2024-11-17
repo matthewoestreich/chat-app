@@ -30,9 +30,9 @@ authRouter.post("/register", async (req, res) => {
       res.status(403).send({ ok: false });
       return;
     }
-    const connection = await req.databasePool.getConnection();
-    const result = await accountService.insert(connection.db, username, uuidv7(), password, email);
-    connection.release();
+    const { db, release } = await req.databasePool.getConnection();
+    const result = await accountService.insert(db, username, uuidv7(), password, email);
+    release();
 
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
