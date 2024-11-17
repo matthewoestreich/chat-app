@@ -3,7 +3,7 @@ import path from "path";
 import helmet from "helmet";
 import morgan from "morgan";
 import { useCookieParser, useCspNonce, useDatabasePool } from "@/server/middleware/index.js";
-import SQLitePool from "@/server/db/SQLitePool.js";
+import SQLitePool from "@/server/db/SQLitePool";
 
 export default function (app: Application) {
   // Create database pool

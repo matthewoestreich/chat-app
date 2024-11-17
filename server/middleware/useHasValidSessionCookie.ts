@@ -7,28 +7,26 @@ import { sessionService } from "@/server/db/services/index.js";
  * If it does, they have a valid session.
  */
 export default async function (req: Request, res: Response, next: NextFunction) {
-  const { session } = req.cookies;
+  try {
+    const { session } = req.cookies;
 
-  if (!session) {
+    if (!session) {
+      return next();
+    }
+
+    const decodedToken = jsonwebtoken.decode(session) as SessionToken;
+    const connection = await req.databasePool.getConnection();
+    const storedSession = await sessionService.selectByUserId(connection.db, decodedToken?.id);
+
+    if (storedSession.token !== session) {
+      res.clearCookie("session");
+      req.cookies.session = "";
+      return next();
+    }
+
+    return res.redirect("/v2/chat");
+  } catch (e) {
+    console.log(`[useHasValidSessionCookie][ERROR] `, e);
     return next();
   }
-
-  const decodedToken = jsonwebtoken.decode(session) as SessionToken;
-
-  return req.databasePool
-    .getConnection()
-    .then((db) => {
-      return sessionService
-        .selectByUserId(db, decodedToken?.id)
-        .then((row) => {
-          if (row.token !== session) {
-            // If token mismatch, remove client side token so they have to reauth.
-            res.clearCookie("session");
-            return next();
-          }
-          return res.redirect("/v2/chat");
-        })
-        .catch(() => next());
-    })
-    .catch(() => next());
 }
