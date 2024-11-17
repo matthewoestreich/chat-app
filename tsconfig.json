@@ -18,5 +18,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["dist/", "node_modules/**", "__tests__/**", "scripts/**", "**/*.test.*", "jest.config.js", "babel.config.js", ".env.example"]
+  "exclude": ["dist/", "node_modules/**", "__tests__/**", "scripts/**", "**/*.test.*", "*.config.js", ".env.example"]
 }
