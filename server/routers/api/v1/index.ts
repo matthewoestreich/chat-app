@@ -2,9 +2,9 @@
   V1 Router
 */
 import express from "express";
-import userRouter from "./user/index.js";
-import authRouter from "./auth/index.js";
-import { useJwtSession } from "@/server/middleware/index.js";
+import userRouter from "./user/index";
+import authRouter from "./auth/index";
+import { useJwtSession } from "@/server/middleware/index";
 
 const v1Router = express.Router();
 
