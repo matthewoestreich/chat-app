@@ -6,7 +6,7 @@ sqlite3.verbose();
 export default async function () {
   return new Promise((resolve, reject) => {
     try {
-      const db = new sqlite3.Database(path.resolve(import.meta.dirname, "../server/db/rtchat.db"));
+      const db = new sqlite3.Database(path.resolve(__dirname, process.env.ABSOLUTE_DB_PATH));
       db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`CREATE TABLE IF NOT EXISTS "user" (

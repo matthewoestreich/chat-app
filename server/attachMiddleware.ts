@@ -1,5 +1,4 @@
 import { Application, Request, Response } from "express";
-import path from "path";
 import helmet from "helmet";
 import morgan from "morgan";
 import { useCookieParser, useCspNonce, useDatabasePool } from "@/server/middleware/index.js";
@@ -7,7 +6,11 @@ import SQLitePool from "@/server/db/SQLitePool.js";
 
 export default function (app: Application) {
   // Create database pool
-  const dbFilePath = path.resolve(import.meta.dirname, "../server/db/rtchat.db");
+  const dbFilePath = process.env.ABSOLUTE_DB_PATH || "";
+  if (dbFilePath === "") {
+    console.log(`[attachMiddleware] db path not found`);
+    // process.exit(1);
+  }
   const sqlitePool = new SQLitePool(dbFilePath, 5);
   app.use(useDatabasePool(sqlitePool));
 

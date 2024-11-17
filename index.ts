@@ -1,3 +1,15 @@
+// THIS MUST BE AT THE TOP! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+import path from "path";
+process.env.ABSOLUTE_DB_PATH = path.resolve(__dirname, "./server/db/rtchat.db") || "";
+console.log(process.env.ABSOLUTE_DB_PATH);
+if (process.env.ABSOLUTE_DB_PATH === "") {
+  console.log("missing db path, unable to resolve it.");
+  process.exit(1);
+} else {
+  console.log({ absoluteDbPath: process.env.ABSOLUTE_DB_PATH });
+}
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+
 import "dotenv/config";
 import "./server/wss/index.js";
 import initDatabase from "./server/db/initDatabase.js";
@@ -7,12 +19,10 @@ if (!process.env.JWT_SIGNATURE) {
   process.exit(1);
 }
 
-try {
-  await initDatabase();
-} catch (e) {
+initDatabase().catch((e) => {
   console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
   process.exit(1);
-}
+});
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";

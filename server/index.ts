@@ -1,21 +1,21 @@
 import express, { Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import path from "path";
-import { useErrorCatchall } from "@/server/middleware/index";
-import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware/index";
-import { sessionService } from "@/server/db/services/index";
+import { useErrorCatchall } from "@/server/middleware";
+import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware";
+import { sessionService } from "@/server/db/services";
 import attachMiddleware from "./attachMiddleware";
-import apiRouter from "@/server/routers/api/index";
+import apiRouter from "@/server/routers/api";
 
 const app = express();
 
 /** VIEW ENGINE */
 app.set("view engine", "ejs");
-app.set("views", path.resolve(import.meta.dirname, "../www"));
+app.set("views", path.resolve(__dirname, "../www"));
 
 /**  MIDDLEWARES */
 
-app.use("/public", express.static(path.resolve(import.meta.dirname, "../www/public"))); // Serve static assets
+app.use("/public", express.static(path.resolve(__dirname, "../www/public"))); // Serve static assets
 app.use(express.json()); // Parse req bodies into json (when Content-Type='application/json')
 attachMiddleware(app); // Attach "third party"/"internal"/"non-standard" middleware.
 

@@ -5,7 +5,7 @@ console.log("~~~~~~~~~~ RUNNING _BUILD SCRIPT!");
 console.log("~~~~~~~~~~ This script copies assets into build destination specified in tsconfig.json outDir\n");
 
 try {
-  const CWD = import.meta.dirname;
+  const CWD = __dirname;
   const tsconfig = JSON.parse(fs.readFileSync(path.resolve(CWD, "../tsconfig.json"), "utf-8"));
 
   const COPY_MAP = [

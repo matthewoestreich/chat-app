@@ -2,10 +2,10 @@
   "name": "chat-app",
   "version": "1.0.0",
   "description": "Real time chat app built with websockets",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc && node scripts/_build.js",
+    "build": "tsc && tsx scripts/_build.ts",
     "postbuild": "tsc-alias -p tsconfig.json",
     "start:nodemon": "nodemon --verbose",
     "tsx": "tsx index.ts",
@@ -13,7 +13,6 @@
     "test": "jest",
     "jest:clearCache": "jest --clearCache"
   },
-  "type": "module",
   "keywords": [],
   "author": "Matt Oestreich",
   "prettier": {

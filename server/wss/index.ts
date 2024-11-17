@@ -1,5 +1,4 @@
 import { WebSocketServer, WebSocket } from "ws";
-import path from "path";
 import parseCookies from "./parseCookies.js";
 import verifyTokenAsync from "./verifyTokenAsync.js";
 import server from "../index.js";
@@ -9,7 +8,7 @@ import { chatService } from "@/server/db/services/index.js";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes.js";
 
 const wss = new WebSocketServer({ server });
-const dbpath = path.resolve(import.meta.dirname, "../db/rtchat.db");
+const dbpath = process.env.ABSOLUTE_DB_PATH || "";
 const dbpool = new SQLitePool(dbpath, 5);
 
 // kind of like the "root" app
