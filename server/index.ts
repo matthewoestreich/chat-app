@@ -1,18 +1,13 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import jsonwebtoken from "jsonwebtoken";
 import path from "path";
-import { v7 as uuidv7 } from "uuid";
-import { useErrorCatchall } from "@/server/middleware/index.js";
+import { useErrorCatchall } from "@/server/middleware/index";
+import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware/index";
+import { sessionService } from "@/server/db/services/index";
 import attachMiddleware from "./attachMiddleware";
-import ChatRooms, { Room, RoomMember } from "@/server/db/ChatRooms.js";
-import apiRouter from "@/server/routers/api/index.js";
-import v2Router from "@/server/v2.js";
+import apiRouter from "@/server/routers/api/index";
 
 const app = express();
-
-/**
- * [LEGACY] This is how we store room related data
- */
-export const CHAT_ROOMS = new ChatRooms();
 
 /** VIEW ENGINE */
 app.set("view engine", "ejs");
@@ -25,90 +20,52 @@ app.use(express.json()); // Parse req bodies into json (when Content-Type='appli
 attachMiddleware(app); // Attach "third party"/"internal"/"non-standard" middleware.
 
 /** ATTACH ROUTERS */
-app.use("/v2", v2Router);
 app.use("/api", apiRouter);
 
+const jwtMiddleware = useJwtSession({
+  onError: (_req: Request, res: Response) => {
+    return res.redirect("/");
+  },
+});
+
 /**
- * LEGACY
  * @route {GET} /
  */
-app.get("/", (_req, res) => {
+app.get("/", [useHasValidSessionCookie], (_req: Request, res: Response) => {
   res.render("index", { nonce: res.locals.cspNonce });
 });
 
 /**
- * LEGACY
- * @route {GET} /join
+ * @route {GET} /chat
  */
-app.get("/join", (_req, res) => {
-  const userId = uuidv7();
-  res.render("join-existing-room", { userId, nonce: res.locals.cspNonce });
+app.get("/chat", [jwtMiddleware], (req: Request, res: Response) => {
+  const { name, email } = jsonwebtoken.decode(req.cookies.session) as SessionToken;
+  res.render("chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
 });
 
 /**
- * LEGACY
- * @route {GET} /create
+ * @route {GET} /logout
  */
-app.get("/create", (_req, res) => {
-  const roomId = uuidv7();
-  const userId = uuidv7();
-  // Only create the room here, don't add the user to it yet. We will add
-  // the user to the room when the user first hits the "/chat/:roomId" endpoint.
-  // Adding them here would technically be premature.
-  CHAT_ROOMS.add(new Room(roomId, ""));
-  res.render("create-room", { roomId, userId, nonce: res.locals.cspNonce });
-});
+app.get("/logout", async (req: Request, res: Response) => {
+  try {
+    const { session } = req.cookies.session;
+    console.log({ "req.cookies": req.cookies, sessionBeforeRemove: req.cookies.session });
 
-/**
- * LEGACY
- * Handles chat room(s)..
- * @route {GET} /chat/:roomId?:userId=_&:displayName=_
- */
-app.get("/chat/:roomId", (req, res) => {
-  const roomId = req.params?.roomId;
-  const { userId, displayName } = req.query;
+    const connection = await req.databasePool.getConnection();
 
-  if (!roomId || !displayName || !userId) {
-    console.log(`[/chat][ERROR] missing required param!`, {
-      roomId,
-      displayName,
-      userId,
-    });
-    res.render("error", { error: "Something went wrong!" });
-    return;
-  }
-
-  const existingRoom = CHAT_ROOMS.get(roomId);
-  if (!existingRoom) {
-    console.log(`[/chat][ERROR] room does not exist!`, { roomId });
-    res.render("error", { error: "Something went wrong!" });
-    return;
-  }
-
-  let member = existingRoom.getMemberById(userId);
-  // ~~~ NEED TO TEST THIS ~~ If someone tries to join roomId with existing userId. If (server.ROOMS[roomId][userId]) {
-  if (member && member.displayName !== displayName) {
-    // If the displayName is diff it's prob a duplicate userId...
-    console.log(`[/chat][ERROR] userId and displayName mismatch! Possibly spoofed user.`, { roomId, userId, displayName });
-    res.render("error", { error: "Something went wrong!" });
-    return;
-  }
-
-  if (!member) {
-    member = new RoomMember(userId, displayName);
-    member.chatBubbleColor = getRandomLightColorHex();
-    existingRoom.addMember(member);
-  }
-
-  // TODO:
-  // I dont really like this being here.. Is it a good idea to pass existing room members this way?
-  const members = existingRoom.members.map((m: RoomMember) => {
-    if (m.id !== member.id) {
-      return m.displayName;
+    if (await sessionService.delete(connection.db, session)) {
+      console.log("successfully removed session token from db.");
+      connection.release();
+      req.cookies.session = "";
+      res.clearCookie("session");
+      console.log({ sessionAfterRemove: req.cookies.session });
     }
-  });
 
-  res.render("chat-room", { displayName, roomId, userId, members, websocketUrl: process.env.WSS_URL, nonce: res.locals.cspNonce });
+    return res.render("logout");
+  } catch (e) {
+    console.log({ logoutError: e });
+    return res.render("error", { error: "Error logging you out." });
+  }
 });
 
 /**
@@ -143,6 +100,7 @@ export default app.listen(process.env.EXPRESS_PORT, () => {
  * that contain values in the `A-F` range.
  *
  */
+// @ts-ignore
 function getRandomLightColorHex() {
   let color = "#";
   for (let i = 0; i < 6; i++) {

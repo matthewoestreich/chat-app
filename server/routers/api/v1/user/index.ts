@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import { chatService } from "@/server/db/services/index.js";
 
@@ -8,13 +8,14 @@ const router = express.Router();
  * @route {POST} /rooms
  * we get userId from the jwt.
  */
-router.post("/rooms", async (req, res) => {
+router.post("/rooms", async (req: Request, res: Response) => {
   try {
-    const { id: userId } = jsonwebtoken.decode(req.cookies.session);
+    const { userId } = jsonwebtoken.decode(req.cookies.session) as Session;
 
     if (!userId) {
       console.log("no userid");
-      return res.status(400).send({ ok: false, message: "missing required parameter" });
+      res.status(400).send({ ok: false, message: "missing required parameter" });
+      return;
     }
 
     const { db, release } = await req.databasePool.getConnection();
@@ -22,10 +23,10 @@ router.post("/rooms", async (req, res) => {
     release();
 
     res.status(200).send({ ok: true, rooms });
-  } catch (e) {
+  } catch (e: unknown) {
     console.log(e);
-    release();
-    return res.status(500).send({ ok: false, message: "error", error: e.message });
+    res.status(500).send({ ok: false, message: "error", error: (e as Error).message });
+    return;
   }
 });
 

@@ -1,10 +1,10 @@
 /*
   Auth Router
 */
-import express from "express";
+import express, { Request, Response } from "express";
 import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
-import generateTokenPair, { generateSessionToken } from "@/server/generateTokens.js";
+import { generateSessionToken } from "@/server/generateTokens.js";
 import { accountService, sessionService } from "@/server/db/services/index.js";
 
 const authRouter = express.Router();
@@ -22,7 +22,7 @@ const authRouter = express.Router();
  *    e: email,  // email
  * }
  */
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", async (req: Request, res: Response) => {
   try {
     const { u: username, p: password, e: email } = req.body;
     if (!username) {
@@ -31,7 +31,7 @@ authRouter.post("/register", async (req, res) => {
       return;
     }
     const { db, release } = await req.databasePool.getConnection();
-    const result = await accountService.insert(db, username, uuidv7(), password, email);
+    const result = (await accountService.insert(db, username, uuidv7(), password, email)) as Account;
     release();
 
     res.status(200).send({ ok: true, ...result });
@@ -49,12 +49,13 @@ authRouter.post("/register", async (req, res) => {
  *    p: string, // password
  * }
  */
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", async (req: Request, res: Response) => {
   try {
     const { p: password, e: email } = req.body;
     if (!password || !email) {
       console.log(`[POST /login] missing either email or password from body!`, { email, password });
-      return res.status(403).send({ ok: false });
+      res.status(403).send({ ok: false });
+      return;
     }
 
     const { db, release } = await req.databasePool.getConnection();

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { validate as uuidValidate, version as uuidVersion } from "uuid";
 
 /**

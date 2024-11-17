@@ -1,47 +1,93 @@
 import sqlite3 from "sqlite3";
+import Mutex from "@/server/Mutex";
 
 export default class SQLitePool implements DatabasePool<sqlite3.Database> {
-  private databasePath: string;
-  private maxConnections: number;
-  private pool: sqlite3.Database[];
-  private pendingRequests: Array<(connection: DatabasePoolConnection<sqlite3.Database>) => void>;
+  private _databasePath: string;
+  private _maxConnections: number;
+  private _pool: sqlite3.Database[];
+  private _pendingRequests: Array<(connection: DatabasePoolConnection<sqlite3.Database>) => void>;
+  private _mutex: Mutex;
 
   constructor(databasePath: string, maxConnections: number = 5) {
-    this.databasePath = databasePath;
-    this.maxConnections = maxConnections;
-    this.pool = [];
-    this.pendingRequests = [];
+    this._databasePath = databasePath;
+    this._maxConnections = maxConnections;
+    this._pool = [];
+    this._pendingRequests = [];
+    this._mutex = new Mutex();
   }
 
-  async getConnection(): Promise<DatabasePoolConnection<sqlite3.Database>> {
-    return new Promise((resolve, reject) => {
-      const existingConnection = this.pool.pop();
-      if (existingConnection) {
-        return resolve(this.createConnectionWrapper(existingConnection));
+  get databasePath(): string {
+    return this._databasePath;
+  }
+  get maxConnections(): number {
+    return this._maxConnections;
+  }
+  get size(): number {
+    return this._pool.length;
+  }
+  get pendingRequests(): Array<(connection: DatabasePoolConnection<sqlite3.Database>) => void> {
+    return this._pendingRequests;
+  }
+
+  getConnection(): Promise<DatabasePoolConnection<sqlite3.Database>> {
+    //console.log('Attempting to get a connection...');
+    return new Promise(async (resolve, reject) => {
+      await this._mutex.lock();
+
+      const db = this._pool.pop(); // Pop a connection from the pool
+
+      if (db) {
+        //console.log('Reusing an existing connection.', this);
+        const connection = { db, release: () => this.releaseConnection(connection) };
+        this._mutex.unlock();
+        return resolve(connection);
       }
 
-      if (this.pool.length + this.pendingRequests.length < this.maxConnections) {
-        const db = new sqlite3.Database(this.databasePath, (err) => {
+      if (this._pool.length + this.pendingRequests.length < this._maxConnections) {
+        //console.log({
+        //  in: "getConnection",
+        //  condition: "else if (this._pool.length + this._pendingRequests.length < this._maxConnections)",
+        //  action: 'Creating a new connection...',
+        //  misc: `this._pool.length:${this._pool.length} + this._pendingRequests.length:${this._pendingRequests.length} = ${this._pool.length + this._pendingRequests.length}`,
+        //});
+        const db = new sqlite3.Database(this._databasePath, (err) => {
           if (err) {
+            this._mutex.unlock();
             return reject(err);
           }
-          resolve(this.createConnectionWrapper(db));
+          const connection = { db, release: () => this.releaseConnection(connection) };
+          this._mutex.unlock();
+          return resolve(connection);
         });
-      } else {
-        this.pendingRequests.push(resolve);
+
+        this._mutex.unlock();
+        return;
       }
+
+      console.log({
+        in: "getConnection",
+        condition: "else",
+        action: "Pushing new request into pending requests : this._pendingRequests.push(resolve);",
+      });
+      this._pendingRequests.push(resolve);
+      this._mutex.unlock();
     });
   }
 
-  releaseConnection(connection: DatabasePoolConnection<sqlite3.Database>): void {
-    if (this.pendingRequests.length > 0) {
-      const nextRequest = this.pendingRequests.shift();
+  async releaseConnection(connection: DatabasePoolConnection<sqlite3.Database>): Promise<void> {
+    console.log(" - releasing connection");
+    await this._mutex.lock();
+
+    if (this._pendingRequests.length > 0) {
+      const nextRequest = this._pendingRequests.shift();
       if (nextRequest) {
         nextRequest(this.createConnectionWrapper(connection.db));
       }
     } else {
-      this.pool.push(connection.db);
+      this._pool.push(connection.db);
     }
+
+    this._mutex.unlock();
   }
 
   async query(sql: string, params: any): Promise<unknown> {
@@ -57,32 +103,34 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
-  /**
-   * Closes all connections in the pool.
-   */
-  async closeAll(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      let closedCount = 0;
-      const totalConnections = this.pool.length;
+  async closeAll() {
+    return new Promise<void>(async (resolve, reject) => {
+      await this._mutex.lock();
+
+      let closeCount = 0;
+      const totalConnections = this._pool.length;
 
       if (totalConnections === 0) {
-        resolve();
-        return;
+        return resolve();
       }
 
-      for (const connection of this.pool) {
+      for (const connection of this._pool) {
         connection.close((err) => {
           if (err) {
             return reject(err);
           }
-          closedCount++;
-          if (closedCount === totalConnections) {
-            resolve();
+          closeCount++;
+          if (closeCount === totalConnections) {
+            this._pool.length = 0; // Clear the pool
+            return resolve();
           }
         });
       }
+
+      this._mutex.unlock();
     });
   }
+
   private createConnectionWrapper(db: sqlite3.Database): DatabasePoolConnection<sqlite3.Database> {
     return {
       db,
