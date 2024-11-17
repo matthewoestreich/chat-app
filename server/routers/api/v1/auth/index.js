@@ -30,9 +30,9 @@ authRouter.post("/register", async (req, res) => {
       res.status(403).send({ ok: false });
       return;
     }
-    const db = await req.databasePool.getConnection();
-    const result = await accountService.insert(db, username, uuidv7(), password, email);
-    req.databasePool.releaseConnection(db);
+    const connection = await req.databasePool.getConnection();
+    const result = await accountService.insert(connection.db, username, uuidv7(), password, email);
+    connection.release();
 
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
@@ -54,32 +54,29 @@ authRouter.post("/login", async (req, res) => {
     const { p: password, e: email } = req.body;
     if (!password || !email) {
       console.log(`[POST /login] missing either email or password from body!`, { email, password });
-      res.status(403).send({ ok: false });
-      return;
+      return res.status(403).send({ ok: false });
     }
 
-    const dbHandleSelect = await req.databasePool.getConnection();
-    const foundUser = await accountService.selectByEmail(dbHandleSelect, email);
-    req.databasePool.releaseConnection(dbHandleSelect);
+    const { db, release } = await req.databasePool.getConnection();
+    const foundUser = await accountService.selectByEmail(db, email);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
       res.status(403).send({ ok: false });
-      return;
+      return release();
     }
 
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
       console.log(`[POST /login][ERROR] incorrect password!`);
       res.status(403).send({ ok: false });
-      return;
+      return release();
     }
 
     const { name, id, email: foundEmail } = foundUser;
     const sessionToken = generateSessionToken(name, id, foundEmail);
-    const dbHandleInsert = await req.databasePool.getConnection();
-    await sessionService.updateOrInsert(dbHandleInsert, foundUser.id, sessionToken);
-    req.databasePool.releaseConnection(dbHandleInsert);
+    await sessionService.updateOrInsert(db, foundUser.id, sessionToken);
+    release();
 
     res.status(200).send({ ok: true, session: sessionToken });
   } catch (e) {

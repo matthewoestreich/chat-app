@@ -14,45 +14,54 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     this.pendingRequests = [];
   }
 
-  getConnection(): Promise<sqlite3.Database> {
+  getConnection(): Promise<DatabasePoolConnection<sqlite3.Database>> {
     return new Promise((resolve, reject) => {
-      if (this.pool.length > 0) {
-        const db = this.pool.pop();
-        if (db) resolve(db);
-      } else if (this.pool.length + this.pendingRequests.length < this.maxConnections) {
+      const db = this.pool.pop();
+      if (db) {
+        const dbc = { db, release: () => this.releaseConnection(dbc) };
+        return resolve(dbc);
+      }
+      if (this.pool.length + this.pendingRequests.length < this.maxConnections) {
         const db = new sqlite3.Database(this.databasePath, (err) => {
           if (err) {
-            console.log({ from: "SQLitePool.ts", "this.databasePath": this.databasePath });
-            reject(err);
-          } else {
-            resolve(db);
+            return reject(err);
           }
+          const con = { db, release: () => this.releaseConnection(con) };
+          return resolve(con);
         });
-      } else {
-        this.pendingRequests.push({ resolve, reject });
       }
+      // Type '(value: DatabasePoolConnection | PromiseLike<DatabasePoolConnection>) => void'
+      // is not assignable to type '(value: Database | PromiseLike<Database>) => void'.
+      return this.pendingRequests.push({ resolve, reject });
     });
   }
 
-  releaseConnection(db: sqlite3.Database) {
+  /*
+        return this.pendingRequests.push({
+        resolve: (value: sqlite3.Database | PromiseLike<sqlite3.Database>) => {},
+        reject,
+      });
+      */
+
+  releaseConnection(connection: DatabasePoolConnection<sqlite3.Database>) {
     if (this.pendingRequests.length > 0) {
       const request = this.pendingRequests.shift();
-      request?.resolve(db);
+      request?.resolve(connection.db);
     } else {
-      this.pool.push(db);
+      this.pool.push(connection.db);
     }
   }
 
   async query(sql: string, params: any) {
-    const db = await this.getConnection();
+    const databasepoolConnection = await this.getConnection();
+    const connection = databasepoolConnection;
     return new Promise((resolve, reject) => {
-      db.all(sql, params, (err, rows) => {
-        this.releaseConnection(db);
+      connection.db.all(sql, params, (err: any, rows: unknown) => {
+        this.releaseConnection(connection);
         if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
+          return reject(err);
         }
+        return resolve(rows);
       });
     });
   }
