@@ -1,7 +1,7 @@
 import SQLitePool from "../../../server/db/SQLitePool";
 import fs from "fs";
 import path from "path";
-import { log } from "console";
+//import { log } from "console";
 
 const TEST_DB_PATH = path.resolve(__dirname, "jest.db");
 
@@ -35,10 +35,10 @@ describe("SQLitePool", () => {
     expect(connection).toBeDefined();
     expect(connection.db).toBeDefined();
 
-    // Normally wouldn't need to await this...
     await connection.release();
     // Ensure connection is added back to the pool
-    expect(pool.size).toBe(1);
+    const poolSize = await pool.size;
+    expect(poolSize).toBe(1);
   });
 
   test("should create a new connection and release it back to the pool when released is called from the pool", async () => {
@@ -49,7 +49,8 @@ describe("SQLitePool", () => {
     // Normally wouldn't need to await this..
     await pool.releaseConnection(connection);
     // Ensure connection is added back to the pool
-    expect(pool.size).toBe(1);
+    const poolSize = await pool.size;
+    expect(poolSize).toBe(1);
   });
 
   test("should reuse released connections", async () => {
@@ -66,57 +67,23 @@ describe("SQLitePool", () => {
     const conn1 = await pool.getConnection();
     const conn2 = await pool.getConnection();
 
-    // get a bunch of connections
-    let conns: { [k: string]: any } = {};
-    let count = Array.from({ length: 100 }, (_e, idx) => idx + 3);
-    for (const c of count) {
-      if (pool.pendingRequests.length > 0) {
-        log({
-          from: "should handle concurrent connection requests up to the limit",
-          msg: "pool.pendingRequests has an item!",
-          pool,
-        });
-      }
-      console.log({ c, pool });
-      conns[`conn${c.toString()}`] = await pool.getConnection();
-    }
-    // release them back to pool
-    for (const [name, connection] of Object.entries(conns)) {
-      if (pool.pendingRequests.length > 0) {
-        log({
-          from: "should handle concurrent connection requests up to the limit",
-          msg: "pool.pendingRequests has an item!",
-          pool,
-        });
-      }
-      console.log(`releasing ${name}`);
-      connection.release();
-      if (pool.size >= 2) {
-        log({
-          from: "should handle concurrent connection requests up to the limit",
-          msg: "pool at max",
-          pool,
-        });
-      }
-    }
-
-    // Third connection should wait in pendingRequests
     const pendingConnection = pool.getConnection();
-    log({ from: "should handle concurrent connection requests up to the limit", pool });
-    expect(pool.pendingRequests.length).toBe(1);
+    const pendingRequestsSize = await pool.pendingRequestsSize;
+    expect(pendingRequestsSize).toBe(1);
 
+    // Awaits for a lock
     conn1.release();
+
     const conn3 = await pendingConnection;
 
-    // Ensure the pending request was fulfilled
     expect(conn3).toBeDefined();
     expect(conn3.db).toBe(conn1.db); // Reused connection
 
-    conn2.release();
-    conn3.release();
+    await conn2.release();
+    await conn3.release();
   });
 
-  test("should execute a query and release the connection", async () => {
+  test("should execute a query", async () => {
     await pool.query(`CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)`, []);
     await pool.query(`INSERT INTO test (name) VALUES (?)`, ["Alice"]);
 
@@ -144,13 +111,15 @@ describe("SQLitePool", () => {
     const conn1 = await pool.getConnection();
     const conn2 = await pool.getConnection();
 
-    conn1.release();
-    conn2.release();
+    await conn1.release();
+    await conn2.release();
 
     await pool.closeAll();
 
-    expect(pool.size).toBe(0); // The pool should be empty
-    expect(pool.pendingRequests.length).toBe(0); // The pool should be empty
+    const poolSize = await pool.size;
+    const pendingRequestsSize = await pool.pendingRequestsSize;
+    expect(poolSize).toBe(0);
+    expect(pendingRequestsSize).toBe(0); // The pool should be empty
   });
 
   test("should not create more than max connections", async () => {
@@ -164,8 +133,10 @@ describe("SQLitePool", () => {
     // At this point, pool should have no available connections, and a 3rd connection should be pending
     const conn3Promise = pool.getConnection();
 
-    expect(pool["size"]).toBe(0); // Pool should have no available connections
-    expect(pool["pendingRequests"].length).toBe(1); // One request should be pending
+    let poolSize = await pool.size;
+    let pendingRequestsSize = await pool.pendingRequestsSize;
+    expect(poolSize).toBe(0); // Pool should have no available connections
+    expect(pendingRequestsSize).toBe(1); // One request should be pending
 
     // Release the first connection
     conn1.release();
@@ -175,7 +146,9 @@ describe("SQLitePool", () => {
 
     // Now, conn3 should be obtained and no more than 2 connections should exist
     expect(conn3).toBeDefined();
-    expect(pool["size"]).toBe(0); // Pool should have no available connections (we're using both connections)
-    expect(pool["pendingRequests"].length).toBe(0); // Pending requests should be empty
+    poolSize = await pool.size;
+    pendingRequestsSize = await pool.pendingRequestsSize;
+    expect(poolSize).toBe(0); // Pool should have no available connections (we're using both connections)
+    expect(pendingRequestsSize).toBe(0); // Pending requests should be empty
   });
 });

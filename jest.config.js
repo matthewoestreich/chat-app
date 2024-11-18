@@ -1,8 +1,8 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
-import tsconfig from "./tsconfig.json" with { type: "json" };
-import { pathsToModuleNameMapper } from "ts-jest";
+const tsconfig = require("./tsconfig.json");
+const { pathsToModuleNameMapper } = require("ts-jest");
 
-export default {
+module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   testPathIgnorePatterns: ["<rootDir>/dist/"],
