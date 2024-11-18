@@ -10,7 +10,6 @@ export default class Mutex {
         this._locked = true;
         resolve();
       } else {
-        console.log("[Mutex] attempted to access locked mutex.");
         this._queue.push(resolve);
       }
     });
