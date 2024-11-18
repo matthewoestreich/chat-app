@@ -1,6 +1,7 @@
 import SQLitePool from "../../../server/db/SQLitePool";
 import fs from "fs";
 import path from "path";
+import SQLitePoolConnection from "../../../server/db/SQLitePoolConnection";
 //import { log } from "console";
 
 const TEST_DB_PATH = path.resolve(__dirname, "jest.db");
@@ -19,7 +20,7 @@ afterAll(() => {
   }
 });
 
-describe("SQLitePool", () => {
+describe("SQLitePool General", () => {
   let pool: SQLitePool;
 
   beforeEach(() => {
@@ -99,7 +100,7 @@ describe("SQLitePool", () => {
     const pendingConnection = pool.getConnection();
 
     // Reject the pending connection if the pool is full and another connection is not released
-    pool.releaseConnection({ db: conn1.db, release: () => undefined }); // Force pool state
+    pool.releaseConnection(new SQLitePoolConnection(conn1.db, pool)); // Force pool state
     await expect(pendingConnection).resolves.toBeDefined();
 
     conn2.release();
@@ -110,7 +111,6 @@ describe("SQLitePool", () => {
 
     const conn1 = await pool.getConnection();
     const conn2 = await pool.getConnection();
-
     await conn1.release();
     await conn2.release();
 
@@ -124,7 +124,6 @@ describe("SQLitePool", () => {
 
   test("should not create more than max connections", async () => {
     const pool = new SQLitePool(TEST_DB_PATH, 2); // Max 2 connections
-    console.log(TEST_DB_PATH);
 
     const conn1 = await pool.getConnection();
     // @ts-ignore
