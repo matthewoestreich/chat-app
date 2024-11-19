@@ -1,23 +1,42 @@
-import express, { Request, Response } from "express";
-import jsonwebtoken from "jsonwebtoken";
 import path from "path";
+import express, { Request, Response } from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import jsonwebtoken from "jsonwebtoken";
 import { useErrorCatchall } from "@/server/middleware";
-import { useJwtSession, useHasValidSessionCookie } from "@/server/middleware";
+import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, useDatabasePool } from "@/server/middleware";
 import { sessionService } from "@/server/db/services";
-import attachMiddleware from "./attachMiddleware";
+import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
 
 const app = express();
 
-/** VIEW ENGINE */
 app.set("view engine", "ejs");
 app.set("views", path.resolve(__dirname, "../www"));
 
-/**  MIDDLEWARES */
+app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 
-app.use("/public", express.static(path.resolve(__dirname, "../www/public"))); // Serve static assets
-app.use(express.json()); // Parse req bodies into json (when Content-Type='application/json')
-attachMiddleware(app); // Attach "third party"/"internal"/"non-standard" middleware.
+const dbFilePath = process.env.ABSOLUTE_DB_PATH || "";
+const sqlitePool = new SQLitePool(dbFilePath, 5);
+morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2)); // custom logging 'token' to log req bodies.
+
+app.use(express.json());
+app.use(useDatabasePool(sqlitePool));
+app.use(useCookieParser);
+app.use(useCspNonce);
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      // @ts-ignore
+      directives: { scriptSrc: ["'self'", (_req: Request, res: Response) => `'nonce-${res.locals.cspNonce}'`] },
+    },
+  }),
+);
+app.use(
+  morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
+    skip: (req, _res) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
+  }),
+);
 
 /** ATTACH ROUTERS */
 app.use("/api", apiRouter);
@@ -81,38 +100,6 @@ app.get("*", (_req, res) => {
  */
 app.use(useErrorCatchall);
 
-/**
- * START SERVER
- */
-
 export default app.listen(process.env.EXPRESS_PORT, () => {
   console.log(`Express app listening on port ${process.env.EXPRESS_PORT}!`);
 });
-
-/**
- * MISC FUNCTIONS
- */
-
-/**
- *
- * Gets a random light color in hex format.
- * We ensure the color is light by having a bias towards colors
- * that contain values in the `A-F` range.
- *
- */
-// @ts-ignore
-function getRandomLightColorHex() {
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    // Generate a random hex digit (0-F)
-    const digit = Math.floor(Math.random() * 16).toString(16);
-
-    // Ensure the color is light by biasing towards higher values (A-F)
-    if (Math.random() < 0.5) {
-      color += digit;
-    } else {
-      color += Math.floor(Math.random() * 6 + 10).toString(16); // A-F
-    }
-  }
-  return color;
-}
