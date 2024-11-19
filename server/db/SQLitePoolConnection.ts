@@ -6,13 +6,12 @@ export default class SQLitePoolConnection implements DatabasePoolConnection<sqli
   id: string;
   db: sqlite3.Database;
   isClosed: boolean;
-  release: (msg?: string) => void;
+  release: () => void;
 
   constructor(db: sqlite3.Database, parent: SQLitePool) {
     this.db = db;
     this.isClosed = false;
-    this.release = (msg) => {
-      console.log(msg);
+    this.release = () => {
       if (parent.isDraining) {
         console.warn(`[DENIED][SQLitePoolConnection.release] Pool is draining. Cannot perform any tasks while pool is draining.`);
         return;

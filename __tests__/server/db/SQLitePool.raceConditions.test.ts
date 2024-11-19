@@ -136,7 +136,7 @@ describe("SQLitePool Race Conditions", () => {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 50));
-      connection.release(taskId.toString() + " " + connection.id);
+      connection.release();
     };
 
     const tasks: Promise<void>[] = [];

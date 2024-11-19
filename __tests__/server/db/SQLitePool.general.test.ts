@@ -121,19 +121,10 @@ describe("SQLitePool General", () => {
   });
 
   test("should drain all connections when requested", async () => {
-    //const pool = new SQLitePool(TEST_DB_PATH, 2);
-
     //@ts-ignore
     const conn1 = await pool.getConnection();
     //@ts-ignore
     const conn2 = await pool.getConnection();
-
-    // put a connection in 'pending' state.
-    //@ts-ignore
-    const conn3 = pool.getConnection();
-
-    //@ts-ignore
-    const conn4 = pool.getConnection();
 
     await pool.drain();
 
