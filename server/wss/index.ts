@@ -1,66 +1,38 @@
 import { WebSocketServer, WebSocket } from "ws";
-import parseCookies from "./parseCookies.js";
-import verifyTokenAsync from "./verifyTokenAsync.js";
-import server from "../index.js";
-import websocketApp from "./websocketApp.js";
-import SQLitePool from "@/server/db/SQLitePool.js";
-import { chatService } from "@/server/db/services/index.js";
-import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes.js";
+import jsonwebtoken from "jsonwebtoken";
+import parseCookies from "./parseCookies";
+import verifyTokenAsync from "./verifyTokenAsync";
+import server from "../index";
+import SQLitePool from "@/server/db/SQLitePool";
+import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import WebSocketApplication from "./WebSocketApplication";
 
 const wss = new WebSocketServer({ server });
 const dbpath = process.env.ABSOLUTE_DB_PATH || "";
 const dbpool = new SQLitePool(dbpath, 5);
 
-// kind of like the "root" app
-// when a socket connects, this only fires one time.
-// on every subsequent message, the `socket.on("message", ...)` handler kicks in
 wss.on("connection", async (socket: WebSocket, req) => {
   const cookies = parseCookies(req.headers.cookie || "");
-  const authenticated = await isAuthenticated(cookies.session, socket);
-
+  const authenticated = await isAuthenticated(cookies?.session, socket);
   if (!authenticated) {
     socket.close(WEBSOCKET_ERROR_CODE.Unauthorized, "unauthorized");
     return;
   }
 
-  // `wsapp.sendMessage` formats and sends a message for you.
-  // Access it using the first param within any callback.
-  const wsapp = websocketApp({
+  const wsapp = new WebSocketApplication({
     socket: socket,
     databasePool: dbpool,
-    cookies,
-    onConnected: async (self: IWsApp) => {
-      const { db, release } = await self.databasePool.getConnection();
-      try {
-        self.socket.send(JSON.stringify({ ok: true }));
-        self.sendMessage("type_z", {});
-        const rooms = await chatService.selectRoomsByUserId(db, self.account.id);
-        release();
-        self.sendMessage("rooms", { rooms: rooms as WsMessageData });
-      } catch (e) {
-        release();
-      }
-    },
+    account: jsonwebtoken.decode(cookies.session) as Account,
   });
 
-  wsapp.on("get_rooms", async (self: IWsApp, _data) => {
-    const { db, release } = await self.databasePool.getConnection();
-    try {
-      self.socket.send(JSON.stringify({ ok: true }));
-      const rooms = await chatService.selectRoomsByUserId(db, self.account.id);
-      release();
-      self.sendMessage("rooms", { rooms: rooms as WsMessageData });
-    } catch (e) {
-      release();
-    }
+  wsapp.on("send_broadcast", function (me: WsApplication, _data) {
+    me.sendMessage({ type: "general", data: { ok: "nope" } });
   });
 
-  wsapp.on("ping", async (self: IWsApp, data, reqst) => {
-    console.log({ data, reqst });
-    self.socket.send(JSON.stringify({ type: "pong" }));
+  // @ts-ignore
+  wsapp.catch((self) => {
+    console.log("catch");
   });
-
-  //wsapp.on("chat", (socket, data) => {});
 });
 
 async function isAuthenticated(token: string, socket: WebSocket) {

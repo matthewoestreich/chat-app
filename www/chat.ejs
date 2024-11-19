@@ -257,16 +257,7 @@
       </div>
     </div>
     <script nonce="<%= nonce %>">
-      /**
-       *
-       * TO PREVENT SCREEN FLICKERING, THIS GOES AT THE TOP OF BODY!!
-       *
-       * Script to handle theme toggling
-       *
-       * localStorage is source of truth for current theme!
-       *
-       */
-
+      // Theme script...
       const toggleThemeBtn = document.getElementById("toggle-theme");
       const darkThemeIcon = document.getElementById("dark-theme-icon");
       const lightThemeIcon = document.getElementById("light-theme-icon");
@@ -327,9 +318,19 @@
       };
 
       sendChatBtn.addEventListener("click", (e) => {
-        ws.send(createMessage("ping", { more: "datas" }));
-        ws.send(createMessage("get_rooms"));
+        sendMessage(ws, "send_broadcast", { message: "Hello, World!" });
+        sendMessage(ws, "iDontExist", { foo: "bar" });
       });
+
+      function sendMessage(socket, type, data) {
+        if (!socket || !type || !data) {
+          console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });
+          return;
+        }
+        const msg = createMessage(type, data);
+        console.log(`sending`, msg);
+        socket.send(msg);
+      }
 
       function createMessage(type = "", data = {}) {
         return JSON.stringify({ type, ...data });

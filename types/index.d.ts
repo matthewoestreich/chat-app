@@ -1,38 +1,3 @@
-type WsAppHandler = (thisApp: WsApp, data: any, req?: any, res?: any) => void;
-
-interface IWsApp {
-  socket: WebSocket.WebSocket;
-  types: { [key: string]: WsAppHandler };
-  databasePool: DatabasePool<T>;
-  meta: { [key: string]: any }; // store misc data for this socket app
-  cookies: WsCookies;
-  account: Account;
-  on: (type: string, handler: WsAppHandler) => void;
-  sendMessage: (type: string, data: { [k: string]: any }) => void;
-}
-
-interface WsAppOptions {
-  socket: WebSocket.WebSocket;
-  databasePool: DatabasePool<T>;
-  cookies?: WsCookies;
-  onConnected?: WsAppOnInitialConnectionHandler;
-}
-
-interface WsMessageData {
-  [k: any]: any;
-}
-
-interface WsAppMessage extends WsMessageData {
-  type: string;
-}
-
-interface WsCookies {
-  session: string;
-  [k: string]: string;
-}
-
-type WsAppOnInitialConnectionHandler = (self: IWsApp) => void;
-
 interface DatabasePoolConnection<T> {
   db: T;
   release(): void;
@@ -63,6 +28,17 @@ interface Account {
   password?: string;
 }
 
+interface RoomWithMembers {
+  id: string;
+  name: string;
+  members: Account[];
+}
+
+interface Room {
+  id: string;
+  name: string;
+}
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;
@@ -70,3 +46,38 @@ declare namespace Express {
     sessionToken: string;
   }
 }
+
+type WsApplication = {
+  socket: WebSocket.WebSocket;
+  handlers: WsMessageTypeHandler;
+  databasePool: DatabasePool<T>;
+  account: Account;
+  on(type: AllowedWsMessageTypes, handler: WsRouteHandler): void;
+  catch(handler: WsRouteHandler): void;
+  sendMessage(message: WsMessage): void;
+};
+
+interface WebSocketApplicationOptions {
+  socket: WebSocket.WebSocket;
+  databasePool: DatabasePool<T>;
+  account: Account;
+}
+
+interface WsMessage {
+  type: AllowedWsMessageTypes;
+  data: WsMessageData;
+}
+
+interface WsMessageData {
+  [k: string]: any;
+}
+
+interface IncomingWsMessage {
+  parse(message: WebSocket.RawData): WsMessage;
+}
+
+type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "get_room_members" | "general";
+
+type WsMessageTypeHandler = { [k in AllowedWsMessageTypes]?: WsRouteHandler };
+
+type WsRouteHandler = (thisApp: WebSocketApplication, data: WsMessageData) => void;

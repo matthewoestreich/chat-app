@@ -30,14 +30,6 @@ export default async function () {
           CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
           CHECK(length(roomId) = 36 AND length(userId) = 36)
         );`);
-        /*
-        db.run(`CREATE TABLE IF NOT EXISTS refresh_token (
-          userId TEXT NOT NULL,
-          token TEXT NOT NULL,
-          CONSTRAINT refresh_token_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
-          CHECK(length(userId) = 36)
-        );`);
-        */
         db.run(`CREATE TABLE IF NOT EXISTS session (
           userId TEXT NOT NULL,
           token TEXT NOT NULL,

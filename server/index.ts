@@ -3,8 +3,7 @@ import express, { Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import jsonwebtoken from "jsonwebtoken";
-import { useErrorCatchall } from "@/server/middleware";
-import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, useDatabasePool } from "@/server/middleware";
+import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, useDatabasePool, useErrorCatchall } from "@/server/middleware";
 import { sessionService } from "@/server/db/services";
 import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
@@ -24,6 +23,11 @@ app.use(express.json());
 app.use(useDatabasePool(sqlitePool));
 app.use(useCookieParser);
 app.use(useCspNonce);
+
+const useJwt = useJwtSession({
+  onError: (_req: Request, res: Response) => res.redirect("/"),
+});
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -32,6 +36,7 @@ app.use(
     },
   }),
 );
+
 app.use(
   morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
     skip: (req, _res) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
@@ -40,12 +45,6 @@ app.use(
 
 /** ATTACH ROUTERS */
 app.use("/api", apiRouter);
-
-const jwtMiddleware = useJwtSession({
-  onError: (_req: Request, res: Response) => {
-    return res.redirect("/");
-  },
-});
 
 /**
  * @route {GET} /
@@ -57,7 +56,7 @@ app.get("/", [useHasValidSessionCookie], (_req: Request, res: Response) => {
 /**
  * @route {GET} /chat
  */
-app.get("/chat", [jwtMiddleware], (req: Request, res: Response) => {
+app.get("/chat", [useJwt], (req: Request, res: Response) => {
   const { name, email } = jsonwebtoken.decode(req.cookies.session) as SessionToken;
   res.render("chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
 });
@@ -101,5 +100,5 @@ app.get("*", (_req, res) => {
 app.use(useErrorCatchall);
 
 export default app.listen(process.env.EXPRESS_PORT, () => {
-  console.log(`Express app listening on port ${process.env.EXPRESS_PORT}!`);
+  console.log(`Listening on port ${process.env.EXPRESS_PORT}`);
 });
