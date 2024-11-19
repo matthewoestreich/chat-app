@@ -42,7 +42,7 @@ interface DatabasePool<T> {
   getConnection(): Promise<DatabasePoolConnection<T>>;
   releaseConnection(connection: DatabasePoolConnection<T>): void;
   query(sql: string, params: any): Promise<unknown>;
-  closeAll(): Promise<boolean>;
+  closeAllIdleConnections(): Promise<boolean>;
 }
 
 interface SessionToken {

@@ -4,14 +4,28 @@ import Mutex from "@/server/Mutex";
 sqlite3.verbose();
 
 export default class SQLitePool implements DatabasePool<sqlite3.Database> {
-  private _createdConnectionsCount = 0;
   private _mutex = new Mutex();
 
-  private _pool: sqlite3.Database[];
-  get size(): Promise<number> {
+  private _isDraining = false;
+  get isDraining() {
+    return this._isDraining;
+  }
+
+  private _activeConnections: SQLitePoolConnection[] = [];
+  get activeConnectionsSize(): Promise<number> {
     return new Promise(async (resolve) => {
       await this._mutex.lock();
-      const s = this._pool.length;
+      const s = this._activeConnections.length;
+      this._mutex.unlock();
+      resolve(s);
+    });
+  }
+
+  private _idleConnections: SQLitePoolConnection[] = [];
+  get idleConnectionsSize(): Promise<number> {
+    return new Promise(async (resolve) => {
+      await this._mutex.lock();
+      const s = this._idleConnections.length;
       this._mutex.unlock();
       resolve(s);
     });
@@ -27,11 +41,23 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     return this._maxConnections;
   }
 
-  private _pendingRequests: Array<(connection: SQLitePoolConnection) => void>;
-  get pendingRequestsSize(): Promise<number> {
+  private _pendingConnections: Array<{ resolve: (connection: SQLitePoolConnection) => void; reject: (reason?: any) => void }> = [];
+  get pendingConnectionsSize(): Promise<number> {
     return new Promise(async (resolve) => {
       await this._mutex.lock();
-      const s = this._pendingRequests.length;
+      const s = this._pendingConnections.length;
+      this._mutex.unlock();
+      resolve(s);
+    });
+  }
+
+  private get _size(): number {
+    return this._idleConnections.length + this._activeConnections.length;
+  }
+  get size(): Promise<number> {
+    return new Promise(async (resolve) => {
+      await this._mutex.lock();
+      const s = this._idleConnections.length + this._activeConnections.length;
       this._mutex.unlock();
       resolve(s);
     });
@@ -40,78 +66,122 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
   constructor(databasePath: string, maxConnections: number) {
     this._databasePath = databasePath;
     this._maxConnections = maxConnections;
-    this._pool = [];
-    this._pendingRequests = [];
   }
 
-  private async closeSQLiteDatabaseConnection(db: sqlite3.Database): Promise<boolean> {
+  private async createConnection(db?: sqlite3.Database): Promise<SQLitePoolConnection> {
     return new Promise((resolve, reject) => {
-      return db.close((err) => {
+      if (db) {
+        return resolve(new SQLitePoolConnection(db, this));
+      }
+      const _db = new sqlite3.Database(this._databasePath, (err) => {
         if (err) {
           return reject(err);
         }
-        return resolve(true);
       });
+      return resolve(new SQLitePoolConnection(_db, this));
     });
   }
 
-  private async createSQLiteDatabaseConnection(): Promise<sqlite3.Database> {
-    return new Promise((resolve, reject) => {
-      const db = new sqlite3.Database(this._databasePath, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(db);
-      });
+  private closeConnection(connection: SQLitePoolConnection): boolean {
+    connection.db.close((err) => {
+      if (err) {
+        console.error(err);
+        return false;
+      }
     });
-  }
 
-  private createDatabasePoolConnection(db: sqlite3.Database): SQLitePoolConnection {
-    return new SQLitePoolConnection(db, this);
+    connection.isClosed = true;
+
+    const activeIndex = this._activeConnections.findIndex((c) => c.id === connection.id);
+    if (activeIndex > -1) {
+      this._activeConnections.splice(activeIndex, 1);
+    }
+
+    const idleIndex = this._idleConnections.findIndex((c) => c.id === connection.id);
+    if (idleIndex > -1) {
+      this._idleConnections.splice(idleIndex, 1);
+    }
+
+    return true;
   }
 
   getConnection(): Promise<SQLitePoolConnection> {
     return new Promise(async (resolve, reject) => {
+      if (this._isDraining) {
+        console.warn(`[DENIED][getConnection] Pool is draining. Cannot perform any tasks while pool is draining.`);
+        return;
+      }
       await this._mutex.lock();
-      const db = this._pool.pop();
+      const connection = this._idleConnections.pop();
 
-      if (db) {
-        const connection = this.createDatabasePoolConnection(db);
+      // Re-use a connection that was idle..
+      if (connection) {
+        this._activeConnections.push(connection);
         this._mutex.unlock();
         return resolve(connection);
       }
 
-      if (this._createdConnectionsCount < this._maxConnections) {
+      // Create brand new fresh connection
+      if (this._size < this._maxConnections) {
         try {
-          const db = await this.createSQLiteDatabaseConnection();
-          this._createdConnectionsCount++;
+          const connection = await this.createConnection();
+          this._activeConnections.push(connection);
           this._mutex.unlock();
-          return resolve(this.createDatabasePoolConnection(db));
+          return resolve(connection);
         } catch (e) {
           this._mutex.unlock();
-          reject(e);
+          return reject(e);
         }
       }
 
-      this._pendingRequests.push(resolve);
+      // All connections are all busy, push to pending.
+      this._pendingConnections.push({ resolve, reject });
       this._mutex.unlock();
     });
   }
 
   async releaseConnection(connection: SQLitePoolConnection): Promise<void> {
-    await this._mutex.lock();
-    const resolve = this._pendingRequests.shift(); // FIFO
-
-    if (resolve) {
+    if (connection.isClosed) {
+      console.warn(`[releaseConnection] cannot release a closed connection`);
       this._mutex.unlock();
-      return resolve(this.createDatabasePoolConnection(connection.db));
+      return;
+    }
+    if (this._isDraining) {
+      console.warn(`[DENIED][releaseConnection] Pool is draining. Cannot perform any tasks while pool is draining.`);
+      return;
+    }
+    await this._mutex.lock();
+
+    const pending = this._pendingConnections.shift(); // FIFO
+    if (pending) {
+      this._mutex.unlock();
+      return pending.resolve(connection);
     }
 
-    this._pool.push(connection.db);
+    const activeConnectionIndex = this._activeConnections.findIndex((c) => c.id === connection.id);
+    if (activeConnectionIndex >= 0) {
+      this._activeConnections.splice(activeConnectionIndex, 1);
+    }
+
+    // Prevent adding closed connections to idle
+    if (connection.isClosed) {
+      this._mutex.unlock();
+      return;
+    }
+
+    if (this._idleConnections.length + this._activeConnections.length >= this._maxConnections) {
+      this.closeConnection(connection);
+    } else {
+      this._idleConnections.push(connection);
+    }
     this._mutex.unlock();
   }
 
   async query(sql: string, params: any): Promise<unknown> {
+    if (this._isDraining) {
+      console.warn(`[DENIED][query] Pool is draining. Cannot perform any tasks while pool is draining.`);
+      return;
+    }
     const connection = await this.getConnection();
 
     return new Promise(async (resolve, reject) => {
@@ -131,150 +201,109 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
-  async closeAll(): Promise<boolean> {
+  async closeAllIdleConnections(): Promise<boolean> {
+    return new Promise<boolean>(async (resolve, reject) => {
+      if (this._isDraining) {
+        console.warn(`[DENIED][closeAllIdleConnections] Pool is draining. Cannot perform any tasks while pool is draining.`);
+        return;
+      }
+      try {
+        await this._mutex.lock();
+
+        if (this._idleConnections.length === 0) {
+          this._mutex.unlock();
+          return resolve(true);
+        }
+
+        while (this._idleConnections.length) {
+          const idleConnection = this._idleConnections.shift();
+          if (idleConnection) {
+            await this.closeConnection(idleConnection);
+          }
+        }
+
+        this._mutex.unlock();
+        return resolve(true);
+      } catch (e) {
+        return reject(e);
+      }
+    });
+  }
+
+  async closeAllActiveConnections(): Promise<boolean> {
+    return new Promise<boolean>(async (resolve, reject) => {
+      if (this._isDraining) {
+        console.warn(`[DENIED][closeAllActiveConnections] Pool is draining. Cannot perform any tasks while pool is draining.`);
+        return;
+      }
+      try {
+        await this._mutex.lock();
+
+        if (this._activeConnections.length === 0) {
+          this._mutex.unlock();
+          return resolve(true);
+        }
+
+        for (const activeConnection of this._activeConnections) {
+          await this.closeConnection(activeConnection);
+        }
+
+        this._activeConnections = [];
+
+        this._mutex.unlock();
+        return resolve(true);
+      } catch (e) {
+        return reject(e);
+      }
+    });
+  }
+
+  async drain(): Promise<boolean> {
+    this._isDraining = true;
     return new Promise<boolean>(async (resolve, reject) => {
       await this._mutex.lock();
 
-      if (this._pool.length === 0) {
-        this._mutex.unlock();
-        return resolve(true);
-      }
-
-      // Acts like a safety net to protect against infinite loops.
-      // Twice pool length + max allowed connections should be large enough for an upper bound.
-      let iterations = 0;
-      const maxIterations = this._pool.length * 2 + this._maxConnections;
-
-      while (this._pool.length && iterations < maxIterations) {
-        const db = this._pool.shift();
-        if (db) {
-          try {
-            await this.closeSQLiteDatabaseConnection(db);
-          } catch (e) {
-            this._mutex.unlock();
-            return reject(e);
+      try {
+        // Step 1: Resolve all pending connections
+        while (this._pendingConnections.length) {
+          const pending = this._pendingConnections.shift();
+          if (pending) {
+            pending.reject(new Error("Pool drained"));
           }
         }
-        iterations++;
+
+        // Step 2: Close active connections
+        //for (const connection of [...this._activeConnections]) {
+        //  if (!connection.isClosed) {
+        //    this.logState(`[drain][ACTIVE] found active connection to close!`, connection);
+        //    await this.closeConnection(connection);
+        //  } else {
+        //    this.logState(`[drain][ACTIVE][warn] found active connection but it is already closed!!`, connection);
+        //  }
+        //}
+        await Promise.allSettled(this._activeConnections.map((conn) => this.closeConnection(conn)));
+        this._activeConnections = [];
+
+        // Step 3: Close idle connections
+        //for (const connection of [...this._idleConnections]) {
+        //  if (!connection.isClosed) {
+        //    await this.closeConnection(connection);
+        //    this.logState(`[drain][IDLE] found idle connection to close!`, connection);
+        //  } else {
+        //    this.logState(`[drain][IDLE][warn] found idle connection but it is already closed!`, connection);
+        //  }
+        //}
+        await Promise.allSettled(this._idleConnections.map((conn) => this.closeConnection(conn)));
+        this._idleConnections = [];
+      } catch (e) {
+        this._isDraining = false;
+        this._mutex.unlock();
+        return reject(e);
       }
 
+      this._isDraining = false;
       this._mutex.unlock();
       return resolve(true);
     });
   }
 }
-
-/*
-export default class SQLitePool implements DatabasePool<sqlite3.Database> {
-  private _databasePath: string;
-  get databasePath(): string {
-    return this._databasePath;
-  }
-
-  private _maxConnections: number;
-  get maxConnections(): number {
-    return this._maxConnections;
-  }
-
-  private _pool: sqlite3.Database[];
-  get size(): number {
-    return this._pool.length;
-  }
-
-  private _pendingRequests: Array<(connection: DatabasePoolConnection<sqlite3.Database>) => void>;
-  get pendingRequests(): Array<(connection: DatabasePoolConnection<sqlite3.Database>) => void> {
-    return this._pendingRequests;
-  }
-
-  private _activeConnections = 0;
-  private _mutex = new Mutex();
-
-  constructor(databasePath: string, maxConnections: number = 5) {
-    this._databasePath = databasePath;
-    this._maxConnections = maxConnections;
-    this._pool = [];
-    this._pendingRequests = [];
-  }
-
-  async getConnection(): Promise<DatabasePoolConnection<sqlite3.Database>> {
-    return new Promise(async (resolve, reject) => {
-      await this._mutex.lock();
-      const db = this._pool.pop();
-      if (db) {
-        this._mutex.this._mutex.unlock();
-        return this._createNewDatabasePoolConnection(db);
-      }
-      if (this._activeConnections < this._maxConnections) {
-        this._activeConnections++;
-        const db = await this._createNewSQLiteConnection();
-        this._mutex.this._mutex.unlock();
-        return this._createNewDatabasePoolConnection(db);
-      }
-      this._pendingRequests.push(resolve);
-      this._mutex.this._mutex.unlock();
-    });
-  }
-
-  releaseConnection(connection: DatabasePoolConnection<sqlite3.Database>): void {
-    if (this._pendingRequests.length > 0) {
-      const resolve = this._pendingRequests.shift();
-      if (resolve) {
-        resolve(this._createNewDatabasePoolConnection(connection.db));
-      }
-    } else {
-      this._pool.push(connection.db);
-    }
-  }
-
-  async query<T = unknown>(sql: string, params: any[] = []): Promise<T[]> {
-    const connection = await this.getConnection();
-    return new Promise((resolve, reject) => {
-      connection.db.all(sql, params, (err, rows: T[]) => {
-        connection.release();
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-  }
-
-  async closeAll() {
-    return new Promise<void>(async (resolve, reject) => {
-      let closeCount = 0;
-      const totalConnections = this._pool.length;
-
-      if (totalConnections === 0) {
-        return resolve();
-      }
-
-      for (const connection of this._pool) {
-        connection.close((err) => {
-          if (err) {
-            return reject(err);
-          }
-          closeCount++;
-          if (closeCount === totalConnections) {
-            this._pool.length = 0; // Clear the pool
-            return resolve();
-          }
-        });
-      }
-    });
-  }
-
-  private _createNewDatabasePoolConnection(db: sqlite3.Database): DatabasePoolConnection<sqlite3.Database> {
-    const release = () => this.releaseConnection({ db, release: () => undefined });
-    return { db, release };
-  }
-
-  private _createNewSQLiteConnection(): Promise<sqlite3.Database> {
-    return new Promise((resolve, reject) => {
-      const db = new sqlite3.Database(this._databasePath, (err) => {
-        if (err) {
-          return reject(err)
-        };
-        resolve(db);
-      });
-    });
-  }
-}
-  */
