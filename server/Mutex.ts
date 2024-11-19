@@ -2,6 +2,10 @@ export default class Mutex {
   private _locked = false;
   private _queue: Array<(value: void | PromiseLike<void>) => void> = [];
 
+  get isLocked() {
+    return this._locked === true;
+  }
+
   constructor() {}
 
   async lock(): Promise<void> {

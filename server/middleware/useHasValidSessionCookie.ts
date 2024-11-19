@@ -3,7 +3,7 @@ import jsonwebtoken from "jsonwebtoken";
 import { sessionService } from "@/server/db/services/index.js";
 
 /**
- * If request has a refresh token, we check if that matches what we have in our database.
+ * If request has a session cookie, we check if that matches what we have in our database.
  * If it does, they have a valid session.
  */
 export default async function (req: Request, res: Response, next: NextFunction) {
