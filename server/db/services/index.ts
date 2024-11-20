@@ -1,4 +1,4 @@
-export { default as accountService } from "./account.js";
-export { default as roomService } from "./room.js";
-export { default as chatService } from "./chat.js";
-export { default as sessionService } from "./session.js";
+export { default as accountService } from "./account";
+export { default as roomService } from "./room";
+export { default as chatService } from "./chat";
+export { default as sessionService } from "./session";

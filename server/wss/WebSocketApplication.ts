@@ -19,18 +19,23 @@ export default class WebSocketApplication<T> implements WsApplication {
     this.databasePool = opts.databasePool;
     this.account = opts.account;
 
+    if (opts.onConnected) {
+      opts.onConnected(this._self);
+    }
+
+    // Create "listener" for all messages..
     this.socket.on("message", async (rawMessage: RawData) => {
       const message = IncomingMessage.parse(rawMessage);
       if (!message.type) {
         return;
       }
+
       const fn = this.handlers[message.type];
       if (fn) {
-        await fn(this._self, message.data);
-        return;
+        return await fn(this._self, message.data);
       }
+
       this._catchFn(this, { unknownMessageType: message.type });
-      return;
     });
   }
 
@@ -43,7 +48,7 @@ export default class WebSocketApplication<T> implements WsApplication {
   }
 
   sendMessage(msg: WsMessage) {
-    this.socket.send(JSON.stringify({ type: msg.type, ...msg.data }));
+    this.socket.send(JSON.stringify(msg));
   }
 }
 
@@ -52,28 +57,28 @@ export default class WebSocketApplication<T> implements WsApplication {
  * more pronounced.
  */
 export class IncomingMessage {
-  static parse(message: RawData): ParsedMessage {
+  static parse(message: RawData): Message {
     if (!message) {
-      return {} as ParsedMessage;
+      return {} as Message;
     }
     const parsedMessage = JSON.parse(message.toString());
     const { type, ...data }: WsMessage = parsedMessage;
     if (!type) {
       console.log(`[IncomingMessage] message has no type`);
-      return {} as ParsedMessage;
+      return {} as Message;
     }
-    return new ParsedMessage(type, data);
+    return new Message(type, data);
   }
 }
 
 /**
  * ParsedMessage class - essentially a parsed incoming message
  */
-export class ParsedMessage {
+export class Message implements WsMessage {
   type: AllowedWsMessageTypes;
-  data: WsMessageData;
+  data: any;
 
-  constructor(type: AllowedWsMessageTypes, data: WsMessageData) {
+  constructor(type: AllowedWsMessageTypes, data: any) {
     this.type = type;
     this.data = data;
   }

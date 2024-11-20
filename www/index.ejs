@@ -91,7 +91,7 @@
                 <div class="invalid-feedback">Password is required!</div>
               </div>
               <div class="d-flex justify-content-end">
-                <button id="open-create-account-modal-btn" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#create-account-modal">Create Account</button>
+                <button id="open-create-account-modal-btn" class="btn btn-outline-secondary me-2">Create Account</button>
                 <button id="login-btn" class="btn btn-primary">Login</button>
               </div>
             </form>
@@ -99,6 +99,7 @@
         </div>
       </div>
     </div>
+    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
     <script nonce="<%= nonce %>">
       const mainLoginBtn = document.getElementById("login-btn");
       const loginEmailInput = document.getElementById("login-email-input");
@@ -114,6 +115,7 @@
         const revertSpinnerBtnState = addSpinnerToButton(mainLoginBtn, "Logging in...");
 
         loginForm.isValid = loginForm.checkValidity();
+        loginForm.classList.add("was-validated");
         if (!loginForm.isValid) {
           revertSpinnerBtnState();
           return;
@@ -169,7 +171,9 @@
       /*
         Script for create-account-modal
       */
+      const openCreateAccountModal = document.getElementById("open-create-account-modal-btn");
       const createAccountModal = document.getElementById("create-account-modal");
+      const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
       const closeCreateAccountModalBtn = document.getElementById("close-modal-btn");
       const form = document.getElementById("form");
       const createBtn = document.getElementById("create-btn");
@@ -178,6 +182,14 @@
       const caEmailInput = document.getElementById("ca-email-input");
       const caPwInput = document.getElementById("ca-pw-input");
       const statusAlert = new CustomAlert(alertDisplay, alertMessage);
+
+      openCreateAccountModal.addEventListener("click", (e) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!bsCreateAccountModal._isShown) {
+          bsCreateAccountModal.show();
+        }
+      });
 
       createAccountModal.addEventListener("hidden.bs.modal", (event) => {
         // have to remove '.was-validated' from form or else when it's reopened everything is red.
@@ -219,7 +231,7 @@
         // Enable btns again.
         [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
 
-        const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
+        //const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
         bsCreateAccountModal.hide();
 
         // Error. Something went wrong creating account
@@ -278,6 +290,5 @@
         };
       }
     </script>
-    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

@@ -61,23 +61,20 @@ interface WebSocketApplicationOptions {
   socket: WebSocket.WebSocket;
   databasePool: DatabasePool<T>;
   account: Account;
+  onConnected?(wsapp: WsApplication): void;
 }
 
 interface WsMessage {
   type: AllowedWsMessageTypes;
-  data: WsMessageData;
-}
-
-interface WsMessageData {
-  [k: string]: any;
+  data: any;
 }
 
 interface IncomingWsMessage {
   parse(message: WebSocket.RawData): WsMessage;
 }
 
-type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "get_room_members" | "general";
+type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "get_room_members" | "general" | "rooms";
 
 type WsMessageTypeHandler = { [k in AllowedWsMessageTypes]?: WsRouteHandler };
 
-type WsRouteHandler = (thisApp: WebSocketApplication, data: WsMessageData) => void;
+type WsRouteHandler = (thisApp: WebSocketApplication, data: any) => void;

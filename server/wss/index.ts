@@ -5,7 +5,8 @@ import verifyTokenAsync from "./verifyTokenAsync";
 import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
-import WebSocketApplication from "./WebSocketApplication";
+import WebSocketApplication, { Message } from "./WebSocketApplication";
+import { chatService } from "../db/services";
 
 const wss = new WebSocketServer({ server });
 const dbpath = process.env.ABSOLUTE_DB_PATH || "";
@@ -23,10 +24,16 @@ wss.on("connection", async (socket: WebSocket, req) => {
     socket: socket,
     databasePool: dbpool,
     account: jsonwebtoken.decode(cookies.session) as Account,
+    onConnected: async (self) => {
+      const { db, release } = await self.databasePool.getConnection();
+      const rooms = await chatService.selectRoomsByUserId(db, self.account.id);
+      release();
+      self.sendMessage(new Message("rooms", rooms));
+    },
   });
 
-  wsapp.on("send_broadcast", function (me: WsApplication, _data) {
-    me.sendMessage({ type: "general", data: { ok: "nope" } });
+  wsapp.on("send_broadcast", function (self: WsApplication, _data) {
+    self.sendMessage({ type: "general", data: { ok: "nope" } });
   });
 
   // @ts-ignore

@@ -207,40 +207,11 @@
             <p class="fs-2 offcanvas-title">Rooms</p>
             <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
           </div>
-          <div id="right-column-container" class="overf-y-scroll">
-            <div class="d-flex flex-column justify-content-center align-items-center offcanvas-body">
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
-              <h6>General</h6>
+          <div class="overf-y-scroll flex-grow-1">
+            <div id="rooms-column-container" class="d-flex flex-column justify-content-center align-items-center offcanvas-body flex-fill">
+              <div id="loading-rooms-spinner" class="spinner-border m-5">
+                <span class="visually-hidden">Loading...</span>
+              </div>
             </div>
           </div>
           <div class="">
@@ -293,6 +264,8 @@
     <script nonce="<%= nonce %>">
       const ws = new WebSocket("<%= websocketUrl %>");
       const sendChatBtn = document.getElementById("send-chat-btn");
+      const roomsContainer = document.getElementById("rooms-column-container");
+      const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -302,14 +275,20 @@
         console.log({ socket: "closed", ws, event });
       };
 
-      ws.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        if (!data?.type) {
+      ws.onmessage = (rawMessage) => {
+        console.log(`got message`, rawMessage);
+        const message = JSON.parse(rawMessage.data);
+        if (!message?.type) {
           console.log(`socket message from server missing type!`);
           return;
         }
 
-        switch (data.type) {
+        switch (message.type) {
+          case "rooms": {
+            handleRooms(message.data);
+            break;
+          }
+
           default: {
             console.log(`got message from server :`, data);
             break;
@@ -317,10 +296,30 @@
         }
       };
 
-      sendChatBtn.addEventListener("click", (e) => {
-        sendMessage(ws, "send_broadcast", { message: "Hello, World!" });
-        sendMessage(ws, "iDontExist", { foo: "bar" });
-      });
+      sendChatBtn.addEventListener("click", (e) => {});
+
+      /**
+       * WebSocket handlers
+       */
+
+      function handleRooms(rooms) {
+        loadingRoomsSpinner.classList.add("d-none");
+        if (!rooms.length) {
+          const p = document.createElement("p");
+          p.innerText = "None";
+          return roomsContainer.appendChild(p);
+        }
+        for (const r of rooms) {
+          console.log(r);
+          const p = document.createElement("p");
+          p.innerText = r.name;
+          roomsContainer.appendChild(p);
+        }
+      }
+
+      /**
+       * Misc functions
+       */
 
       function sendMessage(socket, type, data) {
         if (!socket || !type || !data) {
