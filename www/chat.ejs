@@ -12,6 +12,10 @@
         height: 100%;
       }
 
+      .active-room {
+        background-color: var(--bs-secondary-color);
+      }
+
       .min-h-0 {
         min-height: 0;
       }
@@ -137,47 +141,19 @@
       </div>
       <!-- Content Row (main row) -->
       <div class="row g-0 flex-fill min-h-0">
-        <div id="members-offcanvas" class="col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
-          <div class="d-flex justify-content-center align-items-center offcanvas-header">
-            <p class="fs-2 offcanvas-title">Members</p>
-            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
+        <div id="members-offcanvas" class="card col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
+          <div class="card-header d-flex flex-row display-6 text-center">
+            <div class="flex-fill text-center">Members</div>
+            <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
           </div>
-          <div id="left-column-container" class="overf-y-scroll">
-            <div class="d-flex flex-column justify-content-center align-items-center offcanvas-body">
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
-              <h6>Member</h6>
+          <div id="members-container" class="card-body overf-y-scroll p-0 m-1">
+            <div id="loading-members-spinner" class="d-none d-flex mt-4 justify-content-center">
+              <div class="spinner-border">
+                <span class="visually-hidden">Loading...</span>
+              </div>
             </div>
           </div>
+          <div class="card-footer"></div>
         </div>
         <!-- Chat Col Content / Right Col -->
         <!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
@@ -202,26 +178,27 @@
             </div>
           </div>
         </div>
-        <div id="rooms-offcanvas" class="col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
-          <div class="d-flex justify-content-center align-items-center offcanvas-header">
-            <p class="fs-2 offcanvas-title">Rooms</p>
-            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
+        <div id="rooms-offcanvas" class="card col-3 d-lg-flex flex-column h-90pct min-h-0 offcanvas-lg offcanvas-end">
+          <div class="card-header d-flex flex-row display-6 text-center">
+            <div class="flex-fill text-center">Rooms</div>
+            <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
           </div>
-          <div class="overf-y-scroll flex-grow-1">
-            <div id="rooms-column-container" class="d-flex flex-column justify-content-center align-items-center offcanvas-body flex-fill">
-              <div id="loading-rooms-spinner" class="spinner-border m-5">
+          <div id="rooms-container" class="card-body overf-y-scroll p-0 m-1">
+            <div id="loading-rooms-spinner" class="d-flex mt-4 justify-content-center">
+              <div class="spinner-border">
                 <span class="visually-hidden">Loading...</span>
               </div>
             </div>
           </div>
-          <div class="">
-            <div class="input-group p-3">
-              <input type="text" class="form-control" placeholder="Create Room" />
-              <button class="btn btn-outline-secondary" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-                </svg>
-              </button>
+          <div class="card-footer">
+            <div class="row">
+              <div class="col-6 d-flex">
+                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -262,10 +239,15 @@
       });
     </script>
     <script nonce="<%= nonce %>">
+      const SET_ACTIVE_ROOM = (roomElement) => (window.rtcActiveRoom = roomElement);
+      const GET_ACTIVE_ROOM = () => window?.rtcActiveRoom;
+
       const ws = new WebSocket("<%= websocketUrl %>");
       const sendChatBtn = document.getElementById("send-chat-btn");
-      const roomsContainer = document.getElementById("rooms-column-container");
+      const roomsContainer = document.getElementById("rooms-container");
+      const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
+      const loadingMembersSpinner = document.getElementById("loading-members-spinner");
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -276,16 +258,21 @@
       };
 
       ws.onmessage = (rawMessage) => {
-        console.log(`got message`, rawMessage);
         const message = JSON.parse(rawMessage.data);
         if (!message?.type) {
           console.log(`socket message from server missing type!`);
           return;
         }
+        console.log("got message", message, "data", message.data);
 
         switch (message.type) {
           case "rooms": {
-            handleRooms(message.data);
+            wsHandleRoomsMessage(roomsContainer, message.data);
+            break;
+          }
+
+          case "send_room_members": {
+            wsHandleMembersMessage(membersContainer, message.data);
             break;
           }
 
@@ -299,28 +286,117 @@
       sendChatBtn.addEventListener("click", (e) => {});
 
       /**
+       * Event Handlers
+       */
+
+      function handleRoomClick(event, self, socket) {
+        const activeRoomClass = "active-room";
+        const currentActiveRoom = GET_ACTIVE_ROOM();
+        if (currentActiveRoom === self) {
+          return;
+        }
+        self.classList.add(activeRoomClass);
+        currentActiveRoom?.classList?.remove(activeRoomClass);
+        SET_ACTIVE_ROOM(self);
+        sendMessage(socket, "get_room_members", { roomId: self.id });
+      }
+
+      /**
        * WebSocket handlers
        */
 
-      function handleRooms(rooms) {
-        loadingRoomsSpinner.classList.add("d-none");
-        if (!rooms.length) {
-          const p = document.createElement("p");
-          p.innerText = "None";
-          return roomsContainer.appendChild(p);
-        }
-        for (const r of rooms) {
-          console.log(r);
-          const p = document.createElement("p");
-          p.innerText = r.name;
-          roomsContainer.appendChild(p);
-        }
+      // Active room element is stored at `window.rtcActiveRoom`.
+      function wsHandleRoomsMessage(appendToElement, rooms) {
+        renderRooms(appendToElement, rooms);
+      }
+
+      function wsHandleMembersMessage(appendToElement, members) {
+        console.log("AHHHHHHHHH", { members });
+        renderMembers(appendToElement, members);
       }
 
       /**
        * Misc functions
        */
 
+      function renderMembers(containerElement, members) {
+        containerElement.replaceChildren(); // clear existing html
+
+        if (!members.length) {
+          const p = document.createElement("p");
+          p.classList.add("text-body-tertiary");
+          p.innerText = "None";
+          return containerElement.appendChild(p);
+        }
+
+        const membersListElement = document.createElement("ul");
+        membersListElement.classList.add("list-group", "list-group-flush");
+
+        for (const m of members) {
+          const memberHTML = generateMemberHTML(m.userName, m.userId);
+          membersListElement.appendChild(memberHTML);
+        }
+        containerElement.appendChild(membersListElement);
+      }
+
+      function renderRooms(containerElement, rooms) {
+        loadingRoomsSpinner.classList.add("d-none");
+        if (!rooms.length) {
+          const p = document.createElement("p");
+          p.classList.add("body-color-tertiary");
+          p.innerText = "None";
+          return containerElement.appendChild(p);
+        }
+
+        let roomsListElement = document.createElement("ul");
+        roomsListElement.classList.add("list-group");
+
+        for (const r of rooms) {
+          const roomHtml = generateRoomHTML(r.name, r.id);
+          roomHtml.addEventListener("click", function (e) {
+            handleRoomClick(e, this, ws);
+          });
+          roomsListElement.appendChild(roomHtml);
+        }
+        containerElement.appendChild(roomsListElement);
+      }
+
+      function generateMemberHTML(name, id) {
+        const li = document.createElement("li");
+        li.classList.add("list-group-item");
+        li.id = id;
+        li.innerText = name;
+        return li;
+      }
+
+      function generateRoomHTML(roomName, roomId, text) {
+        const listItemLi = document.createElement("li");
+        const cardDiv = document.createElement("div");
+        const cardBodyDiv = document.createElement("div");
+        const cardTitleH5 = document.createElement("h5");
+        const cardTextP = document.createElement("p");
+
+        listItemLi.classList.add("list-group-item", "p-1", "border-0");
+        listItemLi.id = roomId;
+        cardDiv.classList.add("card");
+        cardDiv.setAttribute("role", "button"); // For the pointer cursor.
+        cardBodyDiv.classList.add("card-body");
+        cardTitleH5.classList.add("card-title");
+        cardTitleH5.textContent = roomName;
+        cardTextP.classList.add("card-text");
+        cardTextP.innerText = text || "";
+
+        cardBodyDiv.appendChild(cardTitleH5);
+        cardBodyDiv.appendChild(cardTextP);
+        cardDiv.appendChild(cardBodyDiv);
+        listItemLi.appendChild(cardDiv);
+
+        return listItemLi;
+      }
+
+      /**
+       *
+       */
       function sendMessage(socket, type, data) {
         if (!socket || !type || !data) {
           console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });

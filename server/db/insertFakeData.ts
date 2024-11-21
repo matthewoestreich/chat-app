@@ -1,99 +1,174 @@
-// @ts-nocheck
-import path from "path";
-import sqlite3 from "sqlite3";
-import bcrypt from "bcrypt";
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ * You can use `npm run insert:fake:data` to run this..
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+import { faker } from "@faker-js/faker";
 import { v7 as uuidV7 } from "uuid";
-import { accountService, roomService, chatService } from "@/server/db/services";
+import bcrypt from "bcrypt";
+import sqlite3 from "sqlite3";
+import path from "path";
 sqlite3.verbose();
 
-const db = new sqlite3.Database(path.resolve(__dirname, "./rtchat.db"), (err) => {
-  if (err) {
-    console.error(err);
-    process.exit(1);
+const NUM_ITEMS_EACH = 100;
+
+function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+function getRandomArrayElement(arr: any = []) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getRandomIntsFromUUID(uuid: string) {
+  let uuidArr = uuid.replace("-", "").split("");
+  let found = [];
+  while (uuidArr.length && found.length < 2) {
+    const curr = parseInt(uuidArr.pop() || "A");
+    if (!isNaN(curr)) {
+      found.push(curr);
+    }
   }
+  return found;
+}
+
+interface ChatRoomMember {
+  id: string;
+  username: string;
+  password: string;
+  email: string;
+  rooms: { name: string; id: string; isPrivate: number }[];
+}
+
+// Generate fake user data
+const users: any[] = Array.from({ length: NUM_ITEMS_EACH }, () => {
+  const username = faker.internet.username();
+  const user = {
+    username,
+    password: username,
+    email: `${username}@${username}.com`,
+    id: uuidV7(),
+  };
+  return user;
 });
 
-const roomIds = ["019327c9-0dc2-720c-b1e7-25cc5a3175c9", "019327c9-0dc4-7383-a9e4-7998b572b582", "019327c9-0dc4-7383-a9e4-83bf2c493e20", "019327c9-0dc4-7383-a9e4-7f14b8e0cb2a", "019327f9-0290-740f-a89e-205f4c265a43", "019327f9-0293-7142-bac9-5f73ba18bd25", "019327f9-0294-71dc-8f08-34806b3ec09a", "019327f9-0294-71dc-8f08-3920a8c3819a"];
-
-const users = ["Wes", "Luke", "Mary", "helloWorld", "chatter", "Kathy", "Bo", "Marcus", "Amy"];
-
-// insertUsers(db, users).catch(e => console.error(e));
-//joinUsersToRooms(db, users).catch(e => console.error(e));
-
-async function insertUsers(db, userNames = []) {
-  const users = [];
-  for (const un of userNames) {
-    const salt = await bcrypt.genSalt(10);
-    const pw = await bcrypt.hash(`${un}123`, salt);
-    users.push({ id: uuidV7(), name: un, password: pw, email: `${un}@${un}.com` });
+// Generate fake room data
+const rooms: any[] = Array.from({ length: NUM_ITEMS_EACH }, (_, i) => {
+  const isPrivate = getRandomArrayElement([0, 1]);
+  if (i % 3 === 0) {
+    return { name: `${faker.word.adjective()} ${faker.word.noun()}`, id: uuidV7(), isPrivate };
   }
+  return { name: faker.word.noun(), id: uuidV7(), isPrivate };
+});
 
-  db.serialize(() => {
-    db.run("BEGIN TRANSACTION");
+// Add users to rooms randomly
+const chat = Array.from({ length: NUM_ITEMS_EACH }, (_, i) => {
+  const output = { ...users[i], rooms: [] as any[] };
+  const randInts = getRandomIntsFromUUID(uuidV7());
+  const randomIndex = getRandomInt(randInts.length);
+  const ceil = randInts[randomIndex];
+  for (let i = 0; i < ceil; i++) {
+    output.rooms.push(getRandomArrayElement(rooms));
+  }
+  return output;
+});
 
-    const stmt = db.prepare('INSERT INTO "user" (id, name, password, email) VALUES (?, ?, ?, ?)');
-
-    users.forEach((user) => {
-      stmt.run(user.id, user.name, user.password, user.email);
-    });
-
-    stmt.finalize();
-
-    db.run("COMMIT", (err) => {
-      if (err) {
-        console.error("Transaction failed", err.message);
-      } else {
-        console.log("Transaction committed");
+async function insertUsers(db: sqlite3.Database, users: { id: string; username: string; password: string; email: string }[]) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO "user" (id, name, email, password) VALUES (?, ?, ?, ?)`);
+      for (const user of users) {
+        const salt = await bcrypt.genSalt(10);
+        const pw = await bcrypt.hash(user.password, salt);
+        stmt.run(user.id, user.username, user.email, pw);
       }
-    });
-  });
-
-  db.close();
-}
-
-async function joinUsersToRooms(db, users = []) {
-  const foundUsers = [];
-  try {
-    for (const user of users) {
-      const email = `${user}@${user}.com`;
-      const found = await accountService.selectByEmail(db, email);
-      if (found && found.email === email) {
-        //const existing = users.find(u => found.email === email);
-        const randomRoomId = roomIds[Math.floor(Math.random() * roomIds.length)];
-        foundUsers.push({ userId: found.id, roomId: randomRoomId });
-      }
+      stmt.finalize(() => {
+        console.log(" - users stmt finalized");
+      });
+      resolve(true);
+    } catch (e) {
+      reject(`error inserting users ${e}`);
     }
-  } catch (e) {
-    console.log(`error finding users`, e);
-    db.close();
-    process.exit(1);
-  }
+  });
+}
 
-  if (!foundUsers.length) {
-    console.error(`didn't match any new users with existing`);
-    db.close();
-    process.exit(1);
-  }
-
-  db.serialize(() => {
-    db.run("BEGIN TRANSACTION");
-
-    const stmt = db.prepare("INSERT INTO chat (userId, roomId) VALUES (?, ?)");
-
-    foundUsers.forEach((user) => {
-      stmt.run(user.userId, user.roomId);
-    });
-
-    stmt.finalize();
-
-    db.run("COMMIT", (err) => {
-      if (err) {
-        console.error("Transaction failed", err.message);
-      } else {
-        console.log("Transaction committed");
+async function insertRooms(db: sqlite3.Database, rooms: { name: string; id: string; isPrivate: number }[]) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO room (id, name, isPrivate) VALUES (?, ?, ?)`);
+      for (const room of rooms) {
+        stmt.run(room.id, room.name, room.isPrivate);
       }
-    });
+      stmt.finalize(() => {
+        console.log(" - rooms stmt finalized");
+      });
+      resolve(true);
+    } catch (e) {
+      reject(`error inserting rooms ${e}`);
+    }
+  });
+}
+
+async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO chat (userId, roomId) VALUES (?, ?)`);
+      for (const user of members) {
+        for (const room of user.rooms) {
+          stmt.run(user.id, room.id);
+        }
+      }
+      stmt.finalize(() => {
+        console.log(" - chat rooms stmt finalized");
+      });
+      resolve(true);
+    } catch (e) {
+      reject(`error inserting chat rooms ${e}`);
+    }
+  });
+}
+
+(async () => {
+  const db = new sqlite3.Database(path.resolve(__dirname, "./rtchat.db"), (err) => {
+    if (err) {
+      console.error(`Error connecting to the database:`, err);
+      process.exit(1);
+    }
   });
 
-  db.close();
-}
+  try {
+    db.serialize(async () => {
+      db.run("BEGIN TRANSACTION");
+
+      console.log("Inserting users...");
+      await insertUsers(db, users);
+      console.log("users inserted");
+
+      console.log("Inserting rooms...");
+      await insertRooms(db, rooms);
+      console.log("rooms inserted");
+
+      console.log("Inserting chat rooms...");
+      await insertChatRooms(db, chat);
+      console.log("chat rooms inserted.");
+
+      db.run("COMMIT");
+    });
+  } catch (e) {
+    db.run("ROLLBACK");
+    console.error("Transaction rolled back due to error:", e);
+  } finally {
+    console.log("done");
+  }
+})();

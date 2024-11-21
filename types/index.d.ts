@@ -1,3 +1,9 @@
+interface RoomMember {
+  userName: string;
+  userId: string;
+  roomId: string;
+}
+
 interface DatabasePoolConnection<T> {
   db: T;
   release(): void;
@@ -69,11 +75,7 @@ interface WsMessage {
   data: any;
 }
 
-interface IncomingWsMessage {
-  parse(message: WebSocket.RawData): WsMessage;
-}
-
-type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "get_room_members" | "general" | "rooms";
+type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "send_room_members" | "get_room_members" | "general" | "rooms";
 
 type WsMessageTypeHandler = { [k in AllowedWsMessageTypes]?: WsRouteHandler };
 

@@ -20,6 +20,7 @@ export default async function () {
         db.run(`CREATE TABLE IF NOT EXISTS room (
           id TEXT NOT NULL,
           name TEXT NOT NULL,
+          isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
           CONSTRAINT room_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);

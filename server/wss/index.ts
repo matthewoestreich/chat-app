@@ -32,6 +32,18 @@ wss.on("connection", async (socket: WebSocket, req) => {
     },
   });
 
+  wsapp.on("get_room_members", async (self, data) => {
+    const { db, release } = await self.databasePool.getConnection();
+    const members = await chatService.selectRoomMembersByRoomId(db, data?.roomId);
+    release();
+    self.sendMessage(
+      new Message(
+        "send_room_members",
+        members.filter((m) => m.userId !== self.account.id),
+      ),
+    );
+  });
+
   wsapp.on("send_broadcast", function (self: WsApplication, _data) {
     self.sendMessage({ type: "general", data: { ok: "nope" } });
   });

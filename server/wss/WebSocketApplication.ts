@@ -25,7 +25,7 @@ export default class WebSocketApplication<T> implements WsApplication {
 
     // Create "listener" for all messages..
     this.socket.on("message", async (rawMessage: RawData) => {
-      const message = IncomingMessage.parse(rawMessage);
+      const message = Message.parse(rawMessage);
       if (!message.type) {
         return;
       }
@@ -53,10 +53,17 @@ export default class WebSocketApplication<T> implements WsApplication {
 }
 
 /**
- * IncomingMessage class - this comment is here to make visual code boundaries
- * more pronounced.
+ * ParsedMessage class - essentially a parsed incoming message
  */
-export class IncomingMessage {
+export class Message implements WsMessage {
+  type: AllowedWsMessageTypes;
+  data: any;
+
+  constructor(type: AllowedWsMessageTypes, data: any) {
+    this.type = type;
+    this.data = data;
+  }
+
   static parse(message: RawData): Message {
     if (!message) {
       return {} as Message;
@@ -68,18 +75,5 @@ export class IncomingMessage {
       return {} as Message;
     }
     return new Message(type, data);
-  }
-}
-
-/**
- * ParsedMessage class - essentially a parsed incoming message
- */
-export class Message implements WsMessage {
-  type: AllowedWsMessageTypes;
-  data: any;
-
-  constructor(type: AllowedWsMessageTypes, data: any) {
-    this.type = type;
-    this.data = data;
   }
 }

@@ -1,9 +1,11 @@
 import sqlite3 from "sqlite3";
+sqlite3.verbose();
 
 export default {
   selectRoomsByUserId: selectAllRoomsByUserId,
   addUserByIdToRoomById: insertUserByIdToRoomById,
   selectAllRoomsAndMembersByUserId: selectAllRoomsAndRoomMembersByUserId,
+  selectRoomMembersByRoomId: selectRoomMembersByRoomId,
 };
 
 function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName = "chat", roomTableName = "room") {
@@ -13,12 +15,42 @@ function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName 
       FROM ${roomTableName} r
       JOIN ${tableName} c ON r.id = c.roomId
       WHERE c.userId = ?
+      ORDER BY r.name ASC
     `;
 
     db.all(query, [userId], (err, rows) => {
       if (err) {
         return reject(err);
       }
+      console.log(rows);
+      return resolve(rows);
+    });
+  });
+}
+
+function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTableName = "chat", roomTableName = "room", userTableName = "user"): Promise<RoomMember[]> {
+  return new Promise((resolve, reject) => {
+    const query = `
+    SELECT 
+        r.id AS roomId,
+        u.name AS userName,
+        u.id AS userId
+    FROM 
+        ${chatTableName} c1
+    JOIN 
+        ${roomTableName} r ON c1.roomId = r.id
+    JOIN 
+        "${userTableName}" u ON c1.userId = u.id
+    WHERE 
+        --c1.userId = ?
+        r.id = ? ;
+  `;
+
+    db.all(query, [roomId], (err, rows: RoomMember[]) => {
+      if (err) {
+        return reject(err);
+      }
+      console.log(rows);
       return resolve(rows);
     });
   });
@@ -60,7 +92,8 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
   JOIN 
       "${userTableName}" u ON c2.userId = u.id
   WHERE 
-      c1.userId = ?;
+      c1.userId = ?
+  ORDER BY roomName ASC;
 `;
 
     // Execute the query
@@ -85,7 +118,7 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
   });
 }
 
-function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, tableName = "chat", roomTableName = "room") {
+function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, tableName = "chat") {
   return new Promise((resolve, reject) => {
     try {
       const query = `INSERT INTO ${tableName} (userId, roomId) VALUES (?, ?)`;
