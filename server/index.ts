@@ -57,8 +57,8 @@ app.get("/", [useHasValidSessionCookie], (_req: Request, res: Response) => {
  * @route {GET} /chat
  */
 app.get("/chat", [useJwt], (req: Request, res: Response) => {
-  const { name, email } = jsonwebtoken.decode(req.cookies.session) as SessionToken;
-  res.render("chat", { nonce: res.locals.cspNonce, name, email, websocketUrl: process.env.WSS_URL });
+  const { name, email, id } = jsonwebtoken.decode(req.cookies.session) as SessionToken;
+  res.render("chat", { nonce: res.locals.cspNonce, name, email, id, websocketUrl: process.env.WSS_URL });
 });
 
 /**

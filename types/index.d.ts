@@ -1,9 +1,3 @@
-interface RoomMember {
-  userName: string;
-  userId: string;
-  roomId: string;
-}
-
 interface DatabasePoolConnection<T> {
   db: T;
   release(): void;
@@ -16,6 +10,18 @@ interface DatabasePool<T> {
   closeAllIdleConnections(): Promise<boolean>;
 }
 
+interface RoomMember {
+  userName: string;
+  userId: string;
+  roomId: string;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  isPublic: boolean;
+}
+
 interface SessionToken {
   id: string;
   name: string;
@@ -23,7 +29,7 @@ interface SessionToken {
 }
 
 interface Session {
-  token: string;
+  token: SessionToken;
   userId: string;
 }
 
@@ -52,31 +58,3 @@ declare namespace Express {
     sessionToken: string;
   }
 }
-
-type WsApplication = {
-  socket: WebSocket.WebSocket;
-  handlers: WsMessageTypeHandler;
-  databasePool: DatabasePool<T>;
-  account: Account;
-  on(type: AllowedWsMessageTypes, handler: WsRouteHandler): void;
-  catch(handler: WsRouteHandler): void;
-  sendMessage(message: WsMessage): void;
-};
-
-interface WebSocketApplicationOptions {
-  socket: WebSocket.WebSocket;
-  databasePool: DatabasePool<T>;
-  account: Account;
-  onConnected?(wsapp: WsApplication): void;
-}
-
-interface WsMessage {
-  type: AllowedWsMessageTypes;
-  data: any;
-}
-
-type AllowedWsMessageTypes = "send_broadcast" | "get_rooms" | "send_room_members" | "get_room_members" | "general" | "rooms";
-
-type WsMessageTypeHandler = { [k in AllowedWsMessageTypes]?: WsRouteHandler };
-
-type WsRouteHandler = (thisApp: WebSocketApplication, data: any) => void;

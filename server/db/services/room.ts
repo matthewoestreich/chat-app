@@ -2,7 +2,19 @@ import sqlite3 from "sqlite3";
 
 export default {
   insert: insertRoom,
+  selectAllPublicRooms,
 };
+
+function selectAllPublicRooms(db: sqlite3.Database, tableName = "room"): Promise<Room[]> {
+  return new Promise((resolve, reject) => {
+    db.get(`SELECT * FROM ${tableName} WHERE isPrivate = 0`, [], (err, rows) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(rows as Room[]);
+    });
+  });
+}
 
 function insertRoom(db: sqlite3.Database, roomName: string, id: string, tableName = "room") {
   return new Promise(async (resolve, reject) => {

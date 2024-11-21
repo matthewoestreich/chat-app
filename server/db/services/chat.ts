@@ -22,7 +22,6 @@ function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName 
       if (err) {
         return reject(err);
       }
-      console.log(rows);
       return resolve(rows);
     });
   });
@@ -50,7 +49,6 @@ function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTab
       if (err) {
         return reject(err);
       }
-      console.log(rows);
       return resolve(rows);
     });
   });

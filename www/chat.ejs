@@ -61,6 +61,7 @@
         position: relative;
         padding: 10px;
         border-radius: 10px;
+        max-width: 70%;
       }
 
       .message.message-to > .message-body {
@@ -155,26 +156,15 @@
           </div>
           <div class="card-footer"></div>
         </div>
-        <!-- Chat Col Content / Right Col -->
-        <!--DON'T SET COL WIDTH HERE, SET IT ON THE MAIN CARD CONTAINER-->
-        <div class="col-lg-6 mh-100 overf-y-scroll">
-          <!-- Nested container to hold chart card -->
-          <!-- This mirrors the main structure, but nested in a col -->
-          <div class="container-fluid g-0 h-100 d-flex flex-column">
-            <div class="row g-0 flex-fill min-h-0">
-              <!-- Main Card CONTAINER - SET COL-WIDTH HERE!!! -->
-              <div class="col-lg-12 offset-lg-0 col-md-10 offset-md-1">
-                <!-- Main Card For Chat Window -->
-                <div class="card mh-100 h-90pct">
-                  <div id="chat-display" class="card-body mh-100 overf-y-scroll"></div>
-                  <div class="card-footer">
-                    <div class="input-group">
-                      <textarea id="chat-text-input" class="form-control custom-control" rows="3" style="resize: none"></textarea>
-                      <button id="send-chat-btn" class="input-group-addon btn btn-lg btn-primary">Send</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-1 h-90pct overf-hide d-flex">
+          <div class="card-header d-flex flex-row">
+            <div class="flex-fill text-center">Main Title</div>
+          </div>
+          <div id="chat-display" class="card-body overf-y-scroll"></div>
+          <div class="card-footer">
+            <div class="input-group">
+              <textarea id="chat-text-input" class="form-control custom-control" rows="3" style="resize: none"></textarea>
+              <button id="send-chat-btn" class="input-group-addon btn btn-lg btn-primary">Send</button>
             </div>
           </div>
         </div>
@@ -242,12 +232,30 @@
       const SET_ACTIVE_ROOM = (roomElement) => (window.rtcActiveRoom = roomElement);
       const GET_ACTIVE_ROOM = () => window?.rtcActiveRoom;
 
+      // User info
+      const USER_NAME = "<%= name %>";
+      const USER_ID = "<%= id %>";
+      const USER_EMAIL = "<%= email %>";
+
+      // Websocket
       const ws = new WebSocket("<%= websocketUrl %>");
+      // Members & Rooms elements
       const sendChatBtn = document.getElementById("send-chat-btn");
       const roomsContainer = document.getElementById("rooms-container");
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
+      // Chat related elements
+      const chatDisplay = document.getElementById("chat-display");
+      const sendChatButton = document.getElementById("send-chat-btn");
+      const chatTextInput = document.getElementById("chat-text-input");
+
+      // Insert fake messages for testing
+      //for (let i = 0; i < 40; i++) {
+      //  const msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam id ultricies neque, vel suscipit leo.";
+      //  const isSending = [true, false][Math.floor(Math.random() * 2)];
+      //  renderChatMessage(chatDisplay, msg, "Something Random", isSending);
+      //}
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -258,36 +266,62 @@
       };
 
       ws.onmessage = (rawMessage) => {
-        const message = JSON.parse(rawMessage.data);
+        const message = JSON.parse(rawMessage?.data);
         if (!message?.type) {
           console.log(`socket message from server missing type!`);
           return;
         }
-        console.log("got message", message, "data", message.data);
+        console.log("got message", { message });
 
         switch (message.type) {
           case "rooms": {
-            wsHandleRoomsMessage(roomsContainer, message.data);
+            wsHandleRoomsMessage(roomsContainer, message.rooms);
             break;
           }
 
           case "send_room_members": {
-            wsHandleMembersMessage(membersContainer, message.data);
+            wsHandleMembersMessage(membersContainer, message.members);
+            break;
+          }
+
+          // Got a message
+          case "broadcast": {
+            wsHandleBroadcast(message);
             break;
           }
 
           default: {
-            console.log(`got message from server :`, data);
+            console.log(`got message from server :`, { message });
             break;
           }
         }
       };
 
-      sendChatBtn.addEventListener("click", (e) => {});
-
       /**
-       * Event Handlers
+       * Events & Event Handlers
        */
+
+      sendChatBtn.addEventListener("click", (e) => {
+        const activeRoom = GET_ACTIVE_ROOM();
+        if (!activeRoom) {
+          return;
+        }
+        if (!chatTextInput.value) {
+          return;
+        }
+        if (ws.readyState !== ws.OPEN) {
+          const opts = { message: "Unable to send message", displayName: USER_NAME, isSending: true, chatBubbleColor: "red", isError: true };
+          chatDisplay.appendChild(generateChatHTML(opts));
+          scrollToBottomOfElement(chatDisplay);
+          return;
+        }
+        sendMessage(ws, "send_broadcast", { fromUserId: USER_ID, fromUserName: USER_NAME, toRoom: activeRoom?.id, value: chatTextInput.value });
+        const opts = { message: chatTextInput.value, displayName: USER_NAME, isSending: true, isError: false };
+        const msgHTML = generateChatHTML(opts);
+        chatTextInput.value = "";
+        chatDisplay.appendChild(msgHTML);
+        scrollToBottomOfElement(chatDisplay);
+      });
 
       function handleRoomClick(event, self, socket) {
         const activeRoomClass = "active-room";
@@ -302,7 +336,7 @@
       }
 
       /**
-       * WebSocket handlers
+       * WebSocket related functions/handlers
        */
 
       // Active room element is stored at `window.rtcActiveRoom`.
@@ -311,27 +345,50 @@
       }
 
       function wsHandleMembersMessage(appendToElement, members) {
-        console.log("AHHHHHHHHH", { members });
         renderMembers(appendToElement, members);
       }
 
+      // Received message
+      function wsHandleBroadcast(broadcast) {
+        const opts = { message: broadcast.message, displayName: broadcast.from, isSending: false, chatBubbleColor: broadcast.color };
+        const msgHTML = generateChatHTML(opts);
+        chatDisplay.appendChild(msgHTML);
+        scrollToBottomOfElement(chatDisplay);
+      }
+
+      // Send a message
+      function sendMessage(socket, type, data) {
+        if (!socket || !type || !data) {
+          console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });
+          return;
+        }
+        const msg = createMessage(type, data);
+        console.log(`sending`, msg);
+        socket.send(msg);
+      }
+
+      function createMessage(type = "", data = {}) {
+        return JSON.stringify({ type, ...data });
+      }
+
       /**
-       * Misc functions
+       * Render functions
        */
+
+      function renderChatMessage(containerElement, messageHTML) {
+        containerElement.appendChild(messageHTML);
+      }
 
       function renderMembers(containerElement, members) {
         containerElement.replaceChildren(); // clear existing html
-
         if (!members.length) {
           const p = document.createElement("p");
           p.classList.add("text-body-tertiary");
           p.innerText = "None";
           return containerElement.appendChild(p);
         }
-
         const membersListElement = document.createElement("ul");
         membersListElement.classList.add("list-group", "list-group-flush");
-
         for (const m of members) {
           const memberHTML = generateMemberHTML(m.userName, m.userId);
           membersListElement.appendChild(memberHTML);
@@ -347,10 +404,8 @@
           p.innerText = "None";
           return containerElement.appendChild(p);
         }
-
         let roomsListElement = document.createElement("ul");
         roomsListElement.classList.add("list-group");
-
         for (const r of rooms) {
           const roomHtml = generateRoomHTML(r.name, r.id);
           roomHtml.addEventListener("click", function (e) {
@@ -359,6 +414,43 @@
           roomsListElement.appendChild(roomHtml);
         }
         containerElement.appendChild(roomsListElement);
+      }
+
+      /**
+       * Generate HTML functions
+       */
+
+      function generateChatHTML(opts = { message: "", displayName: "", isSending: true, chatBubbleColor: "", isError: false }) {
+        let { message, displayName, isSending, chatBubbleColor, isError } = opts;
+        console.log({ opts });
+        const messageDiv = document.createElement("div");
+        const messageBodyDiv = document.createElement("div");
+        const messageFooterSpan = document.createElement("span");
+        let senderOrRecieverClass = "message-to";
+        if (!chatBubbleColor) {
+          chatBubbleColor = "lightgreen";
+        }
+        if (!isSending) {
+          senderOrRecieverClass = "message-from";
+          messageBodyDiv.style.backgroundColor = chatBubbleColor;
+        }
+        if (isError) {
+          messageBodyDiv.style.backgroundColor = "red";
+        }
+        let textColor = "black";
+        //if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
+        //  textColor = "white";
+        //}
+        messageDiv.classList.add("message");
+        messageDiv.classList.add(senderOrRecieverClass);
+        messageBodyDiv.classList.add("message-body");
+        messageBodyDiv.style.color = textColor;
+        messageBodyDiv.innerText = message;
+        messageFooterSpan.classList.add("message-footer");
+        messageFooterSpan.innerText = displayName;
+        messageDiv.appendChild(messageBodyDiv);
+        messageDiv.appendChild(messageFooterSpan);
+        return messageDiv;
       }
 
       function generateMemberHTML(name, id) {
@@ -375,7 +467,6 @@
         const cardBodyDiv = document.createElement("div");
         const cardTitleH5 = document.createElement("h5");
         const cardTextP = document.createElement("p");
-
         listItemLi.classList.add("list-group-item", "p-1", "border-0");
         listItemLi.id = roomId;
         cardDiv.classList.add("card");
@@ -385,30 +476,19 @@
         cardTitleH5.textContent = roomName;
         cardTextP.classList.add("card-text");
         cardTextP.innerText = text || "";
-
         cardBodyDiv.appendChild(cardTitleH5);
         cardBodyDiv.appendChild(cardTextP);
         cardDiv.appendChild(cardBodyDiv);
         listItemLi.appendChild(cardDiv);
-
         return listItemLi;
       }
 
       /**
-       *
+       * MISC FUNCTIONS
        */
-      function sendMessage(socket, type, data) {
-        if (!socket || !type || !data) {
-          console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });
-          return;
-        }
-        const msg = createMessage(type, data);
-        console.log(`sending`, msg);
-        socket.send(msg);
-      }
 
-      function createMessage(type = "", data = {}) {
-        return JSON.stringify({ type, ...data });
+      function scrollToBottomOfElement(element) {
+        element.scrollTop = element.scrollHeight;
       }
     </script>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
