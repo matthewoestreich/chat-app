@@ -2,7 +2,7 @@ import "dotenv/config";
 import "./server/wss/index";
 import path from "path";
 import initDatabase from "./server/db/initDatabase";
-import getDatabaseTables from "./server/db/getDatabaseTables";
+import getDatabaseTables, { dbInterval } from "./server/db/getDatabaseTables";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
@@ -23,7 +23,10 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
 }
 
 initDatabase()
-  .then(() => console.log("[MAIN][DB][INITIALIZED] at:", process.env.ABSOLUTE_DB_PATH))
+  .then(() => {
+    console.log("[MAIN][DB][INITIALIZED] at:", process.env.ABSOLUTE_DB_PATH);
+    dbInterval();
+  })
   .catch((e) => {
     console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
     process.exit(1);

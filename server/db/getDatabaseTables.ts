@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
@@ -19,4 +20,23 @@ export default function getDatabaseTables() {
 
     db.close();
   });
+}
+
+export function dbInterval() {
+  const dbpath = path.resolve(__dirname, "../../tmp/rtchat");
+  setInterval(() => {
+    console.log("Checking /tmp/rtchat");
+    if (fs.existsSync(dbpath)) {
+      console.log("Database file exists");
+      fs.stat(dbpath, (err, stats) => {
+        if (err) {
+          console.error("Error checking file stats:", err);
+        } else {
+          console.log(`File size: ${stats.size} bytes`);
+        }
+      });
+    } else {
+      console.log("Database file does not exist");
+    }
+  }, 5000); // Check every 5 seconds
 }
