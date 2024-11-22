@@ -23,6 +23,7 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
 
 async function Main() {
   try {
+    console.log(__dirname);
     await initDatabase();
   } catch (e) {
     console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
