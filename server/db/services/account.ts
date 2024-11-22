@@ -21,7 +21,7 @@ function insertAccount(db: sqlite3.Database, name: string, id: string, passwd: s
     try {
       const salt = await bcrypt.genSalt(10);
       const hashedPw = await bcrypt.hash(passwd, salt);
-      const query = `INSERT INTO ${tableName} (id, name, password, email) VALUES (?, ?, ?, ?)`;
+      const query = `INSERT INTO "${tableName}" (id, name, password, email) VALUES (?, ?, ?, ?)`;
 
       db.run(query, [id, name, hashedPw, email], (err) => {
         if (err) {
@@ -37,7 +37,7 @@ function insertAccount(db: sqlite3.Database, name: string, id: string, passwd: s
 
 function selectAccountByEmail(db: sqlite3.Database, email: string, tableName = "user"): Promise<Account> {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${tableName} WHERE email = ?`, [email], (err, row) => {
+    db.get(`SELECT * FROM "${tableName}" WHERE email = ?`, [email], (err, row) => {
       if (err) {
         return reject(err);
       }
@@ -48,7 +48,7 @@ function selectAccountByEmail(db: sqlite3.Database, email: string, tableName = "
 
 function selectAccountById(db: sqlite3.Database, userId: string, tableName = "user"): Promise<Account> {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [userId], (err, row) => {
+    db.get(`SELECT * FROM "${tableName}" WHERE id = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }
