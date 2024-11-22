@@ -9,6 +9,8 @@ import { chatService } from "../db/services";
 
 const WSS = new WebSocketServer({ server });
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
+// How we store references to sockets. Structured so we can track
+// which users are in which rooms.
 const BUCKETS: Map<string, Map<string, WebSocket>> = new Map();
 
 WSS.on("connection", async (socket: WebSocket, req) => {
@@ -33,6 +35,13 @@ WSS.on("connection", async (socket: WebSocket, req) => {
       }
     }
   }
+
+  socket.on("close", (code: number, reason: Buffer) => {
+    if (socket.activeIn) {
+      handleLeaveRoom(socket, socket.activeIn);
+    }
+    console.log(`socket closed.`, { user: socket?.user?.id || "NA", code, reason: reason.toString() });
+  });
 
   socket.on("message", async (rawMessage: RawData) => {
     const message = JSON.parse(rawMessage.toString());
@@ -68,8 +77,7 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
   }
   if (socket.activeIn) {
     // If they already had an active room, it means they're leaving it. So notify that room they left.
-    broadcastMemberStatus(socket.activeIn, socket.user.id, "left"); // Here, socket.activeIn is the room they just left.
-    BUCKETS.get(socket.activeIn)?.delete(socket.user.id); // Remove them from bucket they left
+    handleLeaveRoom(socket, socket.activeIn);
   }
 
   socket.activeIn = roomId; // Update to the rooms they just entered
@@ -82,6 +90,15 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
   });
 
   sendMessage(socket, "members", { members });
+}
+
+function handleLeaveRoom(socket: WebSocket, roomId: string) {
+  if (!socket?.activeIn || !socket?.user?.id) {
+    console.log(`[ws][handleLeaveRoom] either socket.activein or socket.user.id are empty..`, { activeIn: socket.activeIn, userId: socket?.user?.id });
+    return;
+  }
+  broadcastMemberStatus(socket.activeIn, socket.user.id, "left"); // Here, socket.activeIn is the room they just left.
+  BUCKETS.get(roomId)!.delete(socket.user.id); // Remove them from bucket they left
 }
 
 function handleSendMessage(socket: WebSocket, message: any) {
