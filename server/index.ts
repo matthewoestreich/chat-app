@@ -105,6 +105,17 @@ app.get("/initdb", async (_req: Request, res: Response) => {
   }
 });
 
+app.get("/query", async (req: Request, res: Response) => {
+  let { statement } = req.query;
+  if (!statement) statement = "SELECT * FROM 'user'";
+  //const { db, release } = await req.databasePool.getConnection();
+  const p = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 3);
+  const finalStatement = statement.toString();
+  console.log(finalStatement);
+  const result = await p.query(finalStatement, []);
+  res.send(result);
+});
+
 /**
  * 404 route
  * @route {GET} *

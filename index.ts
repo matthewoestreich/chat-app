@@ -25,7 +25,9 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
 initDatabase()
   .then(() => {
     console.log("[MAIN][DB][INITIALIZED] at:", process.env.ABSOLUTE_DB_PATH);
-    dbInterval();
+    if (process.env.WSS_URL!.endsWith("onrender.com")) {
+      dbInterval();
+    }
   })
   .catch((e) => {
     console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
