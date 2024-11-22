@@ -12,8 +12,8 @@ export default function getDatabaseTables() {
           resolve(false);
         }
         console.log("Tables in the database:");
-        rows.forEach((row) => console.log(row.name));
-        resolve(true);
+        //rows.forEach((row) => console.log(row.name));
+        resolve(rows);
       });
     });
 

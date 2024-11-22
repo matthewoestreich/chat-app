@@ -28,4 +28,6 @@ initDatabase()
     process.exit(1);
   });
 
-getDatabaseTables().catch((e) => console.error(e));
+getDatabaseTables()
+  .then((tables) => console.log(tables))
+  .catch((e) => console.error(e));

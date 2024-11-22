@@ -7,6 +7,8 @@ import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, 
 import { sessionService } from "@/server/db/services";
 import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
+import initDatabase from "./db/initDatabase";
+import getDatabaseTables from "./db/getDatabaseTables";
 
 const app = express();
 
@@ -83,6 +85,20 @@ app.get("/logout", async (req: Request, res: Response) => {
   } catch (e) {
     console.log({ logoutError: e });
     return res.render("error", { error: "Error logging you out." });
+  }
+});
+
+app.get("/initdb", async (req: Request, res: Response) => {
+  try {
+    console.log({ taks: "initDatabase", to: process.env.ABSOLUTE_DB_PATH });
+    await initDatabase();
+    const tables = (await getDatabaseTables()) as [];
+    if (!tables || (tables && !tables.length)) {
+      throw new Error("no tables created");
+    }
+    res.send(tables);
+  } catch (e) {
+    res.send(e);
   }
 });
 
