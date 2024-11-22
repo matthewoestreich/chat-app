@@ -1,6 +1,7 @@
 import "dotenv/config";
 import "./server/wss/index";
 import initDatabase from "./server/db/initDatabase";
+import getDatabaseTables from "./server/db/getDatabaseTables";
 import path from "path";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
@@ -27,3 +28,5 @@ initDatabase()
     console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
     process.exit(1);
   });
+
+getDatabaseTables().catch((e) => console.error(e));
