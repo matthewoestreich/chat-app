@@ -21,7 +21,9 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
   process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
 }
 
-initDatabase().catch((e) => {
-  console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
-  process.exit(1);
-});
+initDatabase()
+  .then(() => console.log("[MAIN][DB][INITIALIZED] at:", process.env.ABSOLUTE_DB_PATH))
+  .catch((e) => {
+    console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
+    process.exit(1);
+  });
