@@ -1,11 +1,10 @@
 import "dotenv/config";
 import "./server/wss/index";
 import initDatabase from "./server/db/initDatabase";
-import path from "path";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
-process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || path.resolve(__dirname, "./server/db/rtchat.db");
+process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || "";
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
 
 if (!process.env.ABSOLUTE_DB_PATH || process.env.ABSOLUTE_DB_PATH === "") {
