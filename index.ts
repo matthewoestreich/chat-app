@@ -6,7 +6,7 @@ import getDatabaseTables from "./server/db/getDatabaseTables";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
-process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || path.resolve(__dirname, "./server/db/rtchat");
+process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || path.resolve(__dirname, "./tmp/rtchat");
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
 
 if (!process.env.ABSOLUTE_DB_PATH) {
