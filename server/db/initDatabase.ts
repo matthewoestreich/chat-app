@@ -38,9 +38,9 @@ export default async function () {
           CHECK(length(userId) = 36)
         );`);
         db.run("COMMIT");
+        db.close();
+        resolve();
       });
-      db.close();
-      resolve();
     } catch (e) {
       reject(e);
     }

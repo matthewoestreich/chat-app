@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs";
 import express, { Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -8,8 +7,6 @@ import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, 
 import { sessionService } from "@/server/db/services";
 import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
-import initDatabase from "./db/initDatabase";
-import getDatabaseTables from "./db/getDatabaseTables";
 
 const app = express();
 
@@ -18,11 +15,12 @@ app.set("views", path.resolve(__dirname, "../www"));
 
 app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 
-const dbFilePath = process.env.ABSOLUTE_DB_PATH || path.resolve(__dirname, "../tmp/rtchat");
+const dbFilePath = process.env.ABSOLUTE_DB_PATH!;
 const sqlitePool = new SQLitePool(dbFilePath, 5);
 morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2)); // custom logging 'token' to log req bodies.
 
 app.use(express.json());
+console.log(`[SQLITEPOOL][DB_PATH] ${sqlitePool.databasePath}`);
 app.use(useDatabasePool(sqlitePool));
 app.use(useCookieParser);
 app.use(useCspNonce);
@@ -87,32 +85,6 @@ app.get("/logout", async (req: Request, res: Response) => {
     console.log({ logoutError: e });
     return res.render("error", { error: "Error logging you out." });
   }
-});
-
-app.get("/initdb", async (_req: Request, res: Response) => {
-  try {
-    console.log({ taks: "initDatabase", to: process.env.ABSOLUTE_DB_PATH });
-    await initDatabase();
-    const tables = (await getDatabaseTables()) as [];
-    if (!tables || (tables && !tables.length)) {
-      throw new Error("no tables created");
-    }
-    fs.writeFileSync("./listings.txt", JSON.stringify(tables), "utf-8");
-    const contents = fs.readFileSync("./listings.txt", "utf-8");
-    res.json({ tables, tablesFromFile: JSON.parse(contents), doesRTCHATExists: fs.existsSync(path.resolve(__dirname, "./tmp/rtchat")) });
-  } catch (e) {
-    res.send(e);
-  }
-});
-
-app.get("/query", async (req: Request, res: Response) => {
-  let { statement } = req.query;
-  if (!statement) statement = "SELECT * FROM 'user'";
-  const p = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 3);
-  const finalStatement = statement.toString();
-  console.log(finalStatement);
-  const result = await p.query(finalStatement, []);
-  res.send(result);
 });
 
 /**
