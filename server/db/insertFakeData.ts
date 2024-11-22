@@ -77,9 +77,17 @@ const chat = Array.from({ length: NUM_ITEMS_EACH }, (_, i) => {
   const output = { ...users[i], rooms: [] as any[] };
   const randInts = getRandomIntsFromUUID(uuidV7());
   const randomIndex = getRandomInt(randInts.length);
-  const ceil = randInts[randomIndex];
-  for (let i = 0; i < ceil; i++) {
-    output.rooms.push(getRandomArrayElement(rooms));
+  let ceil = randInts[randomIndex];
+  if (ceil === 0) {
+    ceil = 4;
+  }
+  const existing: any[] = [];
+  for (let i = 0; i < ceil * 3; i++) {
+    const room = getRandomArrayElement(rooms);
+    if (!existing.includes(room.id)) {
+      output.rooms.push(room);
+    }
+    existing.push(room.id);
   }
   return output;
 });
@@ -139,7 +147,7 @@ async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) 
   });
 }
 
-(async () => {
+async function main() {
   const db = new sqlite3.Database(path.resolve(__dirname, "./rtchat.db"), (err) => {
     if (err) {
       console.error(`Error connecting to the database:`, err);
@@ -171,4 +179,12 @@ async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) 
   } finally {
     console.log("done");
   }
-})();
+}
+
+/**
+ *
+ * COMMENT THIS OUT TO SKIP RUNNING
+ */
+(async () => main())();
+/*
+ */

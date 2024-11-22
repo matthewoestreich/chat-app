@@ -24,74 +24,92 @@ wss.on("connection", async (socket: WebSocket, req) => {
   socket.chatColor = generateLightColor();
 
   // Send user their rooms on first connection
-  const rooms = await handleGetUsersRooms(socket);
+  const rooms = await getRoomsByUserId(socket);
   if (rooms) {
     sendMessage(socket, "rooms", { rooms });
   }
 
   socket.on("message", async (rawMessage: RawData) => {
-    try {
-      const message = JSON.parse(rawMessage.toString());
-      console.log(`[ws][new message]`, { message });
-      if (!message?.type) {
-        console.log(`[ws][socket.on("message")] Message missing type!`);
-        return;
+    const message = JSON.parse(rawMessage.toString());
+    console.log(`[ws][new message]`, { message });
+    if (!message?.type) {
+      console.log(`[ws][socket.on("message")] Message missing type!`);
+      return;
+    }
+
+    // Process message
+    switch (message.type) {
+      case "entered_room": {
+        handleEnteredRoom(wss, socket, message?.roomId);
+        break;
       }
 
-      // Process message
-      switch (message.type) {
-        case "get_room_members": {
-          const members = await handleGetRoomMembers(socket, message?.roomId);
-          sendMessage(socket, "send_room_members", { members });
-          break;
+      case "send_message": {
+        let color = socket.chatColor;
+        if (!color) {
+          color = generateLightColor();
         }
-
-        case "send_broadcast": {
-          let color = socket.chatColor;
-          if (!color) {
-            color = generateLightColor();
-          }
-          handleSendBroadcast(wss, message?.fromUserId, message?.fromUserName, color, message?.toRoom, message?.value);
-          break;
-        }
-
-        default: {
-          console.log(`[ws] Unknown type on message!`, { message });
-          break;
-        }
+        broadcastMessage(wss, message?.fromUserId, message?.fromUserName, color, message?.toRoom, message?.value);
+        break;
       }
-    } catch (e) {
-      console.log(`[ws] Something went wrong processing message! ${e}`);
+
+      default: {
+        console.log(`[ws] Unknown type on message!`, { message });
+        break;
+      }
     }
   });
 });
 
-/**
- *
- * Handlers
- *
- */
+async function handleEnteredRoom(wss: WebSocketServer, socket: WebSocket, roomId: string) {
+  if (!socket.user || !socket.databasePool) {
+    return;
+  }
+  // If they already had an active room, it means they're leaving it. So notify that room they left.
+  if (socket.activeIn) {
+    // Here, socket.activeIn is the room they just left.
+    broadcastMemberStatus(wss, socket.activeIn, socket.user.id, "left");
+  }
+  socket.activeIn = roomId;
+  // We also need to broadcast to the room that someone has joined.
+  broadcastMemberStatus(wss, roomId, socket.user.id, "entered");
+  const members = await getRoomMembers(wss, socket, roomId);
+  sendMessage(socket, "send_room_members", { members });
+}
 
 // Get all members of a specific room.
-async function handleGetRoomMembers(socket: WebSocket, roomId: string): Promise<RoomMember[] | null> {
-  socket.activeIn = roomId;
+async function getRoomMembers(wss: WebSocketServer, socket: WebSocket, roomId: string): Promise<RoomMember[] | null> {
   const connection = await socket?.databasePool?.getConnection();
   if (!connection) {
-    console.log(`[ws][handleGetRoomMembers] 'databasePool' not found on socket!`);
     return null;
   }
   const user = socket?.user;
   if (!user) {
-    console.log(`[ws][handleGetRoomMembers] 'user' not found on socket!`);
     return null;
   }
   const members = await chatService.selectRoomMembersByRoomId(connection.db, roomId);
   connection.release();
-  return members.filter((m) => user.id !== m.userId);
+  getActiveRoomMembers(wss, roomId).forEach((rm) => {
+    const index = members.findIndex((m) => m.userId === rm.userId);
+    if (index !== -1) {
+      members[index].isActive = true;
+    }
+  });
+  return members.filter((m) => m.userId !== user.id);
+}
+
+function getActiveRoomMembers(wss: WebSocketServer, roomId: string): RoomMember[] {
+  const members: RoomMember[] = [];
+  wss.clients.forEach((c: WebSocket) => {
+    if (c && c.activeIn && c.activeIn === roomId && c.user) {
+      members.push({ userName: c.user.name, userId: c.user.id, roomId, isActive: true });
+    }
+  });
+  return members;
 }
 
 // Get all rooms that a specific user is part of.
-async function handleGetUsersRooms(socket: WebSocket): Promise<Room[] | null> {
+async function getRoomsByUserId(socket: WebSocket): Promise<Room[] | null> {
   const connection = await socket?.databasePool?.getConnection();
   if (!connection) {
     console.log(`[ws][handleGetUsersRooms] 'databasePool' not found on socket!`);
@@ -107,8 +125,20 @@ async function handleGetUsersRooms(socket: WebSocket): Promise<Room[] | null> {
   return rooms as Room[];
 }
 
+function broadcastMemberStatus(wss: WebSocketServer, roomId: string, userId: string, status: "left" | "entered") {
+  if (userId === "") {
+    console.log(`[ws][broadcastEnteredRoom] Joining member id is missing!`);
+    return;
+  }
+  wss.clients.forEach((c: WebSocket) => {
+    if (c && c.user && c.activeIn === roomId && c.user.id !== userId) {
+      sendMessage(c, status, { id: userId });
+    }
+  });
+}
+
 // Handle sending broadcast to all members of a specific room
-function handleSendBroadcast(wss: WebSocketServer, fromUserId: string, fromUserName: string, chatColor: string, toRoomId: string, messageText: string) {
+function broadcastMessage(wss: WebSocketServer, fromUserId: string, fromUserName: string, chatColor: string, toRoomId: string, messageText: string) {
   // Get all active members of this room..
   wss.clients.forEach((c: WebSocket) => {
     if (c && c.user && c.activeIn === toRoomId && c.user.id !== fromUserId) {
@@ -116,10 +146,6 @@ function handleSendBroadcast(wss: WebSocketServer, fromUserId: string, fromUserN
     }
   });
 }
-
-/**
- * MISC FUNCS
- */
 
 async function isAuthenticated(token: string, socket: WebSocket) {
   if (!token) {

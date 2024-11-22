@@ -229,14 +229,10 @@
       });
     </script>
     <script nonce="<%= nonce %>">
-      const SET_ACTIVE_ROOM = (roomElement) => (window.rtcActiveRoom = roomElement);
-      const GET_ACTIVE_ROOM = () => window?.rtcActiveRoom;
-
       // User info
       const USER_NAME = "<%= name %>";
       const USER_ID = "<%= id %>";
       const USER_EMAIL = "<%= email %>";
-
       // Websocket
       const ws = new WebSocket("<%= websocketUrl %>");
       // Members & Rooms elements
@@ -290,6 +286,18 @@
             break;
           }
 
+          // Someone entered the room
+          case "entered": {
+            wsHandleMemberEntered(message?.id);
+            break;
+          }
+
+          // Someone left the room we are currently in
+          case "left": {
+            wsHandleMemberLeft(message?.id);
+            break;
+          }
+
           default: {
             console.log(`got message from server :`, { message });
             break;
@@ -302,7 +310,7 @@
        */
 
       sendChatBtn.addEventListener("click", (e) => {
-        const activeRoom = GET_ACTIVE_ROOM();
+        const activeRoom = window?.rtcActiveRoom;
         if (!activeRoom) {
           return;
         }
@@ -315,7 +323,7 @@
           scrollToBottomOfElement(chatDisplay);
           return;
         }
-        sendMessage(ws, "send_broadcast", { fromUserId: USER_ID, fromUserName: USER_NAME, toRoom: activeRoom?.id, value: chatTextInput.value });
+        sendMessage(ws, "send_message", { fromUserId: USER_ID, fromUserName: USER_NAME, toRoom: activeRoom?.id, value: chatTextInput.value });
         const opts = { message: chatTextInput.value, displayName: USER_NAME, isSending: true, isError: false };
         const msgHTML = generateChatHTML(opts);
         chatTextInput.value = "";
@@ -325,14 +333,14 @@
 
       function handleRoomClick(event, self, socket) {
         const activeRoomClass = "active-room";
-        const currentActiveRoom = GET_ACTIVE_ROOM();
+        const currentActiveRoom = window?.rtcActiveRoom;
         if (currentActiveRoom === self) {
           return;
         }
         self.classList.add(activeRoomClass);
         currentActiveRoom?.classList?.remove(activeRoomClass);
-        SET_ACTIVE_ROOM(self);
-        sendMessage(socket, "get_room_members", { roomId: self.id });
+        window.rtcActiveRoom = self;
+        sendMessage(socket, "entered_room", { roomId: self.id });
       }
 
       /**
@@ -345,6 +353,8 @@
       }
 
       function wsHandleMembersMessage(appendToElement, members) {
+        window.rtcRoomMembers = members;
+        sortRoomMembers(window.rtcRoomMembers);
         renderMembers(appendToElement, members);
       }
 
@@ -354,6 +364,30 @@
         const msgHTML = generateChatHTML(opts);
         chatDisplay.appendChild(msgHTML);
         scrollToBottomOfElement(chatDisplay);
+      }
+
+      function wsHandleMemberEntered(id) {
+        if (!window.rtcRoomMembers) {
+          return;
+        }
+        const idx = window.rtcRoomMembers.findIndex((m) => m.userId === id);
+        if (idx !== -1) {
+          window.rtcRoomMembers[idx].isActive = true;
+        }
+        sortRoomMembers(window.rtcRoomMembers);
+        renderMembers(membersContainer, window.rtcRoomMembers);
+      }
+
+      function wsHandleMemberLeft(id) {
+        if (!window.rtcRoomMembers) {
+          return;
+        }
+        const idx = window.rtcRoomMembers.findIndex((m) => m.userId === id);
+        if (idx !== -1) {
+          window.rtcRoomMembers[idx].isActive = false;
+        }
+        sortRoomMembers(window.rtcRoomMembers);
+        renderMembers(membersContainer, window.rtcRoomMembers);
       }
 
       // Send a message
@@ -390,8 +424,16 @@
         const membersListElement = document.createElement("ul");
         membersListElement.classList.add("list-group", "list-group-flush");
         for (const m of members) {
-          const memberHTML = generateMemberHTML(m.userName, m.userId);
-          membersListElement.appendChild(memberHTML);
+          //const memberHTML = generateMemberHTML(m.userName, m.userId);
+          //membersListElement.appendChild(memberHTML);
+          membersListElement.innerHTML += `
+            <li id="${m.userId}" class="list-group-item d-flex justify-content-between align-items-start">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">${m.userName}</div>
+              </div>
+              <span id="${m.userId}-status" class="badge rounded-pill text-bg-${m.isActive ? "success" : "warning"}">${"  "}</span>
+            </li>
+          `;
         }
         containerElement.appendChild(membersListElement);
       }
@@ -422,7 +464,6 @@
 
       function generateChatHTML(opts = { message: "", displayName: "", isSending: true, chatBubbleColor: "", isError: false }) {
         let { message, displayName, isSending, chatBubbleColor, isError } = opts;
-        console.log({ opts });
         const messageDiv = document.createElement("div");
         const messageBodyDiv = document.createElement("div");
         const messageFooterSpan = document.createElement("span");
@@ -437,14 +478,10 @@
         if (isError) {
           messageBodyDiv.style.backgroundColor = "red";
         }
-        let textColor = "black";
-        //if (!isError && chatBubbleColor && isDarkColor(chatBubbleColor)) {
-        //  textColor = "white";
-        //}
         messageDiv.classList.add("message");
         messageDiv.classList.add(senderOrRecieverClass);
         messageBodyDiv.classList.add("message-body");
-        messageBodyDiv.style.color = textColor;
+        messageBodyDiv.style.color = "black";
         messageBodyDiv.innerText = message;
         messageFooterSpan.classList.add("message-footer");
         messageFooterSpan.innerText = displayName;
@@ -486,6 +523,21 @@
       /**
        * MISC FUNCTIONS
        */
+
+      function sortRoomMembers(members) {
+        members.sort((a, b) => {
+          if (a.isActive && b.isActive) {
+            return a.userName.localeCompare(b.userName);
+          }
+          if (a.isActive && !b.isActive) {
+            return -1;
+          }
+          if (b.isActive && !a.isActive) {
+            return 1;
+          }
+          return a.userName.localeCompare(b.userName);
+        });
+      }
 
       function scrollToBottomOfElement(element) {
         element.scrollTop = element.scrollHeight;

@@ -6,14 +6,15 @@ interface DatabasePoolConnection<T> {
 interface DatabasePool<T> {
   getConnection(): Promise<DatabasePoolConnection<T>>;
   releaseConnection(connection: DatabasePoolConnection<T>): void;
-  query(sql: string, params: any): Promise<unknown>;
-  closeAllIdleConnections(): Promise<boolean>;
+  //query(sql: string, params: any): Promise<unknown>;
+  //closeAllIdleConnections(): Promise<boolean>;
 }
 
 interface RoomMember {
   userName: string;
   userId: string;
   roomId: string;
+  isActive: boolean;
 }
 
 interface Room {
