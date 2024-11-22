@@ -15,9 +15,13 @@ try {
       from: "../www",
       to: tsconfig.compilerOptions.outDir,
     },
+    {
+      isDir: false,
+      isRecursive: false,
+      from: "../server/db/rtchat",
+      to: `${tsconfig.compilerOptions.outDir}/server/db`,
+    },
   ];
-
-  console.log(`** COPYING DIRS\n`);
 
   for (const job of COPY_MAP) {
     try {
@@ -28,6 +32,9 @@ try {
       if (job.isDir) {
         fs.cpSync(src, dest, { recursive: job.isRecursive });
         console.log(`Copied:\n\t${src}\ninto\n\t${dest}`);
+      } else {
+        fs.copyFileSync(src, dest);
+        console.log(`Copied:\n\t${src}\nto\n\t${dest}`);
       }
     } catch (e) {
       console.error(`[_build.js][ERROR] Error during copy.`, e);

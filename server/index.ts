@@ -99,7 +99,7 @@ app.get("/initdb", async (_req: Request, res: Response) => {
     }
     fs.writeFileSync("./listings.txt", JSON.stringify(tables), "utf-8");
     const contents = fs.readFileSync("./listings.txt", "utf-8");
-    res.json({ tables, tablesFromFile: JSON.parse(contents) });
+    res.json({ tables, tablesFromFile: JSON.parse(contents), doesRTCHATExists: fs.existsSync(path.resolve(__dirname, "./db/rtchat")) });
   } catch (e) {
     res.send(e);
   }
