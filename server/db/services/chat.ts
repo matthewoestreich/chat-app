@@ -6,6 +6,7 @@ export default {
   addUserByIdToRoomById: insertUserByIdToRoomById,
   selectAllRoomsAndMembersByUserId: selectAllRoomsAndRoomMembersByUserId,
   selectRoomMembersByRoomId: selectRoomMembersByRoomId,
+  selectRoomMembersByRoomIdIgnoreUserId,
 };
 
 function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName = "chat", roomTableName = "room") {
@@ -46,6 +47,33 @@ function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTab
   `;
 
     db.all(query, [roomId], (err, rows: RoomMember[]) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(rows);
+    });
+  });
+}
+
+// Like when you want to get all roooms but not for "yourself".
+function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: string, userToIgnore: string, chatTableName = "chat", roomTableName = "room", userTableName = "user"): Promise<RoomMember[]> {
+  return new Promise((resolve, reject) => {
+    const query = `
+    SELECT 
+        r.id AS roomId,
+        u.name AS userName,
+        u.id AS userId
+    FROM 
+        ${chatTableName} c1
+    JOIN 
+        ${roomTableName} r ON c1.roomId = r.id
+    JOIN 
+        "${userTableName}" u ON c1.userId = u.id
+    WHERE 
+        r.id = ? AND u.id != ? ;
+  `;
+
+    db.all(query, [roomId, userToIgnore], (err, rows: RoomMember[]) => {
       if (err) {
         return reject(err);
       }

@@ -57,9 +57,9 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
     // Get existing session token from db.
     const existingSession = await sessionService.selectByUserId(db, decodedToken.id);
-
+    console.log({ from: "useJwtSession", "String(existingSession.token)": String(existingSession.token) });
     // If no existing token, or existing token missing "token" column, or mismatch force user to reauth.
-    if (!existingSession || !existingSession.token || existingSession.token !== receivedSessionToken) {
+    if (!existingSession || !existingSession.token || String(existingSession.token) !== receivedSessionToken) {
       console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
       release();
       return false;

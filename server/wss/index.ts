@@ -7,11 +7,11 @@ import SQLitePool from "@/server/db/SQLitePool";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import { chatService } from "../db/services";
 
-const wss = new WebSocketServer({ server });
-const dbpath = process.env.ABSOLUTE_DB_PATH || "";
-const sqlitePool = new SQLitePool(dbpath, 5);
+const WSS = new WebSocketServer({ server });
+const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
+const BUCKETS: Map<string, Map<string, WebSocket>> = new Map();
 
-wss.on("connection", async (socket: WebSocket, req) => {
+WSS.on("connection", async (socket: WebSocket, req) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const authenticated = await isAuthenticated(cookies?.session, socket);
   if (!authenticated) {
@@ -20,13 +20,18 @@ wss.on("connection", async (socket: WebSocket, req) => {
   }
 
   socket.user = jsonwebtoken.decode(cookies.session) as Account;
-  socket.databasePool = sqlitePool;
   socket.chatColor = generateLightColor();
 
-  // Send user their rooms on first connection
+  // Send user their rooms on first connection and add each room
+  // to our data structure that tracks rooms and membership.
   const rooms = await getRoomsByUserId(socket);
   if (rooms) {
     sendMessage(socket, "rooms", { rooms });
+    for (const room of rooms) {
+      if (!BUCKETS.has(room.id)) {
+        BUCKETS.set(room.id, new Map());
+      }
+    }
   }
 
   socket.on("message", async (rawMessage: RawData) => {
@@ -40,16 +45,12 @@ wss.on("connection", async (socket: WebSocket, req) => {
     // Process message
     switch (message.type) {
       case "entered_room": {
-        handleEnteredRoom(wss, socket, message?.roomId);
+        handleEnteredRoom(socket, message?.roomId);
         break;
       }
 
       case "send_message": {
-        let color = socket.chatColor;
-        if (!color) {
-          color = generateLightColor();
-        }
-        broadcastMessage(wss, message?.fromUserId, message?.fromUserName, color, message?.toRoom, message?.value);
+        handleSendMessage(socket, message);
         break;
       }
 
@@ -61,60 +62,52 @@ wss.on("connection", async (socket: WebSocket, req) => {
   });
 });
 
-async function handleEnteredRoom(wss: WebSocketServer, socket: WebSocket, roomId: string) {
-  if (!socket.user || !socket.databasePool) {
+async function handleEnteredRoom(socket: WebSocket, roomId: string) {
+  if (!socket.user) {
     return;
   }
-  // If they already had an active room, it means they're leaving it. So notify that room they left.
   if (socket.activeIn) {
-    // Here, socket.activeIn is the room they just left.
-    broadcastMemberStatus(wss, socket.activeIn, socket.user.id, "left");
+    // If they already had an active room, it means they're leaving it. So notify that room they left.
+    broadcastMemberStatus(socket.activeIn, socket.user.id, "left"); // Here, socket.activeIn is the room they just left.
+    BUCKETS.get(socket.activeIn)?.delete(socket.user.id); // Remove them from bucket they left
   }
-  socket.activeIn = roomId;
-  // We also need to broadcast to the room that someone has joined.
-  broadcastMemberStatus(wss, roomId, socket.user.id, "entered");
-  const members = await getRoomMembers(wss, socket, roomId);
-  sendMessage(socket, "send_room_members", { members });
+
+  socket.activeIn = roomId; // Update to the rooms they just entered
+  broadcastMemberStatus(roomId, socket.user.id, "entered"); // We also need to broadcast to the room that someone has joined.
+  BUCKETS.get(roomId)!.set(socket.user.id, socket);
+
+  const members = (await getRoomMembers(roomId, socket.user.id))!.map((m) => {
+    m.isActive = BUCKETS.get(roomId)!.has(m.userId);
+    return m;
+  });
+
+  sendMessage(socket, "members", { members });
+}
+
+function handleSendMessage(socket: WebSocket, message: any) {
+  if (!socket.chatColor) {
+    socket.chatColor = generateLightColor();
+  }
+  const { fromUserName, fromUserId, toRoom, value } = message;
+  broadcastMessage(toRoom, fromUserId, fromUserName, value, socket.chatColor);
 }
 
 // Get all members of a specific room.
-async function getRoomMembers(wss: WebSocketServer, socket: WebSocket, roomId: string): Promise<RoomMember[] | null> {
-  const connection = await socket?.databasePool?.getConnection();
-  if (!connection) {
-    return null;
+async function getRoomMembers(roomId: string, ignoreUserId?: string): Promise<RoomMember[] | null> {
+  const connection = await DB_POOL.getConnection();
+  if (ignoreUserId) {
+    const m = await chatService.selectRoomMembersByRoomIdIgnoreUserId(connection.db, roomId, ignoreUserId);
+    connection.release();
+    return m;
   }
-  const user = socket?.user;
-  if (!user) {
-    return null;
-  }
-  const members = await chatService.selectRoomMembersByRoomId(connection.db, roomId);
+  const m = await chatService.selectRoomMembersByRoomId(connection.db, roomId);
   connection.release();
-  getActiveRoomMembers(wss, roomId).forEach((rm) => {
-    const index = members.findIndex((m) => m.userId === rm.userId);
-    if (index !== -1) {
-      members[index].isActive = true;
-    }
-  });
-  return members.filter((m) => m.userId !== user.id);
-}
-
-function getActiveRoomMembers(wss: WebSocketServer, roomId: string): RoomMember[] {
-  const members: RoomMember[] = [];
-  wss.clients.forEach((c: WebSocket) => {
-    if (c && c.activeIn && c.activeIn === roomId && c.user) {
-      members.push({ userName: c.user.name, userId: c.user.id, roomId, isActive: true });
-    }
-  });
-  return members;
+  return m;
 }
 
 // Get all rooms that a specific user is part of.
 async function getRoomsByUserId(socket: WebSocket): Promise<Room[] | null> {
-  const connection = await socket?.databasePool?.getConnection();
-  if (!connection) {
-    console.log(`[ws][handleGetUsersRooms] 'databasePool' not found on socket!`);
-    return null;
-  }
+  const connection = await DB_POOL.getConnection();
   const user = socket?.user;
   if (!user) {
     console.log(`[ws][handleGetRoomMembers] 'user' not found on socket!`);
@@ -125,26 +118,25 @@ async function getRoomsByUserId(socket: WebSocket): Promise<Room[] | null> {
   return rooms as Room[];
 }
 
-function broadcastMemberStatus(wss: WebSocketServer, roomId: string, userId: string, status: "left" | "entered") {
-  if (userId === "") {
-    console.log(`[ws][broadcastEnteredRoom] Joining member id is missing!`);
-    return;
-  }
-  wss.clients.forEach((c: WebSocket) => {
-    if (c && c.user && c.activeIn === roomId && c.user.id !== userId) {
-      sendMessage(c, status, { id: userId });
+function broadcastMemberStatus(roomId: string, userId: string, status: "left" | "entered") {
+  if (BUCKETS.has(roomId)) {
+    for (const [_, socket] of BUCKETS.get(roomId)!) {
+      if (socket.readyState === socket.OPEN) {
+        sendMessage(socket, status, { id: userId });
+      }
     }
-  });
+  }
 }
 
 // Handle sending broadcast to all members of a specific room
-function broadcastMessage(wss: WebSocketServer, fromUserId: string, fromUserName: string, chatColor: string, toRoomId: string, messageText: string) {
-  // Get all active members of this room..
-  wss.clients.forEach((c: WebSocket) => {
-    if (c && c.user && c.activeIn === toRoomId && c.user.id !== fromUserId) {
-      sendMessage(c, "broadcast", { from: fromUserName, message: messageText, color: chatColor });
+function broadcastMessage(toRoomId: string, fromUserId: string, fromUserName: string, message: string, chatColor: string) {
+  if (BUCKETS.has(toRoomId)) {
+    for (const [userId, socket] of BUCKETS.get(toRoomId)!) {
+      if (userId !== fromUserId && socket.readyState === socket.OPEN) {
+        sendMessage(socket, "message", { from: fromUserName, color: chatColor, message });
+      }
     }
-  });
+  }
 }
 
 async function isAuthenticated(token: string, socket: WebSocket) {

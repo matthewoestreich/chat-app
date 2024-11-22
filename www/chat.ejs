@@ -271,30 +271,30 @@
 
         switch (message.type) {
           case "rooms": {
-            wsHandleRoomsMessage(roomsContainer, message.rooms);
+            handleRooms(roomsContainer, message.rooms);
             break;
           }
 
-          case "send_room_members": {
-            wsHandleMembersMessage(membersContainer, message.members);
+          case "members": {
+            handleRoomMembers(membersContainer, message.members);
             break;
           }
 
-          // Got a message
-          case "broadcast": {
-            wsHandleBroadcast(message);
+          // Got a chat message
+          case "message": {
+            handleMessage(message);
             break;
           }
 
           // Someone entered the room
           case "entered": {
-            wsHandleMemberEntered(message?.id);
+            handleEntered(message?.id);
             break;
           }
 
           // Someone left the room we are currently in
           case "left": {
-            wsHandleMemberLeft(message?.id);
+            handleLeft(message?.id);
             break;
           }
 
@@ -348,25 +348,25 @@
        */
 
       // Active room element is stored at `window.rtcActiveRoom`.
-      function wsHandleRoomsMessage(appendToElement, rooms) {
+      function handleRooms(appendToElement, rooms) {
         renderRooms(appendToElement, rooms);
       }
 
-      function wsHandleMembersMessage(appendToElement, members) {
+      function handleRoomMembers(appendToElement, members) {
         window.rtcRoomMembers = members;
         sortRoomMembers(window.rtcRoomMembers);
         renderMembers(appendToElement, members);
       }
 
       // Received message
-      function wsHandleBroadcast(broadcast) {
+      function handleMessage(broadcast) {
         const opts = { message: broadcast.message, displayName: broadcast.from, isSending: false, chatBubbleColor: broadcast.color };
         const msgHTML = generateChatHTML(opts);
         chatDisplay.appendChild(msgHTML);
         scrollToBottomOfElement(chatDisplay);
       }
 
-      function wsHandleMemberEntered(id) {
+      function handleEntered(id) {
         if (!window.rtcRoomMembers) {
           return;
         }
@@ -378,7 +378,7 @@
         renderMembers(membersContainer, window.rtcRoomMembers);
       }
 
-      function wsHandleMemberLeft(id) {
+      function handleLeft(id) {
         if (!window.rtcRoomMembers) {
           return;
         }
@@ -529,13 +529,13 @@
           if (a.isActive && b.isActive) {
             return a.userName.localeCompare(b.userName);
           }
-          if (a.isActive && !b.isActive) {
-            return -1;
+          if (!a.isActive && !b.isActive) {
+            return a.userName.localeCompare(b.userName);
           }
-          if (b.isActive && !a.isActive) {
-            return 1;
+          if (a.isActive) {
+            return -1; // Here, if 'a' is active, 'b' has to be inactive.
           }
-          return a.userName.localeCompare(b.userName);
+          return 1; // Here, we can safely assume 'b' is active and 'a' is inactive.
         });
       }
 

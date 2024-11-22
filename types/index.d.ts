@@ -52,6 +52,10 @@ interface Room {
   name: string;
 }
 
+interface Cookies {
+  [key: string]: string;
+}
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;
