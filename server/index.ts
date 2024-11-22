@@ -18,7 +18,7 @@ app.set("views", path.resolve(__dirname, "../www"));
 
 app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 
-const dbFilePath = process.env.ABSOLUTE_DB_PATH || "";
+const dbFilePath = process.env.ABSOLUTE_DB_PATH || path.resolve(__dirname, "../tmp/rtchat");
 const sqlitePool = new SQLitePool(dbFilePath, 5);
 morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2)); // custom logging 'token' to log req bodies.
 
@@ -108,7 +108,6 @@ app.get("/initdb", async (_req: Request, res: Response) => {
 app.get("/query", async (req: Request, res: Response) => {
   let { statement } = req.query;
   if (!statement) statement = "SELECT * FROM 'user'";
-  //const { db, release } = await req.databasePool.getConnection();
   const p = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 3);
   const finalStatement = statement.toString();
   console.log(finalStatement);
