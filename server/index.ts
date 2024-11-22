@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import express, { Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -96,7 +97,9 @@ app.get("/initdb", async (_req: Request, res: Response) => {
     if (!tables || (tables && !tables.length)) {
       throw new Error("no tables created");
     }
-    res.send(tables);
+    fs.writeFileSync("./listings.txt", JSON.stringify(tables), "utf-8");
+    const contents = fs.readFileSync("./listings.txt", "utf-8");
+    res.json({ tables, tablesFromFile: JSON.parse(contents) });
   } catch (e) {
     res.send(e);
   }
