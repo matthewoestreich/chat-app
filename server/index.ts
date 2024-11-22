@@ -88,7 +88,7 @@ app.get("/logout", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/initdb", async (req: Request, res: Response) => {
+app.get("/initdb", async (_req: Request, res: Response) => {
   try {
     console.log({ taks: "initDatabase", to: process.env.ABSOLUTE_DB_PATH });
     await initDatabase();
