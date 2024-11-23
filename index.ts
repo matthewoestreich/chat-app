@@ -1,7 +1,7 @@
 import "dotenv/config";
 import "./server/wss/index";
 import initDatabase from "@/server/db/initDatabase";
-import createKeepAliveJob from "@/scripts/keepAlive";
+import keepalive from "@/scripts/keepAlive";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
@@ -21,7 +21,7 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
   process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
 } else {
   // Start CronJob as keep-alive...
-  createKeepAliveJob().start();
+  keepalive.start();
 }
 
 async function Main() {

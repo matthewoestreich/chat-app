@@ -1,8 +1,8 @@
 import { CronJob } from "cron";
 
-export default function (host = "rtchat-a7ul.onrender.com"): CronJob {
+function keepaliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   return new CronJob(
-    "* */3 * * * *", // Every 3 minutes..
+    "* */3 * * *", // Every 3 minutes..
     function () {
       fetch(host)
         .then((resp) => resp.text())
@@ -11,3 +11,5 @@ export default function (host = "rtchat-a7ul.onrender.com"): CronJob {
     },
   );
 }
+
+export default keepaliveJob();
