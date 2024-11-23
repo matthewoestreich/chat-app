@@ -2,7 +2,7 @@ import { CronJob } from "cron";
 
 function keepaliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   return new CronJob(
-    "* */3 * * *", // Every 3 minutes..
+    "*/3 * * * *", // Every 3 minutes..
     function () {
       fetch(host)
         .then((resp) => resp.text())
