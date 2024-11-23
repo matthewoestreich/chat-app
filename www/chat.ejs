@@ -100,6 +100,8 @@
   <body>
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
+    <!-- Modals -->
+    <%- include("./partials/leave-room-confirmation-modal.ejs") %>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
       <nav class="container">
@@ -165,7 +167,7 @@
         </div>
         <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
           <div class="card-header d-flex flex-row">
-            <div id="chat-title" class="col-12 align-content-center text-center chat-title chat-title-no-room">Please join a room</div>
+            <div id="chat-title" class="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">Please join a room</div>
           </div>
           <div id="chat-display" class="card-body overf-y-scroll"></div>
           <div class="card-footer">
@@ -189,14 +191,19 @@
           </div>
           <div class="card-footer">
             <div class="row">
-              <div class="col-6 d-flex">
-                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
-                  <i class="bi bi-folder-plus"></i>
-                </button>
-              </div>
-              <div class="col-6 d-flex">
+              <div class="col-4 d-flex p-1">
                 <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Join room">
                   <i class="bi bi-box-arrow-in-up-right"></i>
+                </button>
+              </div>
+              <div class="col-4 d-flex p-1">
+                <button id="leave-room-btn" class="btn btn-outline-danger flex-grow-1" type="button" title="Leave current room" disabled>
+                  <i class="bi bi-box-arrow-down-left"></i>
+                </button>
+              </div>
+              <div class="col-4 d-flex p-1">
+                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
+                  <i class="bi bi-folder-plus"></i>
                 </button>
               </div>
             </div>
@@ -204,6 +211,8 @@
         </div>
       </div>
     </div>
+    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/rtchat/addSpinnerToButton.js"></script>
     <script nonce="<%= nonce %>">
       // Theme script...
       const toggleThemeBtn = document.getElementById("toggle-theme");
@@ -251,11 +260,17 @@
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
+      const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
+      const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
+      const openLeaveRoomConfirmModalBtn = document.getElementById("leave-room-btn");
+      const confirmedLeaveRoomBtn = document.getElementById("leave-room-confirmation-modal-confirmed-leave-btn");
       // Chat related elements
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
       const chatTextInput = document.getElementById("chat-text-input");
       const chatTitle = document.getElementById("chat-title");
+      // bootstrap instances/objects
+      const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -302,6 +317,14 @@
             break;
           }
 
+          // You unjoined a room
+          case "unjoined": {
+            // { ok: bool, rooms?: <if ok, list of updated rooms to render>, error?: <if !ok, error will be here> }
+            const { ok, rooms, error } = message;
+            handleUnjoined(ok, rooms, error);
+            break;
+          }
+
           default: {
             console.log(`got message from server :`, { message });
             break;
@@ -335,7 +358,25 @@
         scrollToBottomOfElement(chatDisplay);
       });
 
+      openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
+        if (!window?.rtcActiveRoom) {
+          return;
+        }
+        leaveRoomConfirmationModalBody.innerText = `Are you sure you want to leave room '${window.rtcActiveRoom.getAttribute("name")}'?`;
+        bsLeaveConfirmationModal.show();
+      });
+
+      confirmedLeaveRoomBtn.addEventListener("click", (event) => {
+        if (!window?.rtcActiveRoom) {
+          bsLeaveConfirmationModal.hide();
+          return;
+        }
+        addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
+        sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
+      });
+
       function handleRoomClick(event, self, socket) {
+        openLeaveRoomConfirmModalBtn.disabled = false;
         const activeRoomClass = "active-room";
         const currentActiveRoom = window?.rtcActiveRoom;
         if (currentActiveRoom === self) {
@@ -346,7 +387,7 @@
         self.classList.add(activeRoomClass);
         currentActiveRoom?.classList?.remove(activeRoomClass);
         window.rtcActiveRoom = self;
-        sendMessage(socket, "entered_room", { roomId: self.id });
+        sendMessage(ws, "entered_room", { roomId: self.id });
       }
 
       /**
@@ -370,6 +411,18 @@
         const msgHTML = generateChatHTML(opts);
         chatDisplay.appendChild(msgHTML);
         scrollToBottomOfElement(chatDisplay);
+      }
+
+      function handleUnjoined(isSuccess, updatedRooms, error) {
+        const restore = getSpinnerButtonInstance(confirmedLeaveRoomBtn);
+        restore();
+        if (!isSuccess) {
+          console.error(`[handleUnjoined][ERROR]`, error);
+          leaveRoomConfirmationModalBody.innerText = "Something went wrong, please try again.";
+          return;
+        }
+        bsLeaveConfirmationModal.hide();
+        handleRooms(roomsContainer, updatedRooms);
       }
 
       function handleEntered(id) {
@@ -436,6 +489,7 @@
       }
 
       function renderRooms(containerElement, rooms) {
+        containerElement.replaceChildren();
         loadingRoomsSpinner.classList.add("d-none");
         if (!rooms.length) {
           const p = document.createElement("p");
@@ -515,6 +569,7 @@
         const cardTextP = document.createElement("p");
         listItemLi.classList.add("list-group-item", "p-1", "border-0");
         listItemLi.id = roomId;
+        listItemLi.setAttribute("name", roomName);
         listItemLi.setAttribute("data-bs-dismiss", "offcanvas");
         listItemLi.setAttribute("data-bs-target", "#rooms-offcanvas");
         cardDiv.classList.add("card");
@@ -554,6 +609,5 @@
         element.scrollTop = element.scrollHeight;
       }
     </script>
-    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

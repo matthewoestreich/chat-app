@@ -100,6 +100,7 @@
       </div>
     </div>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/rtchat/addSpinnerToButton.js"></script>
     <script nonce="<%= nonce %>">
       const mainLoginBtn = document.getElementById("login-btn");
       const loginEmailInput = document.getElementById("login-email-input");
@@ -146,25 +147,6 @@
         const expires = new Date();
         expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
         document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=${path}`;
-      }
-
-      // Returns a function that once called, revers button back to original state.
-      function addSpinnerToButton(btnElement, btnText = "") {
-        // Make button a spinner for "loading" animation purposes
-        const originalText = btnElement.innerText;
-        if (btnText === "") {
-          btnText = originalText;
-        }
-        const spinnerEl = document.createElement("span");
-        const statusEl = document.createElement("span");
-        spinnerEl.classList.add("spinner-border", "spinner-border-sm", "me-1");
-        statusEl.role = "status";
-        statusEl.innerText = btnText;
-        // Turn button into spinner
-        btnElement.replaceChildren(spinnerEl, statusEl);
-        return () => {
-          btnElement.innerText = originalText;
-        };
       }
     </script>
     <script nonce="<%= nonce %>">

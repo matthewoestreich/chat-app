@@ -7,6 +7,7 @@ export default {
   selectAllRoomsAndMembersByUserId: selectAllRoomsAndRoomMembersByUserId,
   selectRoomMembersByRoomId: selectRoomMembersByRoomId,
   selectRoomMembersByRoomIdIgnoreUserId,
+  deleteRoomMember,
 };
 
 function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName = "chat", roomTableName = "room") {
@@ -157,6 +158,24 @@ function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: 
       });
     } catch (e) {
       return reject(e);
+    }
+  });
+}
+
+function deleteRoomMember(db: sqlite3.Database, roomId: string, userId: string, tableName = "chat"): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    try {
+      db.serialize(() => {
+        db.run(`DELETE FROM ${tableName} WHERE roomId = ? AND userId = ?`, [roomId, userId], function (err) {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+      });
+    } catch (e) {
+      console.log(`[chatService][deleteRoomMember][ERROR]`, e);
+      reject(e);
     }
   });
 }

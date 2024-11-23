@@ -63,9 +63,18 @@ WSS.on("connection", async (socket: WebSocket, req) => {
         break;
       }
 
+      case "unjoin": {
+        const { roomId } = message;
+        handleUnjoinRoom(socket, roomId);
+        break;
+      }
+
       case "send_message": {
         handleSendMessage(socket, message);
         break;
+      }
+
+      case "get_public_rooms": {
       }
 
       default: {
@@ -112,6 +121,25 @@ function handleSendMessage(socket: WebSocket, message: any) {
   }
   const { fromUserName, fromUserId, toRoom, value } = message;
   broadcastMessage(toRoom, fromUserId, fromUserName, value, socket.chatColor);
+}
+
+async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
+  try {
+    if (!socket.user || !socket.user.id) {
+      console.log(`[ws][handleUnjoinRoom] empty user or user.id`, { user: socket?.user });
+      sendMessage(socket, "unjoined", { ok: false, error: "empty user or user.id" });
+      return;
+    }
+    const { db, release } = await DB_POOL.getConnection();
+    await chatService.deleteRoomMember(db, roomId, socket.user.id);
+    const updatedRooms = await chatService.selectRoomsByUserId(db, socket.user.id);
+    release();
+    handleLeaveRoom(socket, roomId);
+    sendMessage(socket, "unjoined", { ok: true, rooms: updatedRooms });
+  } catch (e) {
+    console.error(`[ws][handleUnjoinRoom][ERROR]`, e);
+    sendMessage(socket, "unjoined", { ok: false, error: e });
+  }
 }
 
 // Get all members of a specific room.
