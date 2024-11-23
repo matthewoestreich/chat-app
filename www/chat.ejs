@@ -20,12 +20,12 @@
         min-height: 0;
       }
 
-      @media (min-width: 992px) {
+      @media only screen and (min-width: 992px) {
         .h-lg-90pct {
           height: 90%;
         }
       }
-      @media (max-width: 992px) {
+      @media only screen and (max-width: 992px) {
         .h-lg-90pct {
           height: 100%;
         }
@@ -90,6 +90,7 @@
       }
       .chat-title {
         color: var(--bs-tertiary-color);
+        height: 48px;
       }
       .chat-title-no-room {
         font-style: italic;
@@ -140,15 +141,15 @@
       </nav>
     </header>
     <!-- MAIN CONTENT -->
-    <div class="container-xl h-100 d-flex flex-column" style="padding-top: 4em">
+    <div class="container-fluid h-100 d-flex flex-column" style="padding-top: 4em">
       <div class="row text-center">
         <div class="col">
           <h1><%= name %></h1>
         </div>
       </div>
       <!-- Content Row (main row) -->
-      <div class="row g-0 flex-fill min-h-0">
-        <div id="members-offcanvas" class="card col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start">
+      <div class="row g-0 flex-fill justify-content-center min-h-0">
+        <div id="members-offcanvas" class="card col-xl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start">
           <div class="card-header d-flex flex-row display-6 text-center">
             <div class="flex-fill text-center">Members</div>
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
@@ -162,9 +163,9 @@
           </div>
           <div class="card-footer"></div>
         </div>
-        <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-1 h-90pct overf-hide d-flex">
+        <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
           <div class="card-header d-flex flex-row">
-            <div id="chat-title" class="flex-fill text-center chat-title chat-title-no-room">Please join a room</div>
+            <div id="chat-title" class="col-12 align-content-center text-center chat-title chat-title-no-room">Please join a room</div>
           </div>
           <div id="chat-display" class="card-body overf-y-scroll"></div>
           <div class="card-footer">
@@ -174,7 +175,7 @@
             </div>
           </div>
         </div>
-        <div id="rooms-offcanvas" class="card col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end">
+        <div id="rooms-offcanvas" class="card col-xl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end">
           <div class="card-header d-flex flex-row display-6 text-center">
             <div class="flex-fill text-center">Rooms</div>
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
@@ -190,9 +191,12 @@
             <div class="row">
               <div class="col-6 d-flex">
                 <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-                  </svg>
+                  <i class="bi bi-folder-plus"></i>
+                </button>
+              </div>
+              <div class="col-6 d-flex">
+                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Join room">
+                  <i class="bi bi-box-arrow-in-up-right"></i>
                 </button>
               </div>
             </div>
@@ -252,13 +256,6 @@
       const sendChatButton = document.getElementById("send-chat-btn");
       const chatTextInput = document.getElementById("chat-text-input");
       const chatTitle = document.getElementById("chat-title");
-
-      // Insert fake messages for testing
-      //for (let i = 0; i < 40; i++) {
-      //  const msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam id ultricies neque, vel suscipit leo.";
-      //  const isSending = [true, false][Math.floor(Math.random() * 2)];
-      //  renderChatMessage(chatDisplay, msg, "Something Random", isSending);
-      //}
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -399,7 +396,6 @@
         renderMembers(membersContainer, window.rtcRoomMembers);
       }
 
-      // Send a message
       function sendMessage(socket, type, data) {
         if (!socket || !type || !data) {
           console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });
@@ -433,16 +429,8 @@
         const membersListElement = document.createElement("ul");
         membersListElement.classList.add("list-group", "list-group-flush");
         for (const m of members) {
-          //const memberHTML = generateMemberHTML(m.userName, m.userId);
-          //membersListElement.appendChild(memberHTML);
-          membersListElement.innerHTML += `
-            <li id="${m.userId}" class="list-group-item d-flex justify-content-between align-items-start">
-              <div class="ms-2 me-auto">
-                <div class="fw-bold">${m.userName}</div>
-              </div>
-              <span id="${m.userId}-status" class="badge rounded-pill text-bg-${m.isActive ? "success" : "warning"}">${"  "}</span>
-            </li>
-          `;
+          const memberHTML = generateMemberHTML(m.userName, m.userId, m.isActive);
+          membersListElement.appendChild(memberHTML);
         }
         containerElement.appendChild(membersListElement);
       }
@@ -499,11 +487,24 @@
         return messageDiv;
       }
 
-      function generateMemberHTML(name, id) {
+      function generateMemberHTML(name, id, isActive) {
         const li = document.createElement("li");
-        li.classList.add("list-group-item");
+        const divUnContainer = document.createElement("div");
+        const divUn = document.createElement("div");
+        const span = document.createElement("span");
         li.id = id;
-        li.innerText = name;
+        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-start");
+        divUnContainer.classList.add("ms-2", "me-auto");
+        divUn.classList.add("fw-bold");
+        divUn.innerText = name;
+        span.id = `${id}-status`;
+        const status = isActive ? "text-bg-success" : "text-bg-warning";
+        span.classList.add("badge", "rounded-pill", status);
+        // This empty space is intentional
+        span.innerText = " ";
+        divUnContainer.appendChild(divUn);
+        li.appendChild(divUnContainer);
+        li.appendChild(span);
         return li;
       }
 

@@ -4,7 +4,7 @@ import parseCookies from "./parseCookies";
 import verifyTokenAsync from "./verifyTokenAsync";
 import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
-import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import { chatService } from "../db/services";
 
 const WSS = new WebSocketServer({ server });
@@ -17,7 +17,8 @@ WSS.on("connection", async (socket: WebSocket, req) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const authenticated = await isAuthenticated(cookies?.session, socket);
   if (!authenticated) {
-    socket.close(WEBSOCKET_ERROR_CODE.Unauthorized, "unauthorized");
+    const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
+    socket.close(code, definition);
     return;
   }
 
@@ -40,7 +41,11 @@ WSS.on("connection", async (socket: WebSocket, req) => {
     if (socket.activeIn) {
       handleLeaveRoom(socket, socket.activeIn);
     }
-    console.log(`socket closed.`, { user: socket?.user?.id || "NA", code, reason: reason.toString() });
+    let why = { reason: reason.toString(), definition: "" };
+    if (why.reason === "") {
+      why = errorCodeToReason(code);
+    }
+    console.log(`socket closed.`, { user: socket?.user?.id || "NA", code, reason: why });
   });
 
   socket.on("message", async (rawMessage: RawData) => {
@@ -163,7 +168,8 @@ async function isAuthenticated(token: string, socket: WebSocket) {
   try {
     const isValidToken = await verifyTokenAsync(token, process.env.JWT_SIGNATURE || "");
     if (!isValidToken) {
-      socket.close(WEBSOCKET_ERROR_CODE.Unauthorized, "unauthorized");
+      const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
+      socket.close(code, definition);
       return false;
     }
     return true;
