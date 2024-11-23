@@ -37,6 +37,28 @@ export default async function () {
           CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
           CHECK(length(userId) = 36)
         );`);
+        db.run(`CREATE TABLE IF NOT EXISTS messages (
+          id TEXT NOT NULL, --PRIMARY KEY,
+          roomId TEXT NOT NULL,
+          userId TEXT NOT NULL,
+          message TEXT NOT NULL,
+          color TEXT NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`);
+        db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);
+        db.run(`CREATE TRIGGER IF NOT EXISTS enforce_messages_limit 
+          AFTER INSERT ON messages
+          WHEN (SELECT COUNT(*) FROM messages WHERE roomId = NEW.roomId) > 50
+          BEGIN
+              DELETE FROM messages
+              WHERE id = (
+                  SELECT id
+                  FROM messages
+                  WHERE roomId = NEW.roomId
+                  ORDER BY timestamp ASC
+                  LIMIT 1
+              );
+          END;`);
         db.run("COMMIT");
         db.close();
         resolve();

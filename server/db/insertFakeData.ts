@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  *
  *
@@ -21,7 +22,34 @@ import sqlite3 from "sqlite3";
 import path from "path";
 sqlite3.verbose();
 
+/**
+ *
+ *
+ * CHANGE THIS TO TRUE/FALSE WHETHER YOU WANT TO ACTUALLY INSERT DATA
+ * AND NOT JUST TEST GENERATION..
+ *
+ *
+ */
+const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = false;
+//
+//
 const NUM_ITEMS_EACH = 100;
+/**
+ *
+ *
+ *
+ */
+
+function logGeneratedData() {
+  console.log(JSON.stringify(users, null, 2));
+  console.log("*".repeat(40));
+  console.log(JSON.stringify(rooms, null, 2));
+  console.log("*".repeat(40));
+  console.log(JSON.stringify(chat, null, 2));
+  console.log("*".repeat(40));
+  console.log(JSON.stringify(messages, null, 2));
+  console.log("*".repeat(40));
+}
 
 function getRandomInt(max: number) {
   return Math.floor(Math.random() * max);
@@ -92,6 +120,21 @@ const chat = Array.from({ length: NUM_ITEMS_EACH }, (_, i) => {
   return output;
 });
 
+// Generate fake messages...
+const messages: any = [];
+rooms.forEach((room) => {
+  const members = chat.filter((chatMember) => chatMember.rooms.some((memberRoom) => memberRoom.id === room.id));
+  for (let i = 0; i < 50; i++) {
+    messages.push({
+      message: faker.lorem.sentence({ min: 3, max: 20 }),
+      color: faker.color.rgb(),
+      userId: members[i % members.length].id,
+      roomId: room.id,
+      id: uuidV7(),
+    });
+  }
+});
+
 async function insertUsers(db: sqlite3.Database, users: { id: string; username: string; password: string; email: string }[]) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -147,6 +190,28 @@ async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) 
   });
 }
 
+// @ts-ignore
+async function insertMessages(db, messages) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO messages (id, roomId, userId, message, color) VALUES (?, ?, ?, ?, ?)`);
+      for (const message of messages) {
+        stmt.run(message.id, message.roomId, message.userId, message.message, message.color);
+      }
+      stmt.finalize((err) => {
+        if (err) {
+          console.log(`error finalizing messages statement`, err);
+          return reject(err);
+        }
+        console.log(` - messages stmt finalized`);
+        resolve(true);
+      });
+    } catch (e) {
+      reject(`error inserting message ${e}`);
+    }
+  });
+}
+
 async function main() {
   const db = new sqlite3.Database(path.resolve(__dirname, "./rtchat.db"), (err) => {
     if (err) {
@@ -171,6 +236,10 @@ async function main() {
       await insertChatRooms(db, chat);
       console.log("chat rooms inserted.");
 
+      console.log("Inserting messages...");
+      await insertMessages(db, messages);
+      console.log("messages inserted.");
+
       db.run("COMMIT");
     });
   } catch (e) {
@@ -185,6 +254,14 @@ async function main() {
  *
  * COMMENT THIS OUT TO SKIP RUNNING
  */
-(async () => main())();
+if (IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION) {
+  (async () => {
+    console.log(`- OK TO INSERT\n- INSERTING '${NUM_ITEMS_EACH}' ITEMS IN EACH TABLE.\n\n`);
+    main();
+  })();
+} else {
+  console.log(`- *NOT* OK TO INSERT, ONLY LOGGING GENERATED DATA\n\n`);
+  logGeneratedData();
+}
 /*
  */
