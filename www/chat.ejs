@@ -20,6 +20,17 @@
         min-height: 0;
       }
 
+      @media (min-width: 992px) {
+        .h-lg-90pct {
+          height: 90%;
+        }
+      }
+      @media (max-width: 992px) {
+        .h-lg-90pct {
+          height: 100%;
+        }
+      }
+
       .h-90pct {
         height: 90%;
       }
@@ -73,6 +84,16 @@
         /*rgba(42, 41, 41, 0.5);*/
         font-size: 10px;
       }
+      a.navbar-icon {
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .chat-title {
+        color: var(--bs-tertiary-color);
+      }
+      .chat-title-no-room {
+        font-style: italic;
+      }
     </style>
   </head>
   <body>
@@ -80,56 +101,41 @@
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
-      <nav class="container bd-gutter flex-wrap flex-lg-nowrap">
-        <a class="navbar-brand p-0 me-0 me-lg-2" href="/"> RTChat </a>
-        <div class="d-flex">
-          <button class="navbar-toggler d-flex d-lg-none order-3 p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#bdNavbar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-list fs-3" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
-            </svg>
-          </button>
+      <nav class="container">
+        <div class="me-auto">
+          <span class="navbar-brand">RTChat</span>
         </div>
-        <div id="bdNavbar" class="offcanvas-lg offcanvas-end flex-grow-1">
-          <div class="offcanvas-header px-4 pb-0">
-            <h5 class="offcanvas-title" id="bdNavbarOffcanvasLabel">RTChat</h5>
-            <button type="button" class="btn-close btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-bs-target="#bdNavbar"></button>
-          </div>
-          <div class="offcanvas-body p-4 pt-0 p-lg-0">
-            <hr class="d-lg-none text-50" />
-            <ul class="navbar-nav d-lg-none flex-row flex-wrap bd-navbar-nav text-center">
-              <li class="nav-item col-6 col-lg-auto d-flex">
-                <button class="nav-link btn btn-outline-dark flex-fill" data-bs-toggle="offcanvas" data-bs-target="#members-offcanvas">Members</button>
-              </li>
-              <li class="nav-item col-6 col-lg-auto d-flex">
-                <button class="nav-link btn btn-outline-dark flex-fill" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">Rooms</button>
-              </li>
-            </ul>
-            <hr class="d-lg-none text-50" />
-            <ul class="navbar-nav flex-lg-row flex-lg-wrap ms-md-auto">
-              <li class="nav-item col-lg-6 col-12 col-lg-auto">
-                <a id="toggle-theme" class="nav-link d-flex" style="cursor: pointer" title="Toggle theme">
-                  <button class="btn btn-outline-secondary flex-fill">
-                    <svg id="dark-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="d-none bi bi-moon" viewBox="0 0 16 16">
-                      <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286" />
-                    </svg>
-                    <svg id="light-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sun-fill fs-3 d-none" viewBox="0 0 16 16">
-                      <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
-                    </svg>
-                  </button>
-                </a>
-              </li>
-              <li class="nav-item col-lg-6 col-12 col-lg-auto">
-                <a class="nav-link d-flex" href="logout">
-                  <button class="btn btn-outline-secondary flex-fill" type="button" title="Logout">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
-                      <path d="M7.5 1v7h1V1z" />
-                      <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812" />
-                    </svg>
-                  </button>
-                </a>
-              </li>
-            </ul>
-          </div>
+        <div class="mx-auto">
+          <a class="navbar-icon d-inline-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#members-offcanvas">
+            <button class="btn btn-outline-secondary" type="button" title="View Members">
+              <i class="bi bi-people"></i>
+            </button>
+          </a>
+          <a class="navbar-icon d-inline-block d-lg-none">
+            <button class="btn btn-outline-secondary" type="button" title="View Rooms" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">
+              <i class="bi bi-door-open"></i>
+            </button>
+          </a>
+        </div>
+        <div class="ms-auto">
+          <a id="toggle-theme" class="navbar-icon" title="Toggle theme">
+            <button class="btn btn-outline-secondary flex-fill">
+              <svg id="dark-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="d-none bi bi-moon" viewBox="0 0 16 16">
+                <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286" />
+              </svg>
+              <svg id="light-theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sun-fill fs-3 d-none" viewBox="0 0 16 16">
+                <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
+              </svg>
+            </button>
+          </a>
+          <a class="navbar-icon" href="logout">
+            <button class="btn btn-outline-secondary flex-fill" type="button" title="Logout">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+                <path d="M7.5 1v7h1V1z" />
+                <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812" />
+              </svg>
+            </button>
+          </a>
         </div>
       </nav>
     </header>
@@ -142,7 +148,7 @@
       </div>
       <!-- Content Row (main row) -->
       <div class="row g-0 flex-fill min-h-0">
-        <div id="members-offcanvas" class="card col-3 d-lg-flex flex-column rounded-end-3 h-90pct border min-h-0 overf-hide offcanvas-lg offcanvas-end">
+        <div id="members-offcanvas" class="card col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start">
           <div class="card-header d-flex flex-row display-6 text-center">
             <div class="flex-fill text-center">Members</div>
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
@@ -158,7 +164,7 @@
         </div>
         <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-1 h-90pct overf-hide d-flex">
           <div class="card-header d-flex flex-row">
-            <div class="flex-fill text-center">Main Title</div>
+            <div id="chat-title" class="flex-fill text-center chat-title chat-title-no-room">Please join a room</div>
           </div>
           <div id="chat-display" class="card-body overf-y-scroll"></div>
           <div class="card-footer">
@@ -168,7 +174,7 @@
             </div>
           </div>
         </div>
-        <div id="rooms-offcanvas" class="card col-3 d-lg-flex flex-column h-90pct min-h-0 offcanvas-lg offcanvas-end">
+        <div id="rooms-offcanvas" class="card col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end">
           <div class="card-header d-flex flex-row display-6 text-center">
             <div class="flex-fill text-center">Rooms</div>
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#rooms-offcanvas"></button>
@@ -245,6 +251,7 @@
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
       const chatTextInput = document.getElementById("chat-text-input");
+      const chatTitle = document.getElementById("chat-title");
 
       // Insert fake messages for testing
       //for (let i = 0; i < 40; i++) {
@@ -337,6 +344,8 @@
         if (currentActiveRoom === self) {
           return;
         }
+        chatTitle.classList.remove("chat-title-no-room");
+        chatTitle.innerText = self.innerText;
         self.classList.add(activeRoomClass);
         currentActiveRoom?.classList?.remove(activeRoomClass);
         window.rtcActiveRoom = self;
@@ -506,6 +515,8 @@
         const cardTextP = document.createElement("p");
         listItemLi.classList.add("list-group-item", "p-1", "border-0");
         listItemLi.id = roomId;
+        listItemLi.setAttribute("data-bs-dismiss", "offcanvas");
+        listItemLi.setAttribute("data-bs-target", "#rooms-offcanvas");
         cardDiv.classList.add("card");
         cardDiv.setAttribute("role", "button"); // For the pointer cursor.
         cardBodyDiv.classList.add("card-body");
