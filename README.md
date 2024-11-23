@@ -1,12 +1,22 @@
-# chat-app
+# RTChat
 
-A responsive, multi-user, multi-room real time chat application that supports dark mode!
+A responsive, multi-user, multi-room, real time chat application, that supports dark mode!
 
-Built with TypeScript and SQLite3 on the backend and vanilla JS on the frontend.
+## [Start chatting now! (beta)](https://rtchat-a7ul.onrender.com)
 
-[Start chatting now!](https://chat-app-ghpq.onrender.com)
+Backend Technologies:
+ - TypeScript
+ - WebSockets
+ - SQLite3
+ - JWT (acting as session)
+
+Frontend Technologies
+ - Vanilla JS
+ - Bootstrap 5
 
 ---
+
+# Look & Feel
 
 ## Default Look
 
@@ -31,3 +41,7 @@ Optimized for all devices!
 ![Responsive Rooms](/_screenshots/5_responsive_rooms.png "Responsive Members")
 
 ![Responsive Members](/_screenshots/6_responsive_members.png "Responsive Rooms")
+
+##### Older Versions
+
+[Version 1](https://chat-app-ghpq.onrender.com)
