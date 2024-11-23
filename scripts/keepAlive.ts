@@ -6,7 +6,7 @@ function keepaliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
     function () {
       fetch(host)
         .then((resp) => resp.text())
-        .then((result) => console.log(`[CronJob][Result]`, result))
+        .then(() => console.log(`[CronJob][Result] Success!`))
         .catch((e) => console.error(`[CronJob][Error]`, e));
     },
   );
