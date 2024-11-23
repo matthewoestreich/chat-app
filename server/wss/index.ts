@@ -5,7 +5,7 @@ import verifyTokenAsync from "./verifyTokenAsync";
 import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
-import { chatService } from "../db/services";
+import { chatService, messagesService } from "../db/services";
 
 const WSS = new WebSocketServer({ server });
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
@@ -93,17 +93,16 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
     // If they already had an active room, it means they're leaving it. So notify that room they left.
     handleLeaveRoom(socket, socket.activeIn);
   }
-
   socket.activeIn = roomId; // Update to the rooms they just entered
-  broadcastMemberStatus(roomId, socket.user.id, "entered"); // We also need to broadcast to the room that someone has joined.
+  broadcastMemberStatus(roomId, socket.user.id, "member_entered"); // We also need to broadcast to the room that someone has joined.
   BUCKETS.get(roomId)!.set(socket.user.id, socket);
-
   const members = (await getRoomMembers(roomId, socket.user.id))!.map((m) => {
     m.isActive = BUCKETS.get(roomId)!.has(m.userId);
     return m;
   });
-
-  sendMessage(socket, "members", { members });
+  const messages = await getMessages(roomId);
+  console.log(messages[0]);
+  sendMessage(socket, "entered_room", { members, messages });
 }
 
 function handleLeaveRoom(socket: WebSocket, roomId: string) {
@@ -111,7 +110,7 @@ function handleLeaveRoom(socket: WebSocket, roomId: string) {
     console.log(`[ws][handleLeaveRoom] either socket.activein or socket.user.id are empty..`, { activeIn: socket.activeIn, userId: socket?.user?.id });
     return;
   }
-  broadcastMemberStatus(socket.activeIn, socket.user.id, "left"); // Here, socket.activeIn is the room they just left.
+  broadcastMemberStatus(socket.activeIn, socket.user.id, "member_left"); // Here, socket.activeIn is the room they just left.
   BUCKETS.get(roomId)!.delete(socket.user.id); // Remove them from bucket they left
 }
 
@@ -121,6 +120,14 @@ function handleSendMessage(socket: WebSocket, message: any) {
   }
   const { fromUserName, fromUserId, toRoom, value } = message;
   broadcastMessage(toRoom, fromUserId, fromUserName, value, socket.chatColor);
+  DB_POOL.getConnection()
+    .then(({ db, release }) => {
+      messagesService
+        .insertMessage(db, toRoom, fromUserId, value, socket.chatColor!)
+        .then(() => release())
+        .catch(() => release());
+    })
+    .catch((e) => console.log(`error getting db connection while handloingSendMessage`, e));
 }
 
 async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
@@ -139,6 +146,17 @@ async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
   } catch (e) {
     console.error(`[ws][handleUnjoinRoom][ERROR]`, e);
     sendMessage(socket, "unjoined", { ok: false, error: e });
+  }
+}
+
+async function getMessages(roomId: string): Promise<Message[]> {
+  try {
+    const { db, release } = await DB_POOL.getConnection();
+    const messages = await messagesService.selectByRoomId(db, roomId);
+    release();
+    return messages;
+  } catch (e) {
+    return [];
   }
 }
 
@@ -168,7 +186,7 @@ async function getRoomsByUserId(socket: WebSocket): Promise<Room[] | null> {
   return rooms as Room[];
 }
 
-function broadcastMemberStatus(roomId: string, userId: string, status: "left" | "entered") {
+function broadcastMemberStatus(roomId: string, userId: string, status: "member_left" | "member_entered") {
   if (BUCKETS.has(roomId)) {
     for (const [_, socket] of BUCKETS.get(roomId)!) {
       if (socket.readyState === socket.OPEN) {

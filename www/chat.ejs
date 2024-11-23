@@ -289,6 +289,12 @@
         console.log("got message", { message });
 
         switch (message.type) {
+          case "entered_room": {
+            const { members, messages } = message;
+            handleEnteredRoom(members, messages);
+            break;
+          }
+
           case "rooms": {
             handleRooms(roomsContainer, message.rooms);
             break;
@@ -306,14 +312,14 @@
           }
 
           // Someone entered the room
-          case "entered": {
-            handleEntered(message?.id);
+          case "member_entered": {
+            handleMemberEntered(message?.id);
             break;
           }
 
           // Someone left the room we are currently in
-          case "left": {
-            handleLeft(message?.id);
+          case "member_left": {
+            handleMemberLeft(message?.id);
             break;
           }
 
@@ -376,6 +382,7 @@
       });
 
       function handleRoomClick(event, self, socket) {
+        chatDisplay.replaceChildren();
         openLeaveRoomConfirmModalBtn.disabled = false;
         const activeRoomClass = "active-room";
         const currentActiveRoom = window?.rtcActiveRoom;
@@ -425,7 +432,19 @@
         handleRooms(roomsContainer, updatedRooms);
       }
 
-      function handleEntered(id) {
+      function handleEnteredRoom(members, messages) {
+        handleRoomMembers(membersContainer, members);
+        messages.forEach(({ message, userId, userName, roomId, color }) => {
+          const isSending = userId === USER_ID;
+          console.log({ isSending });
+          const opts = { message, chatBubbleColor: color, isSending, displayName: userName };
+          const html = generateChatHTML(opts);
+          renderChatMessage(chatDisplay, html);
+        });
+        scrollToBottomOfElement(chatDisplay);
+      }
+
+      function handleMemberEntered(id) {
         if (!window.rtcRoomMembers) {
           return;
         }
@@ -437,7 +456,7 @@
         renderMembers(membersContainer, window.rtcRoomMembers);
       }
 
-      function handleLeft(id) {
+      function handleMemberLeft(id) {
         if (!window.rtcRoomMembers) {
           return;
         }

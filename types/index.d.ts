@@ -23,6 +23,16 @@ interface Room {
   isPublic: boolean;
 }
 
+interface Message {
+  id: string;
+  userId: string;
+  userName: string;
+  roomId: string;
+  message: string;
+  timestamp: Date;
+  color: string;
+}
+
 interface SessionToken {
   id: string;
   name: string;

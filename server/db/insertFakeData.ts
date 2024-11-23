@@ -30,7 +30,7 @@ sqlite3.verbose();
  *
  *
  */
-const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = false;
+const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = true;
 //
 //
 const NUM_ITEMS_EACH = 100;
@@ -87,6 +87,7 @@ const users: any[] = Array.from({ length: NUM_ITEMS_EACH }, () => {
     password: username,
     email: `${username}@${username}.com`,
     id: uuidV7(),
+    color: faker.color.rgb(),
   };
   return user;
 });
@@ -125,10 +126,11 @@ const messages: any = [];
 rooms.forEach((room) => {
   const members = chat.filter((chatMember) => chatMember.rooms.some((memberRoom) => memberRoom.id === room.id));
   for (let i = 0; i < 50; i++) {
+    const member = members[i % members.length];
     messages.push({
       message: faker.lorem.sentence({ min: 3, max: 20 }),
-      color: faker.color.rgb(),
-      userId: members[i % members.length].id,
+      color: member.color,
+      userId: member.id,
       roomId: room.id,
       id: uuidV7(),
     });
