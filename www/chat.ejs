@@ -283,10 +283,8 @@
       ws.onmessage = (rawMessage) => {
         const message = JSON.parse(rawMessage?.data);
         if (!message?.type) {
-          console.log(`socket message from server missing type!`);
           return;
         }
-        console.log("got message", { message });
 
         switch (message.type) {
           case "entered_room": {
@@ -332,7 +330,6 @@
           }
 
           default: {
-            console.log(`got message from server :`, { message });
             break;
           }
         }
@@ -341,6 +338,14 @@
       /**
        * Events & Event Handlers
        */
+
+      chatTextInput.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") {
+          return;
+        }
+        e.preventDefault();
+        sendChatBtn.click();
+      });
 
       sendChatBtn.addEventListener("click", (e) => {
         const activeRoom = window?.rtcActiveRoom;
@@ -436,7 +441,6 @@
         handleRoomMembers(membersContainer, members);
         messages.forEach(({ message, userId, userName, roomId, color }) => {
           const isSending = userId === USER_ID;
-          console.log({ isSending });
           const opts = { message, chatBubbleColor: color, isSending, displayName: userName };
           const html = generateChatHTML(opts);
           renderChatMessage(chatDisplay, html);
@@ -474,7 +478,6 @@
           return;
         }
         const msg = createMessage(type, data);
-        console.log(`sending`, msg);
         socket.send(msg);
       }
 
