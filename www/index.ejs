@@ -69,11 +69,14 @@
       </div>
       <div class="row" style="max-height: 400px">
         <div class="col mh-100">
+          <rtc-alert id="alert-display"></rtc-alert>
+          <!--
           <div id="alert-display" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
             <i class=""></i>
             <div id="alert-message" class="mb-0 max-h-100px overf-scroll"></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
+          -->
         </div>
       </div>
       <div class="row w-100">
@@ -107,8 +110,7 @@
       const loginEmailInput = document.getElementById("login-email-input");
       const loginPasswordInput = document.getElementById("login-password-input");
       const loginForm = document.getElementById("login-form");
-      const alertDisplay = document.getElementById("alert-display");
-      const alertMessage = document.getElementById("alert-message");
+      const statusAlert = document.getElementById("alert-display");
 
       mainLoginBtn.addEventListener("click", async function (event) {
         event.preventDefault();
@@ -136,7 +138,7 @@
 
         const loginResult = await loginResponse.json();
         if (!loginResponse?.ok) {
-          statusAlert.showWithIcon("danger", "Something went wrong!", "bi-exclamation-triangle-fill");
+          statusAlert.showDanger("Something went wrong!", "bi-exclamation-triangle-fill");
           return;
         }
 
@@ -164,7 +166,6 @@
       const caUnInput = document.getElementById("ca-un-input");
       const caEmailInput = document.getElementById("ca-email-input");
       const caPwInput = document.getElementById("ca-pw-input");
-      const statusAlert = new CustomAlert(alertDisplay, alertMessage);
 
       openCreateAccountModal.addEventListener("click", (e) => {
         event.preventDefault();
@@ -213,18 +214,15 @@
         removeSpinnerFromBtn();
         // Enable btns again.
         [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
-
-        //const bsCreateAccountModal = bootstrap.Modal.getOrCreateInstance(createAccountModal);
         bsCreateAccountModal.hide();
 
         // Error. Something went wrong creating account
         if (!accCreationResult.ok) {
-          console.log("uh oh");
-          statusAlert.showWithIcon("danger", "Something went wrong when creating account. Please try again.", "bi-exclamation-triangle-fill");
+          statusAlert.showDanger("Something went wrong when creating your account. Please try again.", "bi-exclamation-triangle-fill");
           return;
         }
 
-        statusAlert.showWithIcon("success", "Success! Account created successfully.", "bi-person-fill-check");
+        statusAlert.showSuccess("Success! Account created successfully.", "bi-person-fill-check");
         console.log("success!");
       });
     </script>

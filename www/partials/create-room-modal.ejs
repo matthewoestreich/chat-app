@@ -1,4 +1,3 @@
-<script src="/public/rtchat/CustomAlert.js"></script>
 <div class="modal fade modal" id="create-room-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -7,9 +6,7 @@
         <button id="close-modal-btn" tabindex="-1" type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div id="create-room-alert">
-          <div id="create-room-alert-message"></div>
-        </div>
+        <rtc-alert id="create-room-alert"></rtc-alert>
         <div class="form-group">
           <form id="create-room-form">
             <div class="form-floating mb-3">

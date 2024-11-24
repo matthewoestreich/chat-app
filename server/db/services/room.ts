@@ -2,8 +2,9 @@ import sqlite3 from "sqlite3";
 
 export default {
   insert: insertRoom,
-  selectAllPublicRooms,
+  selectAll: selectAllRooms,
   selectById: selectByRoomId,
+  selectUnjoinedRoomsByUserId,
 };
 
 function selectByRoomId(db: sqlite3.Database, roomId: string): Promise<Room> {
@@ -17,13 +18,37 @@ function selectByRoomId(db: sqlite3.Database, roomId: string): Promise<Room> {
   });
 }
 
-function selectAllPublicRooms(db: sqlite3.Database): Promise<Room[]> {
+function selectUnjoinedRoomsByUserId(db: sqlite3.Database, userId: string): Promise<Room[]> {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT * FROM room WHERE isPrivate = 0`, [], (err, rows) => {
+    const query = `
+    SELECT 
+        r.id, 
+        r.name 
+    FROM 
+        room r
+    LEFT JOIN 
+        chat c ON r.id = c.roomId AND c.userId = ?
+    WHERE 
+        c.roomId IS NULL
+    ORDER BY r.name ASC;
+    `;
+    db.all(query, [userId], (err, rows: Room[]) => {
       if (err) {
         return reject(err);
       }
-      return resolve(rows as Room[]);
+      return resolve(rows);
+    });
+  });
+}
+
+function selectAllRooms(db: sqlite3.Database, privateOnly?: boolean): Promise<Room[]> {
+  return new Promise((resolve, reject) => {
+    const privateQuery = privateOnly ? "WHERE isPrivate = 1" : "";
+    db.all(`SELECT * FROM room ${privateQuery} ORDER BY name ASC`, [], (err, rows: Room[]) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(rows);
     });
   });
 }

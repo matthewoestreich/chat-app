@@ -101,7 +101,8 @@
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Modals -->
-    <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room.ejs") %>
+    <script src="/public/rtchat/CustomAlert.js"></script>
+    <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room-modal.ejs") %><%- include("./partials/join-room-modal.ejs") %>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
       <nav class="container">
@@ -192,7 +193,7 @@
           <div class="card-footer">
             <div class="row">
               <div class="col-4 d-flex p-1">
-                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Join room">
+                <button id="open-join-room-modal" class="btn btn-outline-secondary flex-grow-1" type="button" title="Join room">
                   <i class="bi bi-box-arrow-in-up-right"></i>
                 </button>
               </div>
@@ -260,11 +261,13 @@
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
-      // Modal related
+      // ~ Modal related ~
+      // Leave room confirmation modal
       const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
       const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
       const openLeaveRoomConfirmModalBtn = document.getElementById("leave-room-btn");
       const confirmedLeaveRoomBtn = document.getElementById("leave-room-confirmation-modal-confirmed-leave-btn");
+      // Create room modal
       const createRoomModal = document.getElementById("create-room-modal");
       const openCreateRoomModalBtn = document.getElementById("open-create-room-modal-btn");
       const createRoomBtn = document.getElementById("create-room-btn");
@@ -272,7 +275,12 @@
       const createRoomIsPrivateCheckbox = document.getElementById("create-room-isprivate-checkbox");
       const createRoomForm = document.getElementById("create-room-form");
       const createRoomStatusEl = document.getElementById("create-room-alert");
-      const createRoomStatusMessageEl = document.getElementById("create-room-alert-message");
+      // Join room modal
+      const joinRoomModal = document.getElementById("join-room-modal");
+      const openJoinRoomModalBtn = document.getElementById("open-join-room-modal");
+      const joinRoomBtn = document.getElementById("join-room-btn");
+      const joinRoomModalRoomsContainer = document.getElementById("join-room-modal-rooms-container");
+      const joinRoomModalAlert = document.getElementById("join-room-alert");
       // Chat related elements
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
@@ -281,6 +289,7 @@
       // bootstrap instances/objects
       const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
       const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
+      const bsJoinRoomModal = bootstrap.Modal.getOrCreateInstance(joinRoomModal);
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -305,6 +314,13 @@
 
           case "rooms": {
             handleRooms(roomsContainer, message.rooms);
+            break;
+          }
+
+          // Received a list of rooms that this user can select.
+          case "joinable_rooms": {
+            const { ok, rooms, error } = message;
+            handleJoinableRooms(joinRoomModalRoomsContainer, ok, rooms, error);
             break;
           }
 
@@ -334,6 +350,12 @@
           // Someone left the room we are currently in
           case "member_left": {
             handleMemberLeft(message?.id);
+            break;
+          }
+
+          case "joined": {
+            const { ok, error, rooms, joinedRoomId } = message;
+            handleJoinedRoom(ok, rooms, joinedRoomId, error);
             break;
           }
 
@@ -400,12 +422,26 @@
         sendMessage(ws, "create_room", { roomName, isPrivate });
       });
 
+      joinRoomBtn.addEventListener("click", (event) => {
+        const selected = joinRoomModalRoomsContainer.querySelector(".active");
+        if (!selected) {
+          return;
+        }
+        addSpinnerToButton(joinRoomBtn, "Please wait...");
+        sendMessage(ws, "join", { userId: USER_ID, roomId: selected.id });
+      });
+
       openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
         if (!window?.rtcActiveRoom) {
           return;
         }
         leaveRoomConfirmationModalBody.innerText = `Are you sure you want to leave room '${window.rtcActiveRoom.getAttribute("name")}'?`;
         bsLeaveConfirmationModal.show();
+      });
+
+      openJoinRoomModalBtn.addEventListener("click", (event) => {
+        sendMessage(ws, "get_joinable_rooms", {});
+        bsJoinRoomModal.show();
       });
 
       openCreateRoomModalBtn.addEventListener("click", (event) => {
@@ -420,6 +456,13 @@
         }
         addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
         sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
+      });
+
+      joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
+        const revert = getSpinnerButtonInstance(joinRoomBtn);
+        revert();
+        joinRoomModalRoomsContainer.replaceChildren();
+        joinRoomModalAlert.hide();
       });
 
       // Clear form when modal is hidden.
@@ -448,8 +491,45 @@
        */
 
       // Active room element is stored at `window.rtcActiveRoom`.
-      function handleRooms(appendToElement, rooms) {
-        renderRooms(appendToElement, rooms);
+      function handleRooms(appendToElement, rooms, onRenderDone = () => {}) {
+        renderRooms(appendToElement, rooms, onRenderDone);
+      }
+
+      function handleJoinableRooms(appendToElement, ok, rooms, error) {
+        if (!ok) {
+          joinRoomModalAlert.showDanger("Something went wrong. Please close this box and try again.", "bi-exclamation");
+          console.log(`[handleJoinableRooms][ERROR]`, error);
+          return;
+        }
+        appendToElement.replaceChildren(); // clear anything existing..
+        for (const room of rooms) {
+          const roomEl = generateJoinableRoomHTML(room.name, room.id);
+          roomEl.addEventListener("click", function (event) {
+            const currentActive = appendToElement.querySelector(".active");
+            if (currentActive === this) {
+              return;
+            }
+            if (currentActive) {
+              currentActive.classList.remove("active");
+            }
+            this.classList.add("active");
+          });
+          appendToElement.appendChild(roomEl);
+        }
+      }
+
+      function handleJoinedRoom(ok, rooms, joinedRoomId, error) {
+        if (!ok) {
+          joinRoomModalAlert.showDanger("Something went wrong. Please close this box and try again.", "bi-exclamation");
+          console.log(`[handleJoinedRoom][ERROR]`, error);
+          return;
+        }
+        handleRooms(roomsContainer, rooms, () => {
+          const r = document.getElementById(joinedRoomId);
+          console.log({ joinedRoom: r });
+          window.rtcJoinedRoom = r;
+        });
+        bsJoinRoomModal.hide();
       }
 
       function handleRoomMembers(appendToElement, members) {
@@ -461,13 +541,12 @@
       function handleCreatedRoom(ok, rooms, error) {
         const revertButton = getSpinnerButtonInstance(createRoomBtn);
         revertButton();
-        const callout = new CustomAlert(createRoomStatusEl, createRoomStatusMessageEl);
         if (!ok) {
           console.log(`[handleCreatedRooms]`, error);
-          callout.showWithIcon("danger", "Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
+          createRoomStatusEl.showDanger("Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
           return;
         }
-        callout.showWithIcon("success", "Success! Room created successfully.", "bi-check");
+        createRoomStatusEl.showSuccess("Success! Room created successfully.", "bi-check");
         handleRooms(roomsContainer, rooms);
         bsCreateRoomModal.hide();
       }
@@ -490,6 +569,9 @@
         }
         bsLeaveConfirmationModal.hide();
         handleRooms(roomsContainer, updatedRooms);
+        // Clear members and chat from display
+        chatDisplay.replaceChildren();
+        handleRoomMembers(membersContainer, []);
       }
 
       function handleEnteredRoom(members, messages) {
@@ -565,7 +647,7 @@
         containerElement.appendChild(membersListElement);
       }
 
-      function renderRooms(containerElement, rooms) {
+      function renderRooms(containerElement, rooms, onCompleted = () => {}) {
         containerElement.replaceChildren();
         loadingRoomsSpinner.classList.add("d-none");
         if (!rooms.length) {
@@ -584,13 +666,12 @@
           roomsListElement.appendChild(roomHtml);
         }
         containerElement.appendChild(roomsListElement);
+        onCompleted();
       }
 
       /**
        * Generate HTML functions
        */
-
-      class ChatBubble extends HTMLElement {}
 
       function generateChatHTML(opts = { message: "", displayName: "", isSending: true, chatBubbleColor: "", isError: false }) {
         let { message, displayName, isSending, chatBubbleColor, isError } = opts;
@@ -663,6 +744,24 @@
         cardDiv.appendChild(cardBodyDiv);
         listItemLi.appendChild(cardDiv);
         return listItemLi;
+      }
+
+      function generateJoinableRoomHTML(roomName, roomId) {
+        const li = document.createElement("li");
+        const pRoomName = document.createElement("div");
+        const pRoomId = document.createElement("p");
+        li.classList.add("list-group-item", "list-group-item-action");
+        li.type = "button";
+        li.id = roomId;
+        li.setAttribute("name", roomName);
+        pRoomName.innerText = roomName;
+        pRoomName.classList.add("fw-bold", "fs-5");
+        pRoomName.style.textDecoration = "bold";
+        pRoomId.style.fontSize = "0.6em";
+        pRoomId.innerText = roomId;
+        li.appendChild(pRoomName);
+        li.appendChild(pRoomId);
+        return li;
       }
 
       /**

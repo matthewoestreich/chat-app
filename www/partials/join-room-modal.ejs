@@ -1,0 +1,18 @@
+<div class="modal fade modal" id="join-room-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Join Room</h1>
+        <button id="close-modal-btn" tabindex="-1" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <rtc-alert id="join-room-alert"></rtc-alert>
+        <ul id="join-room-modal-rooms-container" class="list-group" style="max-height: 50vh; overflow-y: scroll"></ul>
+      </div>
+      <div class="modal-footer">
+        <button id="-cancel-join-room-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+        <button id="join-room-btn" type="button" class="btn btn-primary">Join Room</button>
+      </div>
+    </div>
+  </div>
+</div>
