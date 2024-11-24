@@ -63,7 +63,7 @@ function getRandomIntsFromUUID(uuid: string) {
   let uuidArr = uuid.replace("-", "").split("");
   let found = [];
   while (uuidArr.length && found.length < 2) {
-    const curr = parseInt(uuidArr.pop() || "A");
+    const curr = parseInt(uuidArr.pop());
     if (!isNaN(curr)) {
       found.push(curr);
     }

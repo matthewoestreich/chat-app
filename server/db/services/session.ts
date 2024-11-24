@@ -10,14 +10,14 @@ export default {
   update: updateSessionToken,
   delete: deleteSessionToken,
   deleteByUserId: deleteSessionTokenByUserId,
-  updateOrInsert: updateOrInsertSessionToken,
+  upsert: upsertSessionToken,
   selectByUserId: selectSessionTokenByUserID,
 };
 
-function insertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session") {
+function insertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string) {
   return new Promise(async (resolve, reject) => {
     try {
-      const query = `INSERT INTO ${tableName} (userId, token) VALUES (?, ?)`;
+      const query = `INSERT INTO session (userId, token) VALUES (?, ?)`;
       db.run(query, [userId, sessionToken], (err) => {
         if (err) {
           return reject(err);
@@ -30,10 +30,10 @@ function insertSessionToken(db: sqlite3.Database, userId: string, sessionToken: 
   });
 }
 
-function updateSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session"): Promise<boolean> {
+function updateSessionToken(db: sqlite3.Database, userId: string, sessionToken: string): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
-      db.run(`UPDATE ${tableName} SET token = ? WHERE userId = ?`, [sessionToken, userId], (err) => {
+      db.run(`UPDATE session SET token = ? WHERE userId = ?`, [sessionToken, userId], (err) => {
         if (err) {
           return reject(err);
         }
@@ -45,9 +45,9 @@ function updateSessionToken(db: sqlite3.Database, userId: string, sessionToken: 
   });
 }
 
-function selectSessionTokenByUserID(db: sqlite3.Database, userId: string, tableName = "session"): Promise<Session> {
+function selectSessionTokenByUserID(db: sqlite3.Database, userId: string): Promise<Session> {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${tableName} WHERE userId = ?`, [userId], (err, row) => {
+    db.get(`SELECT * FROM session WHERE userId = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }
@@ -56,27 +56,28 @@ function selectSessionTokenByUserID(db: sqlite3.Database, userId: string, tableN
   });
 }
 
-function updateOrInsertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string, tableName = "session"): Promise<boolean> {
+function upsertSessionToken(db: sqlite3.Database, userId: string, sessionToken: string): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
-      const existing = await selectSessionTokenByUserID(db, userId);
-      if (existing && existing?.token) {
-        // If already exists, just update it.
-        await updateSessionToken(db, userId, sessionToken, tableName);
+      const query = `INSERT INTO session (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
+      db.run(query, [userId, sessionToken], function (err) {
+        if (err) {
+          console.error("Error upserting session:", err.message);
+          return reject(err);
+        }
+        console.log("Session upserted:", { userId, sessionToken });
         return resolve(true);
-      }
-      await insertSessionToken(db, userId, sessionToken, tableName);
-      return resolve(true);
+      });
     } catch (e) {
       return reject(e);
     }
   });
 }
 
-function deleteSessionTokenByUserId(db: sqlite3.Database, userId: string, tableName = "session"): Promise<boolean> {
+function deleteSessionTokenByUserId(db: sqlite3.Database, userId: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      db.run(`DELETE FROM ${tableName} WHERE userId = ?`, userId, function (err) {
+      db.run(`DELETE FROM session WHERE userId = ?`, userId, function (err) {
         if (err) {
           return reject(err);
         }
@@ -89,11 +90,11 @@ function deleteSessionTokenByUserId(db: sqlite3.Database, userId: string, tableN
   });
 }
 
-function deleteSessionToken(db: sqlite3.Database, sessionToken: string, tableName = "session"): Promise<boolean> {
+function deleteSessionToken(db: sqlite3.Database, sessionToken: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
       db.serialize(() => {
-        db.run(`DELETE FROM ${tableName} WHERE token = ?`, sessionToken, function (err) {
+        db.run(`DELETE FROM session WHERE token = ?`, sessionToken, function (err) {
           if (err) {
             return reject(err);
           }

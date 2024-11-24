@@ -10,12 +10,12 @@ export default {
   deleteRoomMember,
 };
 
-function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName = "chat", roomTableName = "room") {
+function selectAllRoomsByUserId(db: sqlite3.Database, userId: string) {
   return new Promise((resolve, reject) => {
     const query = `
       SELECT r.id, r.name
-      FROM ${roomTableName} r
-      JOIN ${tableName} c ON r.id = c.roomId
+      FROM room r
+      JOIN chat c ON r.id = c.roomId
       WHERE c.userId = ?
       ORDER BY r.name ASC
     `;
@@ -29,7 +29,7 @@ function selectAllRoomsByUserId(db: sqlite3.Database, userId: string, tableName 
   });
 }
 
-function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTableName = "chat", roomTableName = "room", userTableName = "user"): Promise<RoomMember[]> {
+function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string): Promise<RoomMember[]> {
   return new Promise((resolve, reject) => {
     const query = `
     SELECT 
@@ -37,11 +37,11 @@ function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTab
         u.name AS userName,
         u.id AS userId
     FROM 
-        ${chatTableName} c1
+        chat c1
     JOIN 
-        ${roomTableName} r ON c1.roomId = r.id
+        room r ON c1.roomId = r.id
     JOIN 
-        "${userTableName}" u ON c1.userId = u.id
+        "user" u ON c1.userId = u.id
     WHERE 
         --c1.userId = ?
         r.id = ? ;
@@ -57,7 +57,7 @@ function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string, chatTab
 }
 
 // Like when you want to get all roooms but not for "yourself".
-function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: string, userToIgnore: string, chatTableName = "chat", roomTableName = "room", userTableName = "user"): Promise<RoomMember[]> {
+function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: string, userToIgnore: string): Promise<RoomMember[]> {
   return new Promise((resolve, reject) => {
     const query = `
     SELECT 
@@ -65,11 +65,11 @@ function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: str
         u.name AS userName,
         u.id AS userId
     FROM 
-        ${chatTableName} c1
+        chat c1
     JOIN 
-        ${roomTableName} r ON c1.roomId = r.id
+        room r ON c1.roomId = r.id
     JOIN 
-        "${userTableName}" u ON c1.userId = u.id
+        "user" u ON c1.userId = u.id
     WHERE 
         r.id = ? AND u.id != ? ;
   `;
@@ -92,7 +92,7 @@ function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: str
  * @param userTableName? {string}
  * @returns
  */
-function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: string, chatTableName = "chat", roomTableName = "room", userTableName = "user"): Promise<RoomWithMembers[]> {
+function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: string): Promise<RoomWithMembers[]> {
   interface Row {
     // Shape of returned row for the specific query below...
     roomId: string;
@@ -111,13 +111,13 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
       u.name AS userName,
       u.email AS userEmail
   FROM 
-      ${chatTableName} c1
+      chat c1
   JOIN 
-      ${roomTableName} r ON c1.roomId = r.id
+      room r ON c1.roomId = r.id
   JOIN 
-      ${chatTableName} c2 ON c1.roomId = c2.roomId
+      chat c2 ON c1.roomId = c2.roomId
   JOIN 
-      "${userTableName}" u ON c2.userId = u.id
+      "user" u ON c2.userId = u.id
   WHERE 
       c1.userId = ?
   ORDER BY roomName ASC;
@@ -145,10 +145,10 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
   });
 }
 
-function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, tableName = "chat") {
+function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string) {
   return new Promise((resolve, reject) => {
     try {
-      const query = `INSERT INTO ${tableName} (userId, roomId) VALUES (?, ?)`;
+      const query = `INSERT INTO chat (userId, roomId) VALUES (?, ?)`;
 
       db.run(query, [userId, roomId], (err) => {
         if (err) {
@@ -162,11 +162,11 @@ function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: 
   });
 }
 
-function deleteRoomMember(db: sqlite3.Database, roomId: string, userId: string, tableName = "chat"): Promise<boolean> {
+function deleteRoomMember(db: sqlite3.Database, roomId: string, userId: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
       db.serialize(() => {
-        db.run(`DELETE FROM ${tableName} WHERE roomId = ? AND userId = ?`, [roomId, userId], function (err) {
+        db.run(`DELETE FROM chat WHERE roomId = ? AND userId = ?`, [roomId, userId], function (err) {
           if (err) {
             return reject(err);
           }

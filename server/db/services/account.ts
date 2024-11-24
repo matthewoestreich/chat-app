@@ -35,9 +35,9 @@ function insertAccount(db: sqlite3.Database, name: string, id: string, passwd: s
   });
 }
 
-function selectAccountByEmail(db: sqlite3.Database, email: string, tableName = "user"): Promise<Account> {
+function selectAccountByEmail(db: sqlite3.Database, email: string): Promise<Account> {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM "${tableName}" WHERE email = ?`, [email], (err, row) => {
+    db.get(`SELECT * FROM "user" WHERE email = ?`, [email], (err, row) => {
       if (err) {
         return reject(err);
       }
@@ -46,9 +46,9 @@ function selectAccountByEmail(db: sqlite3.Database, email: string, tableName = "
   });
 }
 
-function selectAccountById(db: sqlite3.Database, userId: string, tableName = "user"): Promise<Account> {
+function selectAccountById(db: sqlite3.Database, userId: string): Promise<Account> {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM "${tableName}" WHERE id = ?`, [userId], (err, row) => {
+    db.get(`SELECT * FROM "user" WHERE id = ?`, [userId], (err, row) => {
       if (err) {
         return reject(err);
       }

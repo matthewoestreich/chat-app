@@ -7,10 +7,10 @@ export default {
   selectByRoomId: selectMessagesByRoomId,
 };
 
-async function insertMessage(db: sqlite3.Database, roomId: string, userId: string, message: string, color: string, tableName = "messages"): Promise<boolean> {
+async function insertMessage(db: sqlite3.Database, roomId: string, userId: string, message: string, color: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      db.run(`INSERT INTO ${tableName} (id, roomId, userId, message, color) VALUES (?, ?, ?, ?, ?)`, [uuidV7(), roomId, userId, message, color], function (err) {
+      db.run(`INSERT INTO messages (id, roomId, userId, message, color) VALUES (?, ?, ?, ?, ?)`, [uuidV7(), roomId, userId, message, color], function (err) {
         if (err) {
           console.error("[messagesService][ERROR] Error inserting message:", err);
           return reject(err);

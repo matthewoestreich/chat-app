@@ -144,7 +144,6 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
   async releaseConnection(connection: SQLitePoolConnection): Promise<void> {
     if (connection.isClosed) {
       console.warn(`[releaseConnection] cannot release a closed connection`);
-      this._mutex.unlock();
       return;
     }
     if (this._isDraining) {
@@ -155,8 +154,10 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
 
     const pending = this._pendingConnections.shift(); // FIFO
     if (pending) {
+      console.log({ curr: connection, actives: this._activeConnections.map((ac) => ac.id), idles: this._idleConnections.map((ic) => ic.id), pendings: this._pendingConnections.length });
+      pending.resolve(connection);
       this._mutex.unlock();
-      return pending.resolve(connection);
+      return;
     }
 
     const activeConnectionIndex = this._activeConnections.findIndex((c) => c.id === connection.id);
@@ -249,7 +250,6 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
       this._isDraining = true;
 
       try {
-        // Step 1: Resolve all pending connections
         while (this._pendingConnections.length) {
           const pending = this._pendingConnections.shift();
           if (pending) {

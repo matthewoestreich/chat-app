@@ -76,7 +76,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 
     const { name, id, email: foundEmail } = foundUser;
     const sessionToken = generateSessionToken(name, id, foundEmail);
-    await sessionService.updateOrInsert(db, foundUser.id, sessionToken);
+    await sessionService.upsert(db, foundUser.id, sessionToken);
     release();
 
     res.status(200).send({ ok: true, session: sessionToken });
