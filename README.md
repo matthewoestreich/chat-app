@@ -1,18 +1,25 @@
 # RTChat
 
-A responsive, multi-user, multi-room, real time chat application, that supports dark mode!
+A responsive, multi-user, multi-room, real time chat application that supports dark mode!
 
 ## [Start chatting now! (beta)](https://rtchat-a7ul.onrender.com)
 
-Backend Technologies:
- - TypeScript
- - WebSockets
- - SQLite3
- - JWT (acting as session)
+Features:
+ - Session Based Authentication & Authorization
+ - WebSocket Authentication
+ - Initially Rendered Server Side for Fast Time-To-First-Paint
+ - Dark Mode
+ - Responsive
 
-Frontend Technologies
- - Vanilla JS
- - Bootstrap 5
+Backend Technologies:
+ - [TypeScript](https://www.typescriptlang.org/)
+ - [WebSockets](https://en.wikipedia.org/wiki/WebSocket)
+ - [SQLite3](https://www.sqlite.org/)
+ - [EJS](https://ejs.co/)
+
+Frontend Technologies:
+ - [Vanilla JS](http://vanilla-js.com/)
+ - [Bootstrap 5](https://getbootstrap.com/)
 
 ---
 
