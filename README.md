@@ -4,11 +4,16 @@ A responsive, multi-user, multi-room, real time chat application, that supports 
 
 ## [Start chatting now! (beta)](https://rtchat-a7ul.onrender.com)
 
+Features:
+ - Session Based Authentication & Authorization
+ - WebSocket Authentication & Authorization
+ - Dark Mode
+ - Responsive
+
 Backend Technologies:
  - TypeScript
  - WebSockets
  - SQLite3
- - JWT (acting as session)
 
 Frontend Technologies
  - Vanilla JS
