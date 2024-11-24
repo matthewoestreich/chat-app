@@ -12,6 +12,7 @@ Features:
  - Responsive
 
 Backend Technologies:
+ - [Express](https://expressjs.com/)
  - [TypeScript](https://www.typescriptlang.org/)
  - [WebSockets](https://en.wikipedia.org/wiki/WebSocket)
  - [SQLite3](https://www.sqlite.org/)
