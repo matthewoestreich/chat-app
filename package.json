@@ -12,7 +12,7 @@
     "fmt": "prettier --write \"**/*.{ts,js,json,ejs}\"",
     "test": "jest",
     "jest:clearCache": "jest --clearCache",
-    "insert:fake:data": "tsx server/db/insertFakeData.ts"
+    "insert:fake:data": "tsx scripts/insertFakeData.ts"
   },
   "keywords": [],
   "author": "Matt Oestreich",

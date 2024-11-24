@@ -89,8 +89,8 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
   if (!socket.user) {
     return;
   }
+  // If they already had an active room, it means they're leaving it. So notify that room they left.
   if (socket.activeIn) {
-    // If they already had an active room, it means they're leaving it. So notify that room they left.
     handleLeaveRoom(socket, socket.activeIn);
   }
   socket.activeIn = roomId; // Update to the rooms they just entered
@@ -101,7 +101,6 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
     return m;
   });
   const messages = await getMessages(roomId);
-  console.log(messages[0]);
   sendMessage(socket, "entered_room", { members, messages });
 }
 

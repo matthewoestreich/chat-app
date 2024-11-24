@@ -10,18 +10,18 @@ export default async function () {
       db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`CREATE TABLE IF NOT EXISTS "user" (
-          id TEXT NOT NULL,
+          id TEXT PRIMARY KEY,
           name TEXT NOT NULL, 
           password TEXT NOT NULL,
           email TEXT NOT NULL UNIQUE,
-          CONSTRAINT user_pk PRIMARY KEY (id),
+          --CONSTRAINT user_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS room (
-          id TEXT NOT NULL,
+          id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
-          CONSTRAINT room_pk PRIMARY KEY (id),
+          --CONSTRAINT room_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS chat (
@@ -32,13 +32,13 @@ export default async function () {
           CHECK(length(roomId) = 36 AND length(userId) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS session (
-          userId TEXT NOT NULL,
+          userId TEXT PRIMARY KEY,
           token TEXT NOT NULL,
           CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
           CHECK(length(userId) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS messages (
-          id TEXT NOT NULL, --PRIMARY KEY,
+          id TEXT PRIMARY KEY,
           roomId TEXT NOT NULL,
           userId TEXT NOT NULL,
           message TEXT NOT NULL,
