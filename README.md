@@ -17,7 +17,7 @@ Backend Technologies:
  - [SQLite3](https://www.sqlite.org/)
  - [EJS](https://ejs.co/)
 
-Frontend Technologies
+Frontend Technologies:
  - [Vanilla JS](http://vanilla-js.com/)
  - [Bootstrap 5](https://getbootstrap.com/)
 
