@@ -6,11 +6,6 @@ sqlite3.verbose();
 export default class SQLitePool implements DatabasePool<sqlite3.Database> {
   private _mutex = new Mutex();
 
-  private _isDraining = false;
-  get isDraining() {
-    return this._isDraining;
-  }
-
   private _activeConnections: SQLitePoolConnection[] = [];
   get activeConnectionsSize(): Promise<number> {
     return new Promise(async (resolve) => {
@@ -82,36 +77,26 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
-  private closeConnection(connection: SQLitePoolConnection): boolean {
-    connection.db.close((err) => {
-      if (err) {
-        console.error(err);
-        return false;
+  private async closeConnection(connection: SQLitePoolConnection): Promise<boolean> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        connection.db.close((err) => {
+          if (err) {
+            console.error(err);
+            return reject(err);
+          }
+        });
+        this._activeConnections = this._activeConnections.filter((ac) => ac.id !== connection.id);
+        this._idleConnections = this._idleConnections.filter((ic) => ic.id !== connection.id);
+        return resolve(true);
+      } catch (e) {
+        reject(e);
       }
     });
-
-    connection.isClosed = true;
-
-    const activeIndex = this._activeConnections.findIndex((c) => c.id === connection.id);
-    if (activeIndex > -1) {
-      this._activeConnections.splice(activeIndex, 1);
-    }
-
-    const idleIndex = this._idleConnections.findIndex((c) => c.id === connection.id);
-    if (idleIndex > -1) {
-      this._idleConnections.splice(idleIndex, 1);
-    }
-
-    return true;
   }
 
   getConnection(): Promise<SQLitePoolConnection> {
     return new Promise(async (resolve, reject) => {
-      if (this._isDraining) {
-        console.warn(`[DENIED][getConnection] Pool is draining. Cannot perform any tasks while pool is draining.`);
-        return;
-      }
-
       await this._mutex.lock();
 
       const connection = this._idleConnections.pop();
@@ -142,48 +127,39 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
   }
 
   async releaseConnection(connection: SQLitePoolConnection): Promise<void> {
-    if (connection.isClosed) {
-      console.warn(`[releaseConnection] cannot release a closed connection`);
-      return;
-    }
-    if (this._isDraining) {
-      console.warn(`[DENIED][releaseConnection] Pool is draining. Cannot perform any tasks while pool is draining.`);
-      return;
-    }
     await this._mutex.lock();
+
+    // Cannot release an active connection to idle if we have no active connections.
+    // This means a connection that was "leased" prior to a drain (or closeAll) is requesting to be released.
+    // We consider this connection stale.
+    if (this._activeConnections.length === 0) {
+      console.warn(`[releaseConnection] Stale connection (${connection.id}) requested release. Pool has no active connections to release.`);
+      this._mutex.unlock();
+      return;
+    }
 
     const pending = this._pendingConnections.shift(); // FIFO
     if (pending) {
-      console.log({ curr: connection, actives: this._activeConnections.map((ac) => ac.id), idles: this._idleConnections.map((ic) => ic.id), pendings: this._pendingConnections.length });
       pending.resolve(connection);
       this._mutex.unlock();
       return;
     }
 
-    const activeConnectionIndex = this._activeConnections.findIndex((c) => c.id === connection.id);
-    if (activeConnectionIndex >= 0) {
-      this._activeConnections.splice(activeConnectionIndex, 1);
-    }
+    // Remove from active connections if exists as such.
+    this._activeConnections = this._activeConnections.filter((ac) => ac.id !== connection.id);
 
-    // Prevent adding closed connections to idle
-    if (connection.isClosed) {
+    // Overflow, close anything over the limit instead of releasing back to pool.
+    if (this._idleConnections.length + this._activeConnections.length >= this._maxConnections) {
+      this.closeConnection(connection);
       this._mutex.unlock();
       return;
     }
 
-    if (this._idleConnections.length + this._activeConnections.length >= this._maxConnections) {
-      this.closeConnection(connection);
-    } else {
-      this._idleConnections.push(connection);
-    }
+    this._idleConnections.push(connection);
     this._mutex.unlock();
   }
 
   async query(sql: string, params: any): Promise<unknown> {
-    if (this._isDraining) {
-      console.warn(`[DENIED][query] Pool is draining. Cannot perform any tasks while pool is draining.`);
-      return;
-    }
     const connection = await this.getConnection();
 
     return new Promise(async (resolve, reject) => {
@@ -203,11 +179,8 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
-  private async closeAll(type: "Active" | "Idle") {
+  private async closeAll(type: "Active" | "Idle"): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      if (this._isDraining) {
-        return;
-      }
       try {
         await this._mutex.lock();
 
@@ -246,29 +219,23 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
 
   async drain(): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      await this._mutex.lock();
-      this._isDraining = true;
-
       try {
-        while (this._pendingConnections.length) {
-          const pending = this._pendingConnections.shift();
-          if (pending) {
-            pending.reject(new Error("Pool drained"));
-          }
-        }
-        await Promise.allSettled(this._activeConnections.map((conn) => this.closeConnection(conn)));
+        await this._mutex.lock();
+
+        this._pendingConnections.forEach((pc) => pc.reject(new Error("Pool draining")));
+        this._activeConnections.forEach((ac) => this.closeConnection(ac));
+        this._idleConnections.forEach((ic) => this.closeConnection(ic));
+
         this._activeConnections = [];
-        await Promise.allSettled(this._idleConnections.map((conn) => this.closeConnection(conn)));
         this._idleConnections = [];
+        this._pendingConnections = [];
+
+        this._mutex.unlock();
+        return resolve(true);
       } catch (e) {
-        this._isDraining = false;
         this._mutex.unlock();
         return reject(e);
       }
-
-      this._isDraining = false;
-      this._mutex.unlock();
-      return resolve(true);
     });
   }
 }

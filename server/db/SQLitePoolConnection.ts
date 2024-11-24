@@ -5,23 +5,11 @@ import SQLitePool from "./SQLitePool";
 export default class SQLitePoolConnection implements DatabasePoolConnection<sqlite3.Database> {
   id: string;
   db: sqlite3.Database;
-  isClosed: boolean;
   release: () => void;
 
   constructor(db: sqlite3.Database, parent: SQLitePool) {
     this.db = db;
-    this.isClosed = false;
-    this.release = () => {
-      if (parent.isDraining) {
-        console.warn(`[DENIED][SQLitePoolConnection.release] Pool is draining. Cannot perform any tasks while pool is draining.`);
-        return;
-      }
-      if (this.isClosed) {
-        console.error(`Cannot release a closed connection:`, this);
-        return;
-      }
-      parent.releaseConnection(this);
-    };
+    this.release = () => parent.releaseConnection(this);
     this.id = uuidV7();
   }
 }

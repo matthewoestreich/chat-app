@@ -3,6 +3,7 @@
     "target": "ES2015",
     "module": "CommonJS",
     "moduleResolution": "node",
+    "noImplicitAny": true,
     "sourceMap": true,
     "outDir": "./dist",
     "strict": true,
@@ -18,5 +19,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["dist/", "node_modules/**", "__tests__/**", "scripts/**", "**/*.test.*", "*.config.js", ".env.example"]
+  "exclude": ["dist/", "node_modules/**", "__tests__/**", "scripts/**", "**/*.test.*", "*.config.js", ".env.example", "screenshots/**"]
 }

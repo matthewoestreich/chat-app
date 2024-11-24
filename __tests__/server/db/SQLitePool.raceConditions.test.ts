@@ -188,6 +188,6 @@ describe("SQLitePool Race Conditions", () => {
     const pendingTask = pool.getConnection(); // Create a pending request
     await pool.drain();
 
-    await expect(pendingTask).rejects.toThrow("Pool drained");
+    await expect(pendingTask).rejects.toThrow("Pool draining");
   });
 });

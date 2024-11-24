@@ -27,27 +27,31 @@ Frontend Technologies:
 
 ## Default Look
 
-![General Display](/_screenshots/1_general.png "General")
+![General Display](/screenshots/1_general.png "General")
 
 ## Dark mode!
 
-![Dark Mode General Display](/_screenshots/2_dark_mode.png "Dark Mode!")
+![Dark Mode General Display](/screenshots/2_dark_mode.png "Dark Mode!")
 
 ## Live Member Status
 
 See whos online _right now_
 
-![Live Status Updates](/_screenshots/3_live_status.png "Live Member Status Updates")
+![Live Status Updates](/screenshots/3_live_status.png "Live Member Status Updates")
 
 ## Responsive
 
 Optimized for all devices!
 
-![Responsive General](/_screenshots/4_responsive_main.png "Responsive")
+![Responsive General](/screenshots/4_responsive_main.png "Responsive")
 
-![Responsive Rooms](/_screenshots/5_responsive_rooms.png "Responsive Members")
+---
 
-![Responsive Members](/_screenshots/6_responsive_members.png "Responsive Rooms")
+![Responsive Rooms](/screenshots/5_responsive_rooms.png "Responsive Members")
+
+---
+
+![Responsive Members](/screenshots/6_responsive_members.png "Responsive Rooms")
 
 ##### Older Versions
 
