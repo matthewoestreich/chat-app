@@ -387,17 +387,16 @@
       });
 
       function handleRoomClick(event, self, socket) {
-        chatDisplay.replaceChildren();
         openLeaveRoomConfirmModalBtn.disabled = false;
-        const activeRoomClass = "active-room";
         const currentActiveRoom = window?.rtcActiveRoom;
         if (currentActiveRoom === self) {
           return;
         }
+        chatDisplay.replaceChildren();
         chatTitle.classList.remove("chat-title-no-room");
         chatTitle.innerText = self.innerText;
-        self.classList.add(activeRoomClass);
-        currentActiveRoom?.classList?.remove(activeRoomClass);
+        self.classList.add("active-room");
+        currentActiveRoom?.classList?.remove("active-room");
         window.rtcActiveRoom = self;
         sendMessage(ws, "entered_room", { roomId: self.id });
       }
