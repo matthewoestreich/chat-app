@@ -1,4 +1,5 @@
 import sqlite3 from "sqlite3";
+import { roomService } from ".";
 sqlite3.verbose();
 
 export default {
@@ -10,7 +11,7 @@ export default {
   deleteRoomMember,
 };
 
-function selectAllRoomsByUserId(db: sqlite3.Database, userId: string) {
+function selectAllRoomsByUserId(db: sqlite3.Database, userId: string): Promise<Room[]> {
   return new Promise((resolve, reject) => {
     const query = `
       SELECT r.id, r.name
@@ -20,7 +21,7 @@ function selectAllRoomsByUserId(db: sqlite3.Database, userId: string) {
       ORDER BY r.name ASC
     `;
 
-    db.all(query, [userId], (err, rows) => {
+    db.all(query, [userId], (err, rows: Room[]) => {
       if (err) {
         return reject(err);
       }
@@ -145,16 +146,21 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
   });
 }
 
-function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string) {
+function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, returnAllUserRoomsAfterInsert = false): Promise<Room[] | Room> {
   return new Promise((resolve, reject) => {
     try {
       const query = `INSERT INTO chat (userId, roomId) VALUES (?, ?)`;
 
-      db.run(query, [userId, roomId], (err) => {
+      db.run(query, [userId, roomId], async (err) => {
         if (err) {
           return reject(err);
         }
-        return resolve({ userId, roomId });
+        if (returnAllUserRoomsAfterInsert) {
+          const rooms = await selectAllRoomsByUserId(db, userId);
+          return resolve(rooms);
+        }
+        const room = await roomService.selectById(db, roomId);
+        return resolve(room);
       });
     } catch (e) {
       return reject(e);

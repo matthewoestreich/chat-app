@@ -1,11 +1,12 @@
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import jsonwebtoken from "jsonwebtoken";
+import { v7 as uuidV7 } from "uuid";
 import parseCookies from "./parseCookies";
 import verifyTokenAsync from "./verifyTokenAsync";
 import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
-import { chatService, messagesService } from "../db/services";
+import { chatService, messagesService, roomService } from "../db/services";
 
 const WSS = new WebSocketServer({ server });
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
@@ -74,6 +75,12 @@ WSS.on("connection", async (socket: WebSocket, req) => {
         break;
       }
 
+      case "create_room": {
+        const { roomName, isPrivate } = message;
+        handleCreateRoom(socket, roomName, isPrivate);
+        break;
+      }
+
       case "get_public_rooms": {
       }
 
@@ -122,6 +129,23 @@ async function handleSendMessage(socket: WebSocket, message: any) {
   const { db, release } = await DB_POOL.getConnection();
   messagesService.insertMessage(db, toRoom, fromUserId, value, socket.chatColor!);
   release();
+}
+
+async function handleCreateRoom(socket: WebSocket, roomName: string, isPrivate: 0 | 1) {
+  try {
+    if (!socket.user || !socket.user.id) {
+      console.error(`[ws][handleCreateRoom] socket.user or socket.user.id is undefined!`, { "socket.user": socket?.user });
+    }
+    const { db, release } = await DB_POOL.getConnection();
+    const newroom = await roomService.insert(db, roomName, uuidV7(), isPrivate);
+    addRoomAndUserToBucket(newroom.id, socket.user!.id, socket);
+    const updatedRooms = await chatService.addUserByIdToRoomById(db, socket.user!.id, newroom.id, true);
+    release();
+    sendMessage(socket, "created_room", { ok: true, rooms: updatedRooms, error: null });
+  } catch (e) {
+    console.log(`[handleCreateRoom][error]`, e);
+    sendMessage(socket, "created_room", { ok: false, rooms: [], error: e });
+  }
 }
 
 async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
@@ -199,6 +223,17 @@ function broadcastMessage(toRoomId: string, fromUserId: string, fromUserName: st
       }
     }
   }
+}
+
+function addRoomToBucket(roomId: string) {
+  if (!BUCKETS.has(roomId)) {
+    BUCKETS.set(roomId, new Map());
+  }
+}
+
+function addRoomAndUserToBucket(roomId: string, userId: string, socket: WebSocket) {
+  addRoomToBucket(roomId);
+  BUCKETS.get(roomId)!.set(userId, socket);
 }
 
 async function isAuthenticated(token: string, socket: WebSocket) {

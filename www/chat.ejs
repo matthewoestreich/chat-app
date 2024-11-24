@@ -101,7 +101,7 @@
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Modals -->
-    <%- include("./partials/leave-room-confirmation-modal.ejs") %>
+    <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room.ejs") %>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
       <nav class="container">
@@ -202,7 +202,7 @@
                 </button>
               </div>
               <div class="col-4 d-flex p-1">
-                <button class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
+                <button id="open-create-room-modal-btn" class="btn btn-outline-secondary flex-grow-1" type="button" title="Create room">
                   <i class="bi bi-folder-plus"></i>
                 </button>
               </div>
@@ -260,10 +260,19 @@
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
+      // Modal related
       const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
       const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
       const openLeaveRoomConfirmModalBtn = document.getElementById("leave-room-btn");
       const confirmedLeaveRoomBtn = document.getElementById("leave-room-confirmation-modal-confirmed-leave-btn");
+      const createRoomModal = document.getElementById("create-room-modal");
+      const openCreateRoomModalBtn = document.getElementById("open-create-room-modal-btn");
+      const createRoomBtn = document.getElementById("create-room-btn");
+      const createRoomRoomNameInput = document.getElementById("create-room-name-input");
+      const createRoomIsPrivateCheckbox = document.getElementById("create-room-isprivate-checkbox");
+      const createRoomForm = document.getElementById("create-room-form");
+      const createRoomStatusEl = document.getElementById("create-room-alert");
+      const createRoomStatusMessageEl = document.getElementById("create-room-alert-message");
       // Chat related elements
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
@@ -271,6 +280,7 @@
       const chatTitle = document.getElementById("chat-title");
       // bootstrap instances/objects
       const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
+      const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -295,6 +305,12 @@
 
           case "rooms": {
             handleRooms(roomsContainer, message.rooms);
+            break;
+          }
+
+          case "created_room": {
+            const { ok, rooms, error } = message;
+            handleCreatedRoom(ok, rooms, error);
             break;
           }
 
@@ -369,12 +385,32 @@
         scrollToBottomOfElement(chatDisplay);
       });
 
+      createRoomBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const revertSpinnerBtn = addSpinnerToButton(createRoomBtn, "Please wait...");
+        createRoomForm.isValid = createRoomForm.checkValidity();
+        createRoomForm.classList.add("was-validated");
+        if (!createRoomForm.isValid) {
+          revertSpinnerBtn();
+          return;
+        }
+        const roomName = createRoomRoomNameInput.value;
+        const isPrivate = createRoomIsPrivateCheckbox.checked === true ? 1 : 0;
+        sendMessage(ws, "create_room", { roomName, isPrivate });
+      });
+
       openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
         if (!window?.rtcActiveRoom) {
           return;
         }
         leaveRoomConfirmationModalBody.innerText = `Are you sure you want to leave room '${window.rtcActiveRoom.getAttribute("name")}'?`;
         bsLeaveConfirmationModal.show();
+      });
+
+      openCreateRoomModalBtn.addEventListener("click", (event) => {
+        console.log("create");
+        bsCreateRoomModal.show();
       });
 
       confirmedLeaveRoomBtn.addEventListener("click", (event) => {
@@ -384,6 +420,12 @@
         }
         addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
         sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
+      });
+
+      // Clear form when modal is hidden.
+      createRoomModal.addEventListener("hidden.bs.modal", (event) => {
+        createRoomRoomNameInput.value = "";
+        createRoomIsPrivateCheckbox.checked = false;
       });
 
       function handleRoomClick(event, self, socket) {
@@ -414,6 +456,20 @@
         window.rtcRoomMembers = members;
         sortRoomMembers(window.rtcRoomMembers);
         renderMembers(appendToElement, members);
+      }
+
+      function handleCreatedRoom(ok, rooms, error) {
+        const revertButton = getSpinnerButtonInstance(createRoomBtn);
+        revertButton();
+        const callout = new CustomAlert(createRoomStatusEl, createRoomStatusMessageEl);
+        if (!ok) {
+          console.log(`[handleCreatedRooms]`, error);
+          callout.showWithIcon("danger", "Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
+          return;
+        }
+        callout.showWithIcon("success", "Success! Room created successfully.", "bi-check");
+        handleRooms(roomsContainer, rooms);
+        bsCreateRoomModal.hide();
       }
 
       // Received message
@@ -533,6 +589,8 @@
       /**
        * Generate HTML functions
        */
+
+      class ChatBubble extends HTMLElement {}
 
       function generateChatHTML(opts = { message: "", displayName: "", isSending: true, chatBubbleColor: "", isError: false }) {
         let { message, displayName, isSending, chatBubbleColor, isError } = opts;

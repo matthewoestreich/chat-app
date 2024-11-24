@@ -20,7 +20,7 @@ interface RoomMember {
 interface Room {
   id: string;
   name: string;
-  isPublic: boolean;
+  isPrivate: 0 | 1;
 }
 
 interface Message {
