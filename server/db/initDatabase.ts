@@ -14,14 +14,12 @@ export default async function () {
           name TEXT NOT NULL, 
           password TEXT NOT NULL,
           email TEXT NOT NULL UNIQUE,
-          --CONSTRAINT user_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS room (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
-          --CONSTRAINT room_pk PRIMARY KEY (id),
           CHECK(length(id) = 36)
         );`);
         db.run(`CREATE TABLE IF NOT EXISTS chat (

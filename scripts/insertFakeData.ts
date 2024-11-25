@@ -63,7 +63,7 @@ interface ChatRoomMember {
 
 // Generate fake user data
 const users: any[] = Array.from({ length: NUM_ITEMS_EACH }, () => {
-  const username = faker.internet.username();
+  const username = faker.internet.username().toLowerCase();
   const user = {
     username,
     password: username,
@@ -225,12 +225,11 @@ async function main() {
       console.log("messages inserted.");
 
       db.run("COMMIT");
+      console.log("done running commands");
     });
   } catch (e) {
     db.run("ROLLBACK");
     console.error("Transaction rolled back due to error:", e);
-  } finally {
-    console.log("done");
   }
 }
 
