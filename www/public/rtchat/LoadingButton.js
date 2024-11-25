@@ -6,7 +6,10 @@
 //
 //    // Target element via JS.
 //    const btn = document.getElementById("loading-btn");
+//    btn.showLoading("Loadig Message");
 //
+//    // after loading is done..
+//    btn.hideLoading();
 class LoadingButton extends HTMLButtonElement {
   loadingText = "";
   isLoading = false;
