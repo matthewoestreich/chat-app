@@ -6,12 +6,16 @@
         <button id="close-modal-btn" tabindex="-1" type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <rtc-alert id="join-room-alert"></rtc-alert>
+        <div id="join-room-alert" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
+          <i class=""></i>
+          <div id="join-room-alert-message" class="mb-0 max-h-100px overf-scroll"></div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         <ul id="join-room-modal-rooms-container" class="list-group" style="max-height: 50vh; overflow-y: scroll"></ul>
       </div>
       <div class="modal-footer">
         <button id="-cancel-join-room-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        <rtc-loading-button id="join-room-btn" type="button" class="btn btn-primary">Join Room</rtc-loading-button>
+        <button id="join-room-btn" type="button" class="btn btn-primary">Join Room</button>
       </div>
     </div>
   </div>

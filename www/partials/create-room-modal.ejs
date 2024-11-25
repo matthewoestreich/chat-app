@@ -6,7 +6,11 @@
         <button id="close-modal-btn" tabindex="-1" type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <rtc-alert id="create-room-alert"></rtc-alert>
+        <div id="create-room-alert" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
+          <i class=""></i>
+          <div id="create-room-alert-message" class="mb-0 max-h-100px overf-scroll"></div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         <div class="form-group">
           <form id="create-room-form">
             <div class="form-floating mb-3">
@@ -23,7 +27,7 @@
       </div>
       <div class="modal-footer">
         <button id="cancel-create-room-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        <rtc-loading-button id="create-room-btn" type="button" class="btn btn-primary">Create Room</rtc-loading-button>
+        <button id="create-room-btn" type="button" class="btn btn-primary">Create Room</button>
       </div>
     </div>
   </div>

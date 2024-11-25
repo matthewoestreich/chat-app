@@ -213,7 +213,7 @@
     </div>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
     <script src="/public/rtchat/CustomAlert.js"></script>
-    <script src="/public/rtchat/LoadingButton.js"></script>
+    <script src="/public/rtchat/addSpinnerToButton.js"></script>
     <script nonce="<%= nonce %>">
       // Theme script...
       const toggleThemeBtn = document.getElementById("toggle-theme");
@@ -275,12 +275,15 @@
       const createRoomIsPrivateCheckbox = document.getElementById("create-room-isprivate-checkbox");
       const createRoomForm = document.getElementById("create-room-form");
       const createRoomStatusEl = document.getElementById("create-room-alert");
+      const createRoomAlert = document.getElementById("create-room-alert");
+      const createRoomAlertMessage = document.getElementById("create-room-alert-message");
       // Join room modal
       const joinRoomModal = document.getElementById("join-room-modal");
       const openJoinRoomModalBtn = document.getElementById("open-join-room-modal");
       const joinRoomBtn = document.getElementById("join-room-btn");
       const joinRoomModalRoomsContainer = document.getElementById("join-room-modal-rooms-container");
       const joinRoomModalAlert = document.getElementById("join-room-alert");
+      const joinRoomModalAlertMessage = document.getElementById("join-room-alert-message");
       // Chat related elements
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
@@ -290,6 +293,9 @@
       const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
       const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
       const bsJoinRoomModal = bootstrap.Modal.getOrCreateInstance(joinRoomModal);
+
+      const createRoomCallout = new CustomAlert(createRoomAlert, createRoomAlertMessage);
+      const joinRoomCallout = new CustomAlert(joinRoomModalAlert, joinRoomModalAlertMessage);
 
       ws.onopen = () => {
         console.log(`ws connected`);
@@ -410,11 +416,11 @@
       createRoomBtn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        createRoomBtn.showLoading("Please wait...");
+        const revert = addSpinnerToButton(createRoomBtn, "Please wait...");
         createRoomForm.isValid = createRoomForm.checkValidity();
         createRoomForm.classList.add("was-validated");
         if (!createRoomForm.isValid) {
-          createRoomBtn.hideLoading();
+          revert();
           return;
         }
         const roomName = createRoomRoomNameInput.value;
@@ -427,7 +433,7 @@
         if (!selected) {
           return;
         }
-        joinRoomBtn.showLoading("Please wait...");
+        addSpinnerToButton(joinRoomBtn, "Please wait...");
         sendMessage(ws, "join", { userId: USER_ID, roomId: selected.id });
       });
 
@@ -453,12 +459,12 @@
           bsLeaveConfirmationModal.hide();
           return;
         }
-        confirmedLeaveRoomBtn.showLoading("Please wait...");
+        addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
         sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
       });
 
       joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
-        joinRoomBtn.hideLoading();
+        getSpinnerButtonInstance(joinRoomBtn)();
         joinRoomModalRoomsContainer.replaceChildren();
         joinRoomModalAlert.hide();
       });
@@ -495,7 +501,7 @@
 
       function handleJoinableRooms(appendToElement, ok, rooms, error) {
         if (!ok) {
-          joinRoomModalAlert.showDanger("Something went wrong. Please close this box and try again.", "bi-exclamation");
+          joinRoomCallout.showWithIcon("danger", "Something went wrong. Please close this box and try again.", "bi-exclamation");
           console.log(`[handleJoinableRooms][ERROR]`, error);
           return;
         }
@@ -517,8 +523,9 @@
       }
 
       function handleJoinedRoom(ok, rooms, joinedRoomId, error) {
+        getSpinnerButtonInstance(joinRoomBtn)();
         if (!ok) {
-          joinRoomModalAlert.showDanger("Something went wrong. Please close this box and try again.", "bi-exclamation");
+          joinRoomCallout.showWithIcon("danger", "Something went wrong. Please close this box and try again.", "bi-exclamation");
           console.log(`[handleJoinedRoom][ERROR]`, error);
           return;
         }
@@ -530,8 +537,7 @@
           // to the 'list of rooms we are currently in'.
           scrollToElement(document.getElementById(joinedRoomId));
         });
-        joinRoomBtn.hideLoading();
-        //bsJoinRoomModal.hide();
+        joinRoomCallout.showWithIcon("success", "Successfully joined room!", "bi-check");
       }
 
       function handleRoomMembers(appendToElement, members) {
@@ -541,15 +547,15 @@
       }
 
       function handleCreatedRoom(ok, rooms, error) {
-        createRoomBtn.hideLoading();
+        getSpinnerButtonInstance(createRoomBtn)();
         if (!ok) {
           console.log(`[handleCreatedRooms]`, error);
-          createRoomStatusEl.showDanger("Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
+          createRoomCallout.showWithIcon("danger", "Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
           return;
         }
-        createRoomStatusEl.showSuccess("Success! Room created successfully.", "bi-check");
+        createRoomCallout.showWithIcon("success", "Success! Room created successfully.", "bi-check");
         handleRooms(roomsContainer, rooms);
-        bsCreateRoomModal.hide();
+        //bsCreateRoomModal.hide();
       }
 
       // Received message
@@ -561,7 +567,7 @@
       }
 
       function handleUnjoined(isSuccess, updatedRooms, error) {
-        confirmedLeaveRoomBtn.hideLoading();
+        getSpinnerButtonInstance(confirmedLeaveRoomBtn)();
         if (!isSuccess) {
           console.error(`[handleUnjoined][ERROR]`, error);
           leaveRoomConfirmationModalBody.innerText = "Something went wrong, please try again.";

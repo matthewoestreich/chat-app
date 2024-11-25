@@ -69,14 +69,11 @@
       </div>
       <div class="row" style="max-height: 400px">
         <div class="col mh-100">
-          <rtc-alert id="alert-display"></rtc-alert>
-          <!--
           <div id="alert-display" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
             <i class=""></i>
             <div id="alert-message" class="mb-0 max-h-100px overf-scroll"></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
-          -->
         </div>
       </div>
       <div class="row w-100">
@@ -95,7 +92,7 @@
               </div>
               <div class="d-flex justify-content-end">
                 <button id="open-create-account-modal-btn" type="button" class="btn btn-outline-secondary me-2">Create Account</button>
-                <rtc-loading-button id="login-btn" class="btn btn-primary">Login</rtc-loading-button>
+                <button id="login-btn" class="btn btn-primary">Login</button>
               </div>
             </form>
           </div>
@@ -104,24 +101,25 @@
     </div>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
     <script src="/public/rtchat/CustomAlert.js"></script>
-    <script src="/public/rtchat/LoadingButton.js"></script>
+    <script src="/public/rtchat/addSpinnerToButton.js"></script>
     <script nonce="<%= nonce %>">
       const mainLoginBtn = document.getElementById("login-btn");
       const loginEmailInput = document.getElementById("login-email-input");
       const loginPasswordInput = document.getElementById("login-password-input");
       const loginForm = document.getElementById("login-form");
-      const statusAlert = document.getElementById("alert-display");
+      const alertDisplay = document.getElementById("alert-display");
+      const alertMessage = document.getElementById("alert-message");
 
       mainLoginBtn.addEventListener("click", async function (event) {
         event.preventDefault();
         event.stopPropagation();
 
-        mainLoginBtn.showLoading("Logging in...");
+        addSpinnerToButton(mainLoginBtn, "Logging in...");
 
         loginForm.isValid = loginForm.checkValidity();
         loginForm.classList.add("was-validated");
         if (!loginForm.isValid) {
-          mainLoginBtn.hideLoading();
+          getSpinnerButtonInstance(mainLoginBtn)();
           return;
         }
 
@@ -134,11 +132,11 @@
           }),
         });
 
-        mainLoginBtn.hideLoading();
+        const revert = getSpinnerButtonInstance(mainLoginBtn)();
 
         const loginResult = await loginResponse.json();
         if (!loginResponse?.ok) {
-          statusAlert.showDanger("Something went wrong!", "bi-exclamation-triangle-fill");
+          statusAlert.showWithIcon("danger", "Something went wrong!", "bi-exclamation-triangle-fill");
           return;
         }
 
@@ -166,6 +164,7 @@
       const caUnInput = document.getElementById("ca-un-input");
       const caEmailInput = document.getElementById("ca-email-input");
       const caPwInput = document.getElementById("ca-pw-input");
+      const statusAlert = new CustomAlert(alertDisplay, alertMessage);
 
       openCreateAccountModal.addEventListener("click", (e) => {
         event.preventDefault();
@@ -195,7 +194,7 @@
 
         // Don't let the user close the modal.
         [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
-        createBtn.showLoading("Creating account...");
+        addSpinnerToButton(createBtn, "Creating account...");
 
         const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
           method: "POST",
@@ -218,11 +217,11 @@
 
         // Error. Something went wrong creating account
         if (!accCreationResult.ok) {
-          statusAlert.showDanger("Something went wrong when creating your account. Please try again.", "bi-exclamation-triangle-fill");
+          statusAlert.showWithIcon("danger", "Something went wrong when creating account. Please try again.", "bi-exclamation-triangle-fill");
           return;
         }
 
-        statusAlert.showSuccess("Success! Account created successfully.", "bi-person-fill-check");
+        statusAlert.showWithIcon("success", "Success! Account created successfully.", "bi-person-fill-check");
         console.log("success!");
       });
     </script>
