@@ -525,9 +525,9 @@
         handleRooms(roomsContainer, rooms, () => {
           const r = document.getElementById(joinedRoomId);
           joinRoomModalRoomsContainer.removeChild(r);
-          // Even tho the id is the same it is now in a different spot.
-          // We removed it from the list of rooms to join and added it
-          // to the list of rooms we are currently in.
+          // Even tho the id is the same, it is a different element.
+          // We removed it from the 'list of rooms to join' and added it
+          // to the 'list of rooms we are currently in'.
           scrollToElement(document.getElementById(joinedRoomId));
         });
         joinRoomBtn.hideLoading();

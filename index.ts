@@ -20,7 +20,8 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
   // Add port to wss url if we are running local.
   process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
 } else {
-  // If we are running on Render, start CronJob as keep-alive.
+  // If we are running on Render, start CronJob
+  // so our free-tier container isn't spun down due to inactivity.
   keepalive.start();
 }
 

@@ -4,7 +4,7 @@ export default {
   insert: insertRoom,
   selectAll: selectAllRooms,
   selectById: selectByRoomId,
-  selectUnjoineddRooms: selectUnjoinedRoomsByUserId,
+  selectUnjoinedRooms: selectUnjoinedRoomsByUserId,
 };
 
 function selectByRoomId(db: sqlite3.Database, roomId: string): Promise<Room> {

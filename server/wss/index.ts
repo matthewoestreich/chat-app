@@ -201,7 +201,7 @@ async function handleGetJoinableRooms(socket: WebSocket) {
   }
   const { db, release } = await DB_POOL.getConnection();
   try {
-    const rooms = await roomService.selectUnjoineddRooms(db, socket.user.id);
+    const rooms = await roomService.selectUnjoinedRooms(db, socket.user.id);
     release();
     sendMessage(socket, "joinable_rooms", { ok: true, rooms, error: null });
   } catch (e) {
