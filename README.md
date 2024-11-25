@@ -5,7 +5,7 @@ A responsive, multi-user, multi-room, real time chat application that supports d
 ## [Start chatting now! (beta)](https://rtchat-a7ul.onrender.com)
 
 Features:
- - Session Based Authentication & Authorization
+ - Session Based Authentication & Authorization [*](#user-content-jwt)
  - WebSocket Authentication
  - Initially Rendered Server Side for Fast Time-To-First-Paint
  - Dark Mode
@@ -21,6 +21,8 @@ Backend Technologies:
 Frontend Technologies:
  - [Vanilla JS](http://vanilla-js.com/)
  - [Bootstrap 5](https://getbootstrap.com/)
+
+<sub><a name="jwt">*</a>Pseudo-sessions via JWT. I was testing various auth strategies, got sick of testing different strats, and settled with using a JWT as a session-like token. I plan on migrating to full on sessions soon.</sub>
 
 ---
 
