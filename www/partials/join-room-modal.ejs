@@ -1,4 +1,4 @@
-<div class="modal fade modal" id="join-room-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade modal mh-100" id="join-room-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -9,9 +9,12 @@
         <div id="join-room-alert" class="alert d-none d-flex flex-row align-items-center justify-content-between mh-100" role="alert">
           <i class=""></i>
           <div id="join-room-alert-message" class="mb-0 max-h-100px overf-scroll"></div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button" name="join-room-close-alert" class="btn-close"></button>
         </div>
-        <ul id="join-room-modal-rooms-container" class="list-group" style="max-height: 50vh; overflow-y: scroll"></ul>
+        <input id="join-room-modal-search-rooms-input" type="text" class="form-control" placeholder="Search Rooms" />
+        <div class="border mt-3">
+          <ul id="join-room-modal-rooms-container" class="list-group" style="max-height: 35vh; overflow-y: scroll"></ul>
+        </div>
       </div>
       <div class="modal-footer">
         <button id="-cancel-join-room-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
@@ -20,3 +23,27 @@
     </div>
   </div>
 </div>
+<script nonce="<%= nonce %>">
+  let ogRooms = [];
+  const searchBar = document.getElementById("join-room-modal-search-rooms-input");
+  const modal = document.getElementById("join-room-modal");
+  const container = document.getElementById("join-room-modal-rooms-container");
+
+  modal.addEventListener("shown.bs.modal", (e) => {
+    ogRooms = Array.from(container.childNodes);
+  });
+
+  modal.addEventListener("hidden.bs.modal", (event) => {
+    searchBar.value = "";
+  });
+
+  const ignoredKeys = ["Backspace", "Enter"];
+  searchBar.addEventListener("input", (event) => {
+    if (ignoredKeys.includes(event.key)) {
+      return;
+    }
+    const value = event.target.value.toLowerCase();
+    const found = ogRooms.filter((r) => r.getAttribute("name").toLowerCase().includes(value));
+    container.replaceChildren(...found);
+  });
+</script>

@@ -22,11 +22,11 @@ function addSpinnerToButton(btnElement, btnText = "") {
 
 function getSpinnerButtonInstance(btnElement) {
   if (btnElement.tagName !== "BUTTON") {
-    console.error(`[addSpinnerToButton] btnElement not a button.`);
+    console.warn(`[addSpinnerToButton] btnElement not a button.`);
     return;
   }
   if (btnElement.getAttribute("data-rtc-spinner-btn") != "rtctrue") {
-    console.error(`[addSpinnerToButton][getSpinnerButton] provided btnElement not a spinner button.`, btnElement);
+    console.warn(`[addSpinnerToButton][getSpinnerButton] provided btnElement not a spinner button.`, btnElement);
     return;
   }
   return () => {

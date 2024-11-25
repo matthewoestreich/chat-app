@@ -101,7 +101,7 @@
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Modals -->
-    <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room-modal.ejs") %><%- include("./partials/join-room-modal.ejs") %>
+    <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room-modal.ejs") %><%- include("./partials/join-room-modal.ejs", { nonce }) %>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
       <nav class="container">
@@ -331,8 +331,8 @@
           }
 
           case "create_room": {
-            const { ok, rooms, error } = message;
-            handleCreatedRoom(ok, rooms, error);
+            const { ok, rooms, createdRoomId, error } = message;
+            handleCreatedRoom(ok, rooms, createdRoomId, error);
             break;
           }
 
@@ -464,9 +464,12 @@
       });
 
       joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
-        getSpinnerButtonInstance(joinRoomBtn)();
+        const revert = getSpinnerButtonInstance(joinRoomBtn);
+        if (revert) {
+          revert();
+        }
         joinRoomModalRoomsContainer.replaceChildren();
-        joinRoomModalAlert.hide();
+        joinRoomCallout.close();
       });
 
       // Clear form when modal is hidden.
@@ -523,12 +526,16 @@
       }
 
       function handleJoinedRoom(ok, rooms, joinedRoomId, error) {
-        getSpinnerButtonInstance(joinRoomBtn)();
+        const revert = getSpinnerButtonInstance(joinRoomBtn);
+        if (revert) {
+          revert();
+        }
         if (!ok) {
           joinRoomCallout.showWithIcon("danger", "Something went wrong. Please close this box and try again.", "bi-exclamation");
           console.log(`[handleJoinedRoom][ERROR]`, error);
           return;
         }
+        rooms.sort((a, b) => a.name.localeCompare(b.name));
         handleRooms(roomsContainer, rooms, () => {
           const r = document.getElementById(joinedRoomId);
           joinRoomModalRoomsContainer.removeChild(r);
@@ -546,7 +553,7 @@
         renderMembers(appendToElement, members);
       }
 
-      function handleCreatedRoom(ok, rooms, error) {
+      function handleCreatedRoom(ok, rooms, createdRoomId, error) {
         getSpinnerButtonInstance(createRoomBtn)();
         if (!ok) {
           console.log(`[handleCreatedRooms]`, error);
@@ -554,7 +561,10 @@
           return;
         }
         createRoomCallout.showWithIcon("success", "Success! Room created successfully.", "bi-check");
-        handleRooms(roomsContainer, rooms);
+        rooms.sort((a, b) => a.name.localeCompare(b.name));
+        handleRooms(roomsContainer, rooms, () => {
+          scrollToElement(document.getElementById(createdRoomId));
+        });
         //bsCreateRoomModal.hide();
       }
 
@@ -567,7 +577,10 @@
       }
 
       function handleUnjoined(isSuccess, updatedRooms, error) {
-        getSpinnerButtonInstance(confirmedLeaveRoomBtn)();
+        const revert = getSpinnerButtonInstance(confirmedLeaveRoomBtn);
+        if (revert) {
+          revert();
+        }
         if (!isSuccess) {
           console.error(`[handleUnjoined][ERROR]`, error);
           leaveRoomConfirmationModalBody.innerText = "Something went wrong, please try again.";
@@ -790,8 +803,9 @@
       }
 
       function scrollToElement(element) {
-        if (!element) return;
-
+        if (!element) {
+          return;
+        }
         element.scrollIntoView({
           behavior: "smooth", // Smooth scrolling
           block: "start", // Align to the top of the container

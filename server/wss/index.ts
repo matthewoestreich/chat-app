@@ -146,17 +146,20 @@ async function handleCreateRoom(socket: WebSocket, roomName: string, isPrivate: 
   const { db, release } = await DB_POOL.getConnection();
   try {
     if (!socket.user || !socket.user.id) {
-      console.error(`[ws][handleCreateRoom] socket.user or socket.user.id is undefined!`, { "socket.user": socket?.user });
+      const errMsg = `socket.user or socket.user.id is undefined!`;
+      console.error(`[ws][handleCreateRoom] ${errMsg}`, { "socket.user": socket?.user });
+      sendMessage(socket, "create_room", { ok: false, error: errMsg, rooms: [], createdRoomId: null });
+      return;
     }
     const newroom = await roomService.insert(db, roomName, uuidV7(), isPrivate);
     addRoomAndUserToBucket(newroom.id, socket.user!.id, socket);
     const updatedRooms = await chatService.addUserByIdToRoomById(db, socket.user!.id, newroom.id, true);
     release();
-    sendMessage(socket, "create_room", { ok: true, rooms: updatedRooms, error: null });
+    sendMessage(socket, "create_room", { ok: true, rooms: updatedRooms, createdRoomId: newroom.id, error: null });
   } catch (e) {
     release();
     console.log(`[handleCreateRoom][error]`, e);
-    sendMessage(socket, "create_room", { ok: false, rooms: [], error: e });
+    sendMessage(socket, "create_room", { ok: false, rooms: [], createdRoomId: null, error: e });
   }
 }
 
