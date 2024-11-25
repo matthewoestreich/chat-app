@@ -8,6 +8,13 @@ import { sessionService } from "@/server/db/services";
 import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
 
+// TESTING
+import Session from "@/server/session/index";
+
+const useSession = new Session({
+  secret: "Hello, world!",
+}).middleware;
+
 const app = express();
 
 app.set("view engine", "ejs");

@@ -68,6 +68,7 @@ interface Cookies {
 
 declare namespace Express {
   export interface Request {
+    session: ISession;
     databasePool: DatabasePool<T>;
     cookies: {};
     sessionToken: string;

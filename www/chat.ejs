@@ -261,7 +261,6 @@
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
-      // ~ Modal related ~
       // Leave room confirmation modal
       const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
       const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
@@ -293,7 +292,7 @@
       const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
       const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
       const bsJoinRoomModal = bootstrap.Modal.getOrCreateInstance(joinRoomModal);
-
+      // Alerts/callouts/status updates
       const createRoomCallout = new CustomAlert(createRoomAlert, createRoomAlertMessage);
       const joinRoomCallout = new CustomAlert(joinRoomModalAlert, joinRoomModalAlertMessage);
 
@@ -312,62 +311,69 @@
         }
 
         switch (message.type) {
-          case "entered_room": {
-            const { members, messages } = message;
-            handleEnteredRoom(members, messages);
-            break;
-          }
-
+          // Got a list of our rooms.
           case "rooms": {
             handleRooms(roomsContainer, message.rooms);
             break;
           }
 
-          // Received a list of rooms that this user can select.
-          case "joinable_rooms": {
-            const { ok, rooms, error } = message;
-            handleJoinableRooms(joinRoomModalRoomsContainer, ok, rooms, error);
-            break;
-          }
-
+          // We created a roomm.
           case "create_room": {
             const { ok, rooms, createdRoomId, error } = message;
             handleCreatedRoom(ok, rooms, createdRoomId, error);
             break;
           }
 
+          // We got a list of members for a room.
           case "members": {
             handleRoomMembers(membersContainer, message.members);
             break;
           }
 
-          // Got a chat message
+          // Got a chat message.
           case "message": {
             handleMessage(message);
             break;
           }
 
-          // Someone entered the room
+          // We entered a room.
+          // Also semi-covers when we leave a room, since entering one room means we are leaving
+          // another (unless our active room is null, then this was the first room we entered).
+          case "entered_room": {
+            const { members, messages } = message;
+            handleEnteredRoom(members, messages);
+            break;
+          }
+
+          // Someone else entered the room.
           case "member_entered": {
             handleMemberEntered(message?.id);
             break;
           }
 
-          // Someone left the room we are currently in
+          // Someone else left the room.
           case "member_left": {
             handleMemberLeft(message?.id);
             break;
           }
 
+          // Received a list of rooms that we can join.
+          case "joinable_rooms": {
+            const { ok, rooms, error } = message;
+            handleJoinableRooms(joinRoomModalRoomsContainer, ok, rooms, error);
+            break;
+          }
+
+          // We joined a room.
           case "joined": {
             const { ok, error, rooms, joinedRoomId } = message;
             handleJoinedRoom(ok, rooms, joinedRoomId, error);
             break;
           }
 
-          // You unjoined a room
+          // We "unjoined" a room.
+          // Calling it "unjoin" as to not cause confusion wtih "enter|entered" and "leave|left" types.
           case "unjoin": {
-            // { ok: bool, rooms?: <if ok, list of updated rooms to render>, error?: <if !ok, error will be here> }
             const { ok, rooms, error } = message;
             handleUnjoined(ok, rooms, error);
             break;
