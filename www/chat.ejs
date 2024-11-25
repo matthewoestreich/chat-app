@@ -101,7 +101,6 @@
     <!-- Toast alerts -->
     <div id="toast-container" class="toast-container top-0 end-0 p-2"></div>
     <!-- Modals -->
-    <script src="/public/rtchat/CustomAlert.js"></script>
     <%- include("./partials/leave-room-confirmation-modal.ejs") %> <%- include("./partials/create-room-modal.ejs") %><%- include("./partials/join-room-modal.ejs") %>
     <!-- Navbar -->
     <header class="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
@@ -158,11 +157,11 @@
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
           </div>
           <div id="members-container" class="card-body overf-y-scroll p-0 m-1">
-            <div id="loading-members-spinner" class="d-none d-flex mt-4 justify-content-center">
+            <di id="loading-members-spinner" class="d-none d-flex mt-4 justify-content-center">
               <div class="spinner-border">
                 <span class="visually-hidden">Loading...</span>
               </div>
-            </div>
+            </di>
           </div>
           <div class="card-footer"></div>
         </div>
@@ -213,7 +212,8 @@
       </div>
     </div>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
-    <script src="/public/rtchat/addSpinnerToButton.js"></script>
+    <script src="/public/rtchat/CustomAlert.js"></script>
+    <script src="/public/rtchat/LoadingButton.js"></script>
     <script nonce="<%= nonce %>">
       // Theme script...
       const toggleThemeBtn = document.getElementById("toggle-theme");
@@ -324,7 +324,7 @@
             break;
           }
 
-          case "created_room": {
+          case "create_room": {
             const { ok, rooms, error } = message;
             handleCreatedRoom(ok, rooms, error);
             break;
@@ -360,7 +360,7 @@
           }
 
           // You unjoined a room
-          case "unjoined": {
+          case "unjoin": {
             // { ok: bool, rooms?: <if ok, list of updated rooms to render>, error?: <if !ok, error will be here> }
             const { ok, rooms, error } = message;
             handleUnjoined(ok, rooms, error);
@@ -410,11 +410,11 @@
       createRoomBtn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        const revertSpinnerBtn = addSpinnerToButton(createRoomBtn, "Please wait...");
+        createRoomBtn.showLoading("Please wait...");
         createRoomForm.isValid = createRoomForm.checkValidity();
         createRoomForm.classList.add("was-validated");
         if (!createRoomForm.isValid) {
-          revertSpinnerBtn();
+          createRoomBtn.hideLoading();
           return;
         }
         const roomName = createRoomRoomNameInput.value;
@@ -427,7 +427,7 @@
         if (!selected) {
           return;
         }
-        addSpinnerToButton(joinRoomBtn, "Please wait...");
+        joinRoomBtn.showLoading("Please wait...");
         sendMessage(ws, "join", { userId: USER_ID, roomId: selected.id });
       });
 
@@ -440,12 +440,11 @@
       });
 
       openJoinRoomModalBtn.addEventListener("click", (event) => {
-        sendMessage(ws, "get_joinable_rooms", {});
+        sendMessage(ws, "joinable_rooms", {});
         bsJoinRoomModal.show();
       });
 
       openCreateRoomModalBtn.addEventListener("click", (event) => {
-        console.log("create");
         bsCreateRoomModal.show();
       });
 
@@ -454,13 +453,12 @@
           bsLeaveConfirmationModal.hide();
           return;
         }
-        addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
+        confirmedLeaveRoomBtn.showLoading("Please wait...");
         sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
       });
 
       joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
-        const revert = getSpinnerButtonInstance(joinRoomBtn);
-        revert();
+        joinRoomBtn.hideLoading();
         joinRoomModalRoomsContainer.replaceChildren();
         joinRoomModalAlert.hide();
       });
@@ -526,10 +524,14 @@
         }
         handleRooms(roomsContainer, rooms, () => {
           const r = document.getElementById(joinedRoomId);
-          console.log({ joinedRoom: r });
-          window.rtcJoinedRoom = r;
+          joinRoomModalRoomsContainer.removeChild(r);
+          // Even tho the id is the same it is now in a different spot.
+          // We removed it from the list of rooms to join and added it
+          // to the list of rooms we are currently in.
+          scrollToElement(document.getElementById(joinedRoomId));
         });
-        bsJoinRoomModal.hide();
+        joinRoomBtn.hideLoading();
+        //bsJoinRoomModal.hide();
       }
 
       function handleRoomMembers(appendToElement, members) {
@@ -539,8 +541,7 @@
       }
 
       function handleCreatedRoom(ok, rooms, error) {
-        const revertButton = getSpinnerButtonInstance(createRoomBtn);
-        revertButton();
+        createRoomBtn.hideLoading();
         if (!ok) {
           console.log(`[handleCreatedRooms]`, error);
           createRoomStatusEl.showDanger("Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
@@ -560,8 +561,7 @@
       }
 
       function handleUnjoined(isSuccess, updatedRooms, error) {
-        const restore = getSpinnerButtonInstance(confirmedLeaveRoomBtn);
-        restore();
+        confirmedLeaveRoomBtn.hideLoading();
         if (!isSuccess) {
           console.error(`[handleUnjoined][ERROR]`, error);
           leaveRoomConfirmationModalBody.innerText = "Something went wrong, please try again.";
@@ -780,6 +780,15 @@
             return -1; // Here, if 'a' is active, 'b' has to be inactive.
           }
           return 1; // Here, we can safely assume 'b' is active and 'a' is inactive.
+        });
+      }
+
+      function scrollToElement(element) {
+        if (!element) return;
+
+        element.scrollIntoView({
+          behavior: "smooth", // Smooth scrolling
+          block: "start", // Align to the top of the container
         });
       }
 

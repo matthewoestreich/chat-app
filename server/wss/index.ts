@@ -81,7 +81,7 @@ WSS.on("connection", async (socket: WebSocket, req) => {
         break;
       }
 
-      case "get_joinable_rooms": {
+      case "joinable_rooms": {
         handleGetJoinableRooms(socket);
         break;
       }
@@ -152,11 +152,11 @@ async function handleCreateRoom(socket: WebSocket, roomName: string, isPrivate: 
     addRoomAndUserToBucket(newroom.id, socket.user!.id, socket);
     const updatedRooms = await chatService.addUserByIdToRoomById(db, socket.user!.id, newroom.id, true);
     release();
-    sendMessage(socket, "created_room", { ok: true, rooms: updatedRooms, error: null });
+    sendMessage(socket, "create_room", { ok: true, rooms: updatedRooms, error: null });
   } catch (e) {
     release();
     console.log(`[handleCreateRoom][error]`, e);
-    sendMessage(socket, "created_room", { ok: false, rooms: [], error: e });
+    sendMessage(socket, "create_room", { ok: false, rooms: [], error: e });
   }
 }
 
@@ -178,18 +178,18 @@ async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
   try {
     if (!socket.user || !socket.user.id) {
       console.log(`[ws][handleUnjoinRoom] empty user or user.id`, { user: socket?.user });
-      sendMessage(socket, "unjoined", { ok: false, error: "empty user or user.id" });
+      sendMessage(socket, "unjoin", { ok: false, error: "empty user or user.id" });
       return;
     }
     await chatService.deleteRoomMember(db, roomId, socket.user.id);
     const updatedRooms = await chatService.selectRoomsByUserId(db, socket.user.id);
     release();
     handleLeaveRoom(socket, roomId);
-    sendMessage(socket, "unjoined", { ok: true, rooms: updatedRooms });
+    sendMessage(socket, "unjoin", { ok: true, rooms: updatedRooms });
   } catch (e) {
     console.error(`[ws][handleUnjoinRoom][ERROR]`, e);
     release();
-    sendMessage(socket, "unjoined", { ok: false, error: e });
+    sendMessage(socket, "unjoin", { ok: false, error: e });
   }
 }
 
@@ -201,7 +201,7 @@ async function handleGetJoinableRooms(socket: WebSocket) {
   }
   const { db, release } = await DB_POOL.getConnection();
   try {
-    const rooms = await roomService.selectUnjoinedRoomsByUserId(db, socket.user.id);
+    const rooms = await roomService.selectUnjoineddRooms(db, socket.user.id);
     release();
     sendMessage(socket, "joinable_rooms", { ok: true, rooms, error: null });
   } catch (e) {

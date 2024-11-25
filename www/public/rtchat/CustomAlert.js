@@ -21,10 +21,6 @@ class CustomAlert extends HTMLElement {
     super();
   }
 
-  connectedCallback() {
-    const customText = this.getAttribute("customText") || "Default message";
-  }
-
   showSuccess(msg, iconClass = "bi-check") {
     this._render(msg, iconClass, "success");
   }

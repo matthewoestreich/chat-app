@@ -95,7 +95,7 @@
               </div>
               <div class="d-flex justify-content-end">
                 <button id="open-create-account-modal-btn" type="button" class="btn btn-outline-secondary me-2">Create Account</button>
-                <button id="login-btn" class="btn btn-primary">Login</button>
+                <rtc-loading-button id="login-btn" class="btn btn-primary">Login</rtc-loading-button>
               </div>
             </form>
           </div>
@@ -103,8 +103,8 @@
       </div>
     </div>
     <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
-    <script src="/public/rtchat/addSpinnerToButton.js"></script>
     <script src="/public/rtchat/CustomAlert.js"></script>
+    <script src="/public/rtchat/LoadingButton.js"></script>
     <script nonce="<%= nonce %>">
       const mainLoginBtn = document.getElementById("login-btn");
       const loginEmailInput = document.getElementById("login-email-input");
@@ -116,12 +116,12 @@
         event.preventDefault();
         event.stopPropagation();
 
-        const revertSpinnerBtnState = addSpinnerToButton(mainLoginBtn, "Logging in...");
+        mainLoginBtn.showLoading("Logging in...");
 
         loginForm.isValid = loginForm.checkValidity();
         loginForm.classList.add("was-validated");
         if (!loginForm.isValid) {
-          revertSpinnerBtnState();
+          mainLoginBtn.hideLoading();
           return;
         }
 
@@ -134,7 +134,7 @@
           }),
         });
 
-        revertSpinnerBtnState();
+        mainLoginBtn.hideLoading();
 
         const loginResult = await loginResponse.json();
         if (!loginResponse?.ok) {
@@ -195,7 +195,7 @@
 
         // Don't let the user close the modal.
         [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
-        const removeSpinnerFromBtn = addSpinnerToButton(createBtn, "Creating Account...");
+        createBtn.showLoading("Creating account...");
 
         const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
           method: "POST",
