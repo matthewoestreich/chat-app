@@ -15,9 +15,7 @@ export default async function (req: Request, res: Response, next: NextFunction) 
     }
 
     const decodedToken = jsonwebtoken.decode(session) as SessionToken;
-    console.log(decodedToken);
     const { db, release } = await req.databasePool.getConnection();
-    console.log({ dbPool: req.databasePool });
     const storedSession = await sessionService.selectByUserId(db, decodedToken?.id);
     release();
 
