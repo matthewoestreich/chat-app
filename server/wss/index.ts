@@ -136,7 +136,7 @@ async function handleSendMessage(socket: WebSocket, message: any) {
     socket.chatColor = generateLightColor();
   }
   const { fromUserName, fromUserId, toRoom, value } = message;
-  broadcastMessage(toRoom, fromUserId, fromUserName, value, socket.chatColor);
+  broadcastMessage(socket, toRoom, fromUserId, fromUserName, value, socket.chatColor);
   const { db, release } = await DB_POOL.getConnection();
   messagesService.insertMessage(db, toRoom, fromUserId, value, socket.chatColor!);
   release();
@@ -263,8 +263,18 @@ function broadcastMemberStatus(roomId: string, userId: string, status: "member_l
 }
 
 // Handle sending broadcast to all members of a specific room
-function broadcastMessage(toRoomId: string, fromUserId: string, fromUserName: string, message: string, chatColor: string) {
+function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: string, fromUserName: string, message: string, chatColor: string) {
+  // Check for spoofing
+  if (!fromUserId || !fromUserName || fromUserId !== socket?.user?.id || fromUserName !== socket.user?.name) {
+    console.log("[SPOOF_ATTEMPT] message spoof attempt!", { spoofedMessage: { toRoomId, fromUserId, fromUserName, message }, fromSocket: socket.user });
+    return;
+  }
   if (BUCKETS.has(toRoomId)) {
+    // Verify the user that is sending the message is even active in this room..
+    if (!BUCKETS.get(toRoomId)!.get(fromUserId)) {
+      console.log("[SPOOF?] user not active in room attempted to send a message to that room.", { fromSocket: socket.user, spoofedMessage: { toRoomId, fromUserId, fromUserName, message } });
+      return;
+    }
     for (const [userId, socket] of BUCKETS.get(toRoomId)!) {
       if (userId !== fromUserId && socket.readyState === socket.OPEN) {
         sendMessage(socket, "message", { from: fromUserName, color: chatColor, message });

@@ -46,43 +46,27 @@
       .message {
         display: flex;
         flex-direction: column;
-        margin-bottom: 20px;
-      }
-
-      .message.message-from {
+        margin-bottom: 0.67rem;
         align-items: start;
-      }
-
-      .message.message-to {
-        align-items: end;
-      }
-
-      .message-from > .message-footer {
-        margin-left: 12px;
-      }
-
-      .message-to > .message-footer {
-        margin-right: 5px;
+        margin-left: 1rem;
+        margin-right: 1rem;
       }
 
       .message > .message-body {
         margin-top: auto;
         margin-bottom: auto;
-        margin-left: 10px;
         position: relative;
-        padding: 10px;
-        border-radius: 10px;
-        max-width: 70%;
+        /*padding: 5px;
+        border: 0.001rem solid var(--bs-tertiary-color);
+        border-radius: 10px;*/
+        color: var(--bs-body-color);
+        font-weight: 250;
       }
 
-      .message.message-to > .message-body {
-        background-color: #78e08f;
-      }
-
-      .message > .message-footer {
-        color: var(--bs-secondary-color);
-        /*rgba(42, 41, 41, 0.5);*/
-        font-size: 10px;
+      .message > .message-header {
+        color: var(--bs-body-color);
+        font-weight: 800;
+        font-size: 1rem;
       }
       a.navbar-icon {
         text-decoration: none;
@@ -400,7 +384,7 @@
           return;
         }
         if (ws.readyState !== ws.OPEN) {
-          const opts = { message: "Unable to send message", displayName: USER_NAME, isSending: true, chatBubbleColor: "red", isError: true };
+          const opts = { message: "Unable to send message", displayName: USER_NAME, isSending: true, isError: true };
           chatDisplay.appendChild(generateChatHTML(opts));
           scrollToBottomOfElement(chatDisplay);
           return;
@@ -570,7 +554,7 @@
 
       // Received message
       function handleMessage(broadcast) {
-        const opts = { message: broadcast.message, displayName: broadcast.from, isSending: false, chatBubbleColor: broadcast.color };
+        const opts = { message: broadcast.message, displayName: broadcast.from, isSending: false };
         const msgHTML = generateChatHTML(opts);
         chatDisplay.appendChild(msgHTML);
         scrollToBottomOfElement(chatDisplay);
@@ -597,7 +581,7 @@
         handleRoomMembers(membersContainer, members);
         messages.forEach(({ message, userId, userName, roomId, color }) => {
           const isSending = userId === USER_ID;
-          const opts = { message, chatBubbleColor: color, isSending, displayName: userName };
+          const opts = { message, isSending, displayName: userName };
           const html = generateChatHTML(opts);
           renderChatMessage(chatDisplay, html);
         });
@@ -692,31 +676,21 @@
        * Generate HTML functions
        */
 
-      function generateChatHTML(opts = { message: "", displayName: "", isSending: true, chatBubbleColor: "", isError: false }) {
-        let { message, displayName, isSending, chatBubbleColor, isError } = opts;
+      function generateChatHTML(opts = { message: "", displayName: "", isSending: true, isError: false }) {
+        let { message, displayName, isSending, isError } = opts;
         const messageDiv = document.createElement("div");
         const messageBodyDiv = document.createElement("div");
-        const messageFooterSpan = document.createElement("span");
-        let senderOrRecieverClass = "message-to";
-        if (!chatBubbleColor) {
-          chatBubbleColor = "lightgreen";
-        }
-        if (!isSending) {
-          senderOrRecieverClass = "message-from";
-          messageBodyDiv.style.backgroundColor = chatBubbleColor;
-        }
+        const messageHeaderSpan = document.createElement("span");
         if (isError) {
           messageBodyDiv.style.backgroundColor = "red";
         }
         messageDiv.classList.add("message");
-        messageDiv.classList.add(senderOrRecieverClass);
         messageBodyDiv.classList.add("message-body");
-        messageBodyDiv.style.color = "black";
         messageBodyDiv.innerText = message;
-        messageFooterSpan.classList.add("message-footer");
-        messageFooterSpan.innerText = displayName;
+        messageHeaderSpan.classList.add("message-header");
+        messageHeaderSpan.innerText = displayName;
+        messageDiv.appendChild(messageHeaderSpan);
         messageDiv.appendChild(messageBodyDiv);
-        messageDiv.appendChild(messageFooterSpan);
         return messageDiv;
       }
 
