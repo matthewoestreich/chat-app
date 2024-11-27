@@ -24,10 +24,24 @@
         .h-lg-90pct {
           height: 90%;
         }
+        .message {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 0.67rem;
+          align-items: start;
+          margin-left: 1rem;
+          margin-right: 1rem;
+        }
       }
       @media only screen and (max-width: 992px) {
         .h-lg-90pct {
           height: 100%;
+        }
+        .message {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 0.67rem;
+          align-items: start;
         }
       }
 
@@ -41,15 +55,6 @@
 
       .overf-hide {
         overflow: hidden;
-      }
-
-      .message {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 0.67rem;
-        align-items: start;
-        margin-left: 1rem;
-        margin-right: 1rem;
       }
 
       .message > .message-body {
