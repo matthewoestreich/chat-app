@@ -24,7 +24,6 @@ WSS.on("connection", async (socket: WebSocket, req) => {
   }
 
   socket.user = jsonwebtoken.decode(cookies.session) as Account;
-  socket.chatColor = generateLightColor();
 
   // Send user their rooms on first connection and add each room
   // to our data structure that tracks rooms and membership.
@@ -132,13 +131,10 @@ function handleLeaveRoom(socket: WebSocket, roomId: string) {
 }
 
 async function handleSendMessage(socket: WebSocket, message: any) {
-  if (!socket.chatColor) {
-    socket.chatColor = generateLightColor();
-  }
   const { fromUserName, fromUserId, toRoom, value } = message;
-  broadcastMessage(socket, toRoom, fromUserId, fromUserName, value, socket.chatColor);
+  broadcastMessage(socket, toRoom, fromUserId, fromUserName, value);
   const { db, release } = await DB_POOL.getConnection();
-  messagesService.insertMessage(db, toRoom, fromUserId, value, socket.chatColor!);
+  messagesService.insertMessage(db, toRoom, fromUserId, value);
   release();
 }
 
@@ -263,7 +259,7 @@ function broadcastMemberStatus(roomId: string, userId: string, status: "member_l
 }
 
 // Handle sending broadcast to all members of a specific room
-function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: string, fromUserName: string, message: string, chatColor: string) {
+function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: string, fromUserName: string, message: string) {
   // Check for spoofing
   if (!fromUserId || !fromUserName || fromUserId !== socket?.user?.id || fromUserName !== socket.user?.name) {
     console.log("[SPOOF_ATTEMPT] message spoof attempt!", { spoofedMessage: { toRoomId, fromUserId, fromUserName, message }, fromSocket: socket.user });
@@ -277,7 +273,7 @@ function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: strin
     }
     for (const [userId, socket] of BUCKETS.get(toRoomId)!) {
       if (userId !== fromUserId && socket.readyState === socket.OPEN) {
-        sendMessage(socket, "message", { from: fromUserName, color: chatColor, message });
+        sendMessage(socket, "message", { from: fromUserName, message });
       }
     }
   }
@@ -313,42 +309,4 @@ async function isAuthenticated(token: string, socket: WebSocket) {
 
 function sendMessage(socket: WebSocket, type: string, data: { [k: string]: any }) {
   socket.send(JSON.stringify({ type, ...data }));
-}
-
-function generateLightColor(): string {
-  // Helper function to generate a random light color
-  function getRandomLightColor(): string {
-    const r = Math.floor(128 + Math.random() * 128); // Range 128–255
-    const g = Math.floor(128 + Math.random() * 128);
-    const b = Math.floor(128 + Math.random() * 128);
-    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-  }
-
-  // Helper function to calculate the relative luminance of a color
-  function getLuminance(hexColor: string): number {
-    const hex = hexColor.replace("#", "");
-    const rgb = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)].map((channel) => {
-      const scaled = channel / 255;
-      return scaled <= 0.03928 ? scaled / 12.92 : Math.pow((scaled + 0.055) / 1.055, 2.4);
-    });
-
-    // Luminance formula
-    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-  }
-
-  // Helper function to check contrast ratio
-  function hasSufficientContrast(luminance: number): boolean {
-    const blackLuminance = 0; // Luminance of black
-    const contrastRatio = (luminance + 0.05) / (blackLuminance + 0.05);
-    return contrastRatio > 4.5; // WCAG recommended contrast ratio for normal text
-  }
-
-  // Loop until a color with sufficient contrast is found
-  while (true) {
-    const color = getRandomLightColor();
-    const luminance = getLuminance(color);
-    if (hasSufficientContrast(luminance)) {
-      return color;
-    }
-  }
 }

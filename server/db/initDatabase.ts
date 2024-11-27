@@ -40,7 +40,6 @@ export default async function () {
           roomId TEXT NOT NULL,
           userId TEXT NOT NULL,
           message TEXT NOT NULL,
-          color TEXT NOT NULL,
           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );`);
         db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);

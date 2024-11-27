@@ -30,7 +30,6 @@ interface Message {
   roomId: string;
   message: string;
   timestamp: Date;
-  color: string;
 }
 
 interface SessionToken {

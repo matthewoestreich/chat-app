@@ -5,6 +5,5 @@ declare module "ws" {
     user?: Account;
     activeIn?: string;
     id?: string;
-    chatColor?: string;
   }
 }

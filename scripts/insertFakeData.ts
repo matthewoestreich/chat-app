@@ -69,7 +69,6 @@ const users: any[] = Array.from({ length: NUM_ITEMS_EACH }, () => {
     password: username,
     email: `${username}@${username}.com`,
     id: uuidV7(),
-    color: faker.color.rgb(),
   };
   return user;
 });
@@ -111,7 +110,6 @@ rooms.forEach((room) => {
     const member = members[i % members.length];
     messages.push({
       message: faker.lorem.sentence({ min: 3, max: 20 }),
-      color: member.color,
       userId: member.id,
       roomId: room.id,
       id: uuidV7(),
@@ -178,9 +176,9 @@ async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) 
 async function insertMessages(db, messages) {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO messages (id, roomId, userId, message, color) VALUES (?, ?, ?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`);
       for (const message of messages) {
-        stmt.run(message.id, message.roomId, message.userId, message.message, message.color);
+        stmt.run(message.id, message.roomId, message.userId, message.message);
       }
       stmt.finalize((err) => {
         if (err) {
