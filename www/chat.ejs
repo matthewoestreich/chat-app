@@ -27,8 +27,8 @@
         .message {
           display: flex;
           flex-direction: column;
-          margin-bottom: 0.67rem;
           align-items: start;
+          margin-top: 0.33rem;
           margin-left: 1rem;
           margin-right: 1rem;
         }
@@ -40,7 +40,7 @@
         .message {
           display: flex;
           flex-direction: column;
-          margin-bottom: 0.67rem;
+          margin-top: 0.33rem;
           align-items: start;
         }
       }
@@ -58,8 +58,8 @@
       }
 
       .message > .message-body {
-        margin-top: auto;
-        margin-bottom: auto;
+        /*margin-top: auto;
+        margin-bottom: auto;*/
         position: relative;
         /*padding: 5px;
         border: 0.001rem solid var(--bs-tertiary-color);
@@ -152,7 +152,15 @@
               </div>
             </di>
           </div>
-          <div class="card-footer"></div>
+          <div class="card-footer">
+            <div class="row">
+              <div class="col-12 d-flex p-1">
+                <button id="open-direct-messages" class="btn btn-outline-secondary flex-grow-1" type="button" title="Direct Messages">
+                  <i class="bi bi-chat-dots-fill"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
           <div class="card-header d-flex flex-row">
@@ -684,17 +692,32 @@
       function generateChatHTML(opts = { message: "", displayName: "", isSending: true, isError: false }) {
         let { message, displayName, isSending, isError } = opts;
         const messageDiv = document.createElement("div");
+        messageDiv.setAttribute("name", displayName);
         const messageBodyDiv = document.createElement("div");
         const messageHeaderSpan = document.createElement("span");
         if (isError) {
           messageBodyDiv.style.backgroundColor = "red";
         }
+        const renderHeader = () => {
+          messageHeaderSpan.classList.add("message-header");
+          messageHeaderSpan.innerText = displayName;
+          messageDiv.style.marginTop = "0.67rem";
+          messageDiv.appendChild(messageHeaderSpan);
+        };
+        const isLastMessageFromCurrentSender = () => {
+          // If last message is from the same person, skip the name
+          if (chatDisplay.childElementCount > 0) {
+            const lastMsg = chatDisplay.childNodes[chatDisplay.childNodes.length - 1];
+            return lastMsg.getAttribute("name") === displayName;
+          }
+          return false;
+        };
         messageDiv.classList.add("message");
         messageBodyDiv.classList.add("message-body");
         messageBodyDiv.innerText = message;
-        messageHeaderSpan.classList.add("message-header");
-        messageHeaderSpan.innerText = displayName;
-        messageDiv.appendChild(messageHeaderSpan);
+        if (!isLastMessageFromCurrentSender()) {
+          renderHeader();
+        }
         messageDiv.appendChild(messageBodyDiv);
         return messageDiv;
       }

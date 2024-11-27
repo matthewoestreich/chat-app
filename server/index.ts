@@ -79,11 +79,12 @@ app.get("/logout", async (req: Request, res: Response) => {
       res.clearCookie("session");
       console.log({ sessionAfterRemove: req.cookies.session });
     }
-
     return res.render("logout");
   } catch (e) {
     console.log({ logoutError: e });
-    return res.render("error", { error: "Error logging you out." });
+    res.clearCookie("session");
+    //return res.render("error", { error: "Error logging you out." });
+    return res.render("logout");
   }
 });
 

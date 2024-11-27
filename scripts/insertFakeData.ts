@@ -18,8 +18,8 @@ sqlite3.verbose();
  * CHANGE THIS TO TRUE/FALSE WHETHER YOU WANT TO ACTUALLY INSERT DATA
  * AND NOT JUST TEST GENERATION..
  */
-const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = true;
-const NUM_ITEMS_EACH = 100;
+const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = false;
+const NUM_ITEMS_EACH = 200;
 const DATABASE_PATH = path.resolve(__dirname, "../server/db/rtchat.db");
 
 function logGeneratedData() {
@@ -30,6 +30,10 @@ function logGeneratedData() {
   console.log(JSON.stringify(chat, null, 2));
   console.log("*".repeat(40));
   console.log(JSON.stringify(messages, null, 2));
+  console.log("*".repeat(40));
+  console.log(JSON.stringify(directConvos, null, 2));
+  console.log("*".repeat(40));
+  console.log(JSON.stringify(directMessages, null, 2));
   console.log("*".repeat(40));
 }
 
@@ -59,6 +63,19 @@ interface ChatRoomMember {
   password: string;
   email: string;
   rooms: { name: string; id: string; isPrivate: number }[];
+}
+interface DirectMessage {
+  id: string;
+  directConversationId: string;
+  fromUserId: string;
+  toUserId: string;
+  message: string;
+  timestamp: Date;
+}
+interface DirectConversation {
+  id: string;
+  userA_Id: string;
+  userB_Id: string;
 }
 
 // Generate fake user data
@@ -116,6 +133,39 @@ rooms.forEach((room) => {
     });
   }
 });
+
+// Create direct conversations and direct messages
+const directConvos = [];
+const directMessages = [];
+
+for (let i = 0; i < users.length; i++) {
+  const fromUser = users[i];
+  let numOfPartners = getRandomInt(3);
+  if (numOfPartners === 0) {
+    continue;
+  }
+  const existingPartners = [];
+  for (let j = 0; j < numOfPartners; j++) {
+    let toUser = getRandomArrayElement(users);
+    while (existingPartners.some((ep) => ep.id === toUser.id)) {
+      toUser = getRandomArrayElement(users);
+    }
+    existingPartners.push(toUser);
+    directConvos.push({ id: uuidV7(), userA_Id: fromUser.id, userB_Id: toUser.id } as DirectConversation);
+  }
+  directConvos.forEach((dc: DirectConversation) => {
+    const numOfDms = getRandomInt(5);
+    for (let k = 0; k < numOfDms; k++) {
+      directMessages.push({
+        id: uuidV7(),
+        directConversationId: dc.id,
+        fromUserId: dc.userA_Id,
+        toUserId: dc.userB_Id,
+        message: faker.lorem.sentence({ min: 3, max: 20 }),
+      } as DirectMessage);
+    }
+  });
+}
 
 async function insertUsers(db: sqlite3.Database, users: { id: string; username: string; password: string; email: string }[]) {
   return new Promise(async (resolve, reject) => {
@@ -194,6 +244,48 @@ async function insertMessages(db, messages) {
   });
 }
 
+async function insertDirectConversations(db, convos: DirectConversation[]) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO direct_conversation (id, userA_id, userB_id) VALUES (?, ?, ?)`);
+      for (const convo of convos) {
+        stmt.run(convo.id, convo.userA_Id, convo.userB_Id);
+      }
+      stmt.finalize((err) => {
+        if (err) {
+          console.log(`error finalizing direct_conversation statement`, err);
+          return reject(err);
+        }
+        console.log(` - direct_conversation stmt finalized`);
+        resolve(true);
+      });
+    } catch (e) {
+      reject(`error inserting direct_conversation ${e}`);
+    }
+  });
+}
+
+async function insertDirectMessages(db, messages: DirectMessage[]) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`INSERT INTO direct_messages (id, directConversationId, fromUserId, toUserId, message) VALUES (?, ?, ?, ?, ?)`);
+      for (const msg of messages) {
+        stmt.run(msg.id, msg.directConversationId, msg.fromUserId, msg.toUserId, msg.message);
+      }
+      stmt.finalize((err) => {
+        if (err) {
+          console.log(`error finalizing direct_messages statement`, err);
+          return reject(err);
+        }
+        console.log(` - direct_messages stmt finalized`);
+        resolve(true);
+      });
+    } catch (e) {
+      reject(`error inserting direct_messages ${e}`);
+    }
+  });
+}
+
 async function main() {
   const db = new sqlite3.Database(DATABASE_PATH, (err) => {
     if (err) {
@@ -221,6 +313,14 @@ async function main() {
       console.log("Inserting messages...");
       await insertMessages(db, messages);
       console.log("messages inserted.");
+
+      console.log("Inserting direct-conversations...");
+      await insertDirectConversations(db, directConvos);
+      console.log("direct-conversations inserted.");
+
+      console.log("Inserting direct-messages...");
+      await insertDirectMessages(db, directMessages);
+      console.log("direct-messages inserted.");
 
       db.run("COMMIT");
       console.log("done running commands");

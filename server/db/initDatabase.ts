@@ -43,19 +43,54 @@ export default async function () {
           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );`);
         db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);
-        db.run(`CREATE TRIGGER IF NOT EXISTS enforce_messages_limit 
-          AFTER INSERT ON messages
-          WHEN (SELECT COUNT(*) FROM messages WHERE roomId = NEW.roomId) > 50
-          BEGIN
-              DELETE FROM messages
-              WHERE id = (
-                  SELECT id
-                  FROM messages
-                  WHERE roomId = NEW.roomId
-                  ORDER BY timestamp ASC
-                  LIMIT 1
-              );
-          END;`);
+        db.run(` -- Trigger to only store 50 messages per room.
+          CREATE TRIGGER IF NOT EXISTS enforce_messages_limit AFTER
+          INSERT ON messages WHEN
+            (SELECT COUNT(*)
+            FROM messages
+            WHERE roomId = NEW.roomId) > 50 BEGIN
+          DELETE
+          FROM messages
+          WHERE id =
+              (SELECT id
+              FROM messages
+              WHERE roomId = NEW.roomId
+              ORDER BY timestamp ASC
+              LIMIT 1);
+          END;
+        `);
+        db.run(`CREATE TABLE IF NOT EXISTS direct_conversation (
+          id TEXT PRIMARY KEY,
+	        userA_Id TEXT NOT NULL,
+	        userB_Id TEXT NOT NULL
+        );`);
+        db.run(`CREATE TABLE IF NOT EXISTS direct_messages (
+          id TEXT PRIMARY KEY,
+          directConversationId TEXT NOT NULL,
+          fromUserId TEXT NOT NULL,
+          toUserId TEXT NOT NULL,
+          message TEXT NOT NULL,
+          "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT direct_messages_direcct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
+        );`);
+        db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_timestamp ON direct_messages (fromUserId, timestamp);`);
+        db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_toUserId_timestamp ON direct_messages (fromUserId, toUserId, timestamp);`);
+        db.run(` -- Trigger to only store 50 messages per DM.
+          CREATE TRIGGER IF NOT EXISTS enforce_direct_messages_message_limit AFTER
+          INSERT ON direct_messages WHEN
+            (SELECT COUNT(*)
+            FROM direct_messages
+            WHERE directConversationId = NEW.directConversationId) > 50 BEGIN
+          DELETE
+          FROM direct_messages
+          WHERE id =
+              (SELECT id
+              FROM direct_messages
+              WHERE directConversationId = NEW.directConversationId
+              ORDER BY timestamp ASC
+              LIMIT 1);
+          END;
+        `);
         db.run("COMMIT");
         db.close();
         resolve();

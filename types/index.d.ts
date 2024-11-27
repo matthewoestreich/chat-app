@@ -65,6 +65,12 @@ interface Cookies {
   [key: string]: string;
 }
 
+interface DirectConversation {
+  id: string;
+  toUserId: string;
+  fromUserId: string;
+}
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;
