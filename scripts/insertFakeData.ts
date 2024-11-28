@@ -19,7 +19,7 @@ sqlite3.verbose();
  * AND NOT JUST TEST GENERATION..
  */
 const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = false;
-const NUM_ITEMS_EACH = 200;
+const NUM_ITEMS_EACH = 100;
 const DATABASE_PATH = path.resolve(__dirname, "../server/db/rtchat.db");
 
 function logGeneratedData() {
@@ -140,7 +140,7 @@ const directMessages = [];
 
 for (let i = 0; i < users.length; i++) {
   const fromUser = users[i];
-  let numOfPartners = getRandomInt(3);
+  let numOfPartners = 2; //getRandomInt(3);
   if (numOfPartners === 0) {
     continue;
   }
@@ -154,18 +154,30 @@ for (let i = 0; i < users.length; i++) {
     directConvos.push({ id: uuidV7(), userA_Id: fromUser.id, userB_Id: toUser.id } as DirectConversation);
   }
   directConvos.forEach((dc: DirectConversation) => {
-    const numOfDms = getRandomInt(5);
+    const numOfDms = 5; //getRandomInt(5);
     for (let k = 0; k < numOfDms; k++) {
+      const options = [
+        {
+          fromUserId: dc.userA_Id,
+          toUserId: dc.userB_Id,
+        },
+        {
+          fromUserId: dc.userB_Id,
+          toUserId: dc.userA_Id,
+        },
+      ];
+      const option = getRandomArrayElement(options);
       directMessages.push({
         id: uuidV7(),
         directConversationId: dc.id,
-        fromUserId: dc.userA_Id,
-        toUserId: dc.userB_Id,
         message: faker.lorem.sentence({ min: 3, max: 20 }),
+        ...option,
       } as DirectMessage);
     }
   });
 }
+
+console.log({ numberOfDirectMessages: directMessages.length });
 
 async function insertUsers(db: sqlite3.Database, users: { id: string; username: string; password: string; email: string }[]) {
   return new Promise(async (resolve, reject) => {

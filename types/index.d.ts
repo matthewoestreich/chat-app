@@ -66,9 +66,10 @@ interface Cookies {
 }
 
 interface DirectConversation {
-  id: string;
-  toUserId: string;
-  fromUserId: string;
+  id: string; // convo id
+  userId: string; // person that initiated query
+  participantId: string; // other participant id in DM
+  participantName: string; // other participant name in DM
 }
 
 declare namespace Express {

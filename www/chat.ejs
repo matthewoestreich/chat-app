@@ -6,85 +6,7 @@
     <title>RTChat | Room</title>
     <link href="/public/bootstrap@5.3.3/css/bootstrap.min.css" rel="stylesheet" />
     <%- include("partials/bootstrap-icons.ejs") %>
-    <style>
-      html,
-      body {
-        height: 100%;
-      }
-
-      .active-room {
-        background-color: var(--bs-secondary-color);
-      }
-
-      .min-h-0 {
-        min-height: 0;
-      }
-
-      @media only screen and (min-width: 992px) {
-        .h-lg-90pct {
-          height: 90%;
-        }
-        .message {
-          display: flex;
-          flex-direction: column;
-          align-items: start;
-          margin-top: 0.33rem;
-          margin-left: 1rem;
-          margin-right: 1rem;
-        }
-      }
-      @media only screen and (max-width: 992px) {
-        .h-lg-90pct {
-          height: 100%;
-        }
-        .message {
-          display: flex;
-          flex-direction: column;
-          margin-top: 0.33rem;
-          align-items: start;
-        }
-      }
-
-      .h-90pct {
-        height: 90%;
-      }
-
-      .overf-y-scroll {
-        overflow-y: scroll !important;
-      }
-
-      .overf-hide {
-        overflow: hidden;
-      }
-
-      .message > .message-body {
-        /*margin-top: auto;
-        margin-bottom: auto;*/
-        position: relative;
-        /*padding: 5px;
-        border: 0.001rem solid var(--bs-tertiary-color);
-        border-radius: 10px;*/
-        color: var(--bs-body-color);
-        font-weight: 250;
-      }
-
-      .message > .message-header {
-        color: var(--bs-body-color);
-        font-weight: 800;
-        font-size: 1rem;
-      }
-      a.navbar-icon {
-        text-decoration: none;
-        cursor: pointer;
-      }
-      .chat-title {
-        color: var(--bs-tertiary-color);
-        height: 48px;
-      }
-      .chat-title-no-room {
-        font-style: italic;
-      }
-    </style>
+    <link href="/public/rtchat/css/chat.css" rel="stylesheet" />
   </head>
   <body>
     <!-- Toast alerts -->
@@ -146,11 +68,28 @@
             <button type="button" class="btn btn-close btn-sm d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#members-offcanvas"></button>
           </div>
           <div id="members-container" class="card-body overf-y-scroll p-0 m-1">
-            <di id="loading-members-spinner" class="d-none d-flex mt-4 justify-content-center">
+            <div id="loading-members-spinner" class="d-none d-flex mt-4 justify-content-center">
               <div class="spinner-border">
                 <span class="visually-hidden">Loading...</span>
               </div>
-            </di>
+            </div>
+            <ul id="members-list" class="list-group list-group-flush"></ul>
+            <div id="direct-messages-drawer" class="drawer card">
+              <div class="drawer-header card-header fs-3">
+                <div class="flex-fill text-center">Direct Messages</div>
+                <button id="close-direct-messages-drawer" type="button" class="btn btn-close btn-sm drawer-close-button"></button>
+              </div>
+              <div class="drawer-body card-body"></div>
+              <div class="card-footer">
+                <div class="row">
+                  <div class="col-12 d-flex p-1">
+                    <button id="close-dms-footer-btn" class="btn btn-outline-secondary flex-grow-1" type="button" title="Close Direct Messages">
+                      <i class="bi bi-x-square"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="card-footer">
             <div class="row">
@@ -208,63 +147,36 @@
         </div>
       </div>
     </div>
-    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js"></script>
-    <script src="/public/rtchat/CustomAlert.js"></script>
-    <script src="/public/rtchat/addSpinnerToButton.js"></script>
+    <script src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js" type="text/javascript"></script>
+    <script src="/public/rtchat/js/CustomAlert.js" type="text/javascript"></script>
+    <script src="/public/rtchat/js/addSpinnerToButton.js" type="text/javascript"></script>
+    <script src="/public/rtchat/js/theme.js" type="text/javascript"></script>
+    <script src="/public/rtchat/js/ws.js" type="text/javascript"></script>
     <script nonce="<%= nonce %>">
-      // Theme script...
-      const toggleThemeBtn = document.getElementById("toggle-theme");
-      const darkThemeIcon = document.getElementById("dark-theme-icon");
-      const lightThemeIcon = document.getElementById("light-theme-icon");
-
-      let currentTheme = localStorage.getItem("theme");
-      if (!currentTheme) {
-        currentTheme = "light";
-        localStorage.setItem("theme", currentTheme);
-      }
-      document.documentElement.setAttribute("data-bs-theme", currentTheme);
-
-      if (currentTheme === "dark") {
-        lightThemeIcon.classList.remove("d-none");
-      } else {
-        darkThemeIcon.classList.remove("d-none");
-      }
-
-      toggleThemeBtn.addEventListener("click", (e) => {
-        // Update current to be opposite since we are toggling...
-        const updated = localStorage.getItem("theme") === "dark" ? "light" : "dark";
-        localStorage.setItem("theme", updated);
-        document.documentElement.setAttribute("data-bs-theme", updated);
-
-        if (updated === "dark") {
-          lightThemeIcon.classList.remove("d-none");
-          darkThemeIcon.classList.add("d-none");
-        } else {
-          lightThemeIcon.classList.add("d-none");
-          darkThemeIcon.classList.remove("d-none");
-        }
-      });
-    </script>
-    <script nonce="<%= nonce %>">
-      // User info
+      //#region - "HTML Elements"
+      /* WebSocket */
+      const ws = initWebSocket("<%= websocketUrl %>");
+      /* User info */
       const USER_NAME = "<%= name %>";
       const USER_ID = "<%= id %>";
       const USER_EMAIL = "<%= email %>";
-      // Websocket
-      const ws = new WebSocket("<%= websocketUrl %>");
-      // Members & Rooms elements
+      /* Members & Rooms elements */
       const sendChatBtn = document.getElementById("send-chat-btn");
       const roomsContainer = document.getElementById("rooms-container");
       const membersContainer = document.getElementById("members-container");
       const loadingRoomsSpinner = document.getElementById("loading-rooms-spinner");
       const loadingMembersSpinner = document.getElementById("loading-members-spinner");
-      // ~ Modal related ~
-      // Leave room confirmation modal
+      const directMessagesDrawer = document.getElementById("direct-messages-drawer");
+      const directMessagesDrawerContainer = document.getElementById("drawer-container");
+      const openDirectMessagesDrawer = document.getElementById("open-direct-messages");
+      const closeDirectMessagesDrawer = document.getElementById("close-direct-messages-drawer");
+      const closeDirectMessagesDrawerFooterBtn = document.getElementById("close-dms-footer-btn");
+      /* Leave room confirmation modal */
       const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
       const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
       const openLeaveRoomConfirmModalBtn = document.getElementById("leave-room-btn");
       const confirmedLeaveRoomBtn = document.getElementById("leave-room-confirmation-modal-confirmed-leave-btn");
-      // Create room modal
+      /* Create room modal */
       const createRoomModal = document.getElementById("create-room-modal");
       const openCreateRoomModalBtn = document.getElementById("open-create-room-modal-btn");
       const createRoomBtn = document.getElementById("create-room-btn");
@@ -274,107 +186,26 @@
       const createRoomStatusEl = document.getElementById("create-room-alert");
       const createRoomAlert = document.getElementById("create-room-alert");
       const createRoomAlertMessage = document.getElementById("create-room-alert-message");
-      // Join room modal
+      /* Join room modal */
       const joinRoomModal = document.getElementById("join-room-modal");
       const openJoinRoomModalBtn = document.getElementById("open-join-room-modal");
       const joinRoomBtn = document.getElementById("join-room-btn");
       const joinRoomModalRoomsContainer = document.getElementById("join-room-modal-rooms-container");
       const joinRoomModalAlert = document.getElementById("join-room-alert");
       const joinRoomModalAlertMessage = document.getElementById("join-room-alert-message");
-      // Chat related elements
+      /* Chat related elements */
       const chatDisplay = document.getElementById("chat-display");
       const sendChatButton = document.getElementById("send-chat-btn");
       const chatTextInput = document.getElementById("chat-text-input");
       const chatTitle = document.getElementById("chat-title");
-      // bootstrap instances/objects
+      /* bootstrap instances/objects */
       const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
       const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
       const bsJoinRoomModal = bootstrap.Modal.getOrCreateInstance(joinRoomModal);
+      //#endregion
 
       const createRoomCallout = new CustomAlert(createRoomAlert, createRoomAlertMessage);
       const joinRoomCallout = new CustomAlert(joinRoomModalAlert, joinRoomModalAlertMessage);
-
-      ws.onopen = () => {
-        console.log(`ws connected`);
-      };
-
-      ws.onclose = (ws, event) => {
-        console.log({ socket: "closed", ws, event });
-      };
-
-      ws.onmessage = (rawMessage) => {
-        const message = JSON.parse(rawMessage?.data);
-        if (!message?.type) {
-          return;
-        }
-
-        switch (message.type) {
-          case "entered_room": {
-            const { members, messages } = message;
-            handleEnteredRoom(members, messages);
-            break;
-          }
-
-          case "rooms": {
-            handleRooms(roomsContainer, message.rooms);
-            break;
-          }
-
-          // Received a list of rooms that this user can select.
-          case "joinable_rooms": {
-            const { ok, rooms, error } = message;
-            handleJoinableRooms(joinRoomModalRoomsContainer, ok, rooms, error);
-            break;
-          }
-
-          case "create_room": {
-            const { ok, rooms, createdRoomId, error } = message;
-            handleCreatedRoom(ok, rooms, createdRoomId, error);
-            break;
-          }
-
-          case "members": {
-            handleRoomMembers(membersContainer, message.members);
-            break;
-          }
-
-          // Got a chat message
-          case "message": {
-            handleMessage(message);
-            break;
-          }
-
-          // Someone entered the room
-          case "member_entered": {
-            handleMemberEntered(message?.id);
-            break;
-          }
-
-          // Someone left the room we are currently in
-          case "member_left": {
-            handleMemberLeft(message?.id);
-            break;
-          }
-
-          case "joined": {
-            const { ok, error, rooms, joinedRoomId } = message;
-            handleJoinedRoom(ok, rooms, joinedRoomId, error);
-            break;
-          }
-
-          // You unjoined a room
-          case "unjoin": {
-            // { ok: bool, rooms?: <if ok, list of updated rooms to render>, error?: <if !ok, error will be here> }
-            const { ok, rooms, error } = message;
-            handleUnjoined(ok, rooms, error);
-            break;
-          }
-
-          default: {
-            break;
-          }
-        }
-      };
 
       /**
        * Events & Event Handlers
@@ -475,8 +306,29 @@
         createRoomIsPrivateCheckbox.checked = false;
       });
 
+      openDirectMessagesDrawer.addEventListener("click", (e) => {
+        directMessagesDrawer.classList.toggle("open");
+        sendMessage(ws, "get_direct_conversations", { userId: USER_ID });
+      });
+
+      // Button at top right of DM's drawer (shown as an X).
+      closeDirectMessagesDrawer.addEventListener("click", (e) => {
+        directMessagesDrawer.classList.toggle("open");
+      });
+
+      // Button within DM's drawer (located at footer).
+      closeDirectMessagesDrawerFooterBtn.addEventListener("click", (e) => {
+        directMessagesDrawer.classList.toggle("open");
+      });
+
+      /**
+       * HTML related functions/handlers
+       */
+
       function handleRoomClick(event, self, socket) {
         openLeaveRoomConfirmModalBtn.disabled = false;
+        // If DM's are open, close them..
+        directMessagesDrawer.classList.remove("open");
         const currentActiveRoom = window?.rtcActiveRoom;
         if (currentActiveRoom === self) {
           return;
@@ -520,6 +372,14 @@
           });
           appendToElement.appendChild(roomEl);
         }
+      }
+
+      function handleDirectConversations(ok, conversations, error) {
+        if (!ok) {
+          return;
+        }
+        console.log(conversations);
+        window.conversations = conversations;
       }
 
       function handleJoinedRoom(ok, rooms, joinedRoomId, error) {
@@ -596,7 +456,7 @@
           const isSending = userId === USER_ID;
           const opts = { message, isSending, displayName: userName };
           const html = generateChatHTML(opts);
-          renderChatMessage(chatDisplay, html);
+          chatDisplay.appendChild(html);
         });
         scrollToBottomOfElement(chatDisplay);
       }
@@ -642,25 +502,21 @@
        * Render functions
        */
 
-      function renderChatMessage(containerElement, messageHTML) {
-        containerElement.appendChild(messageHTML);
-      }
-
       function renderMembers(containerElement, members) {
-        containerElement.replaceChildren(); // clear existing html
+        const membersListElement = document.getElementById("members-list");
+        membersListElement.replaceChildren();
+
         if (!members.length) {
           const p = document.createElement("p");
           p.classList.add("text-body-tertiary");
           p.innerText = "None";
           return containerElement.appendChild(p);
         }
-        const membersListElement = document.createElement("ul");
-        membersListElement.classList.add("list-group", "list-group-flush");
+
         for (const m of members) {
           const memberHTML = generateMemberHTML(m.userName, m.userId, m.isActive);
           membersListElement.appendChild(memberHTML);
         }
-        containerElement.appendChild(membersListElement);
       }
 
       function renderRooms(containerElement, rooms, onCompleted = () => {}) {

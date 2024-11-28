@@ -6,7 +6,7 @@ import verifyTokenAsync from "./verifyTokenAsync";
 import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
-import { chatService, messagesService, roomService } from "../db/services";
+import { chatService, directConversationService, messagesService, roomService } from "../db/services";
 
 const WSS = new WebSocketServer({ server });
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
@@ -88,6 +88,12 @@ WSS.on("connection", async (socket: WebSocket, req) => {
       case "create_room": {
         const { roomName, isPrivate } = message;
         handleCreateRoom(socket, roomName, isPrivate);
+        break;
+      }
+
+      case "get_direct_conversations": {
+        const { userId } = message;
+        handleGetDirectConversations(socket, userId);
         break;
       }
 
@@ -210,6 +216,23 @@ async function handleGetJoinableRooms(socket: WebSocket) {
   }
 }
 
+async function handleGetDirectConversations(socket: WebSocket, userId: string) {
+  if (!validateSocketSender(socket, userId)) {
+    console.log(`[ws][handleGetDirectConversations] possible message spoof`, { fromSocket: socket, providedUserId: userId });
+    return;
+  }
+  const { db, release } = await DB_POOL.getConnection();
+  try {
+    const directConvos = await directConversationService.selectAllByUserId(db, userId);
+    release();
+    sendMessage(socket, "get_direct_conversations", { ok: true, conversations: directConvos, error: null });
+  } catch (e) {
+    release();
+    console.log(`[ws][handleGetDirectConversations][ERROR]`, e);
+    sendMessage(socket, "get_direct_conversations", { ok: false, conversations: [], error: e });
+  }
+}
+
 // Gets a chat message
 async function getMessages(roomId: string): Promise<Message[]> {
   try {
@@ -283,6 +306,13 @@ function addRoomToBucket(roomId: string) {
   if (!BUCKETS.has(roomId)) {
     BUCKETS.set(roomId, new Map());
   }
+}
+
+function validateSocketSender(socket: WebSocket, providedUserId: string): boolean {
+  if (!socket.user || !socket.user.id) {
+    return false;
+  }
+  return socket.user.id === providedUserId;
 }
 
 function addRoomAndUserToBucket(roomId: string, userId: string, socket: WebSocket) {

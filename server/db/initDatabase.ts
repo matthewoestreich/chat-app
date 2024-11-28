@@ -71,7 +71,7 @@ export default async function () {
           toUserId TEXT NOT NULL,
           message TEXT NOT NULL,
           "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT direct_messages_direcct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
+          CONSTRAINT direct_messages_direct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
         );`);
         db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_timestamp ON direct_messages (fromUserId, timestamp);`);
         db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_toUserId_timestamp ON direct_messages (fromUserId, toUserId, timestamp);`);
