@@ -92,8 +92,7 @@ WSS.on("connection", async (socket: WebSocket, req) => {
       }
 
       case "get_direct_conversations": {
-        const { userId } = message;
-        handleGetDirectConversations(socket, userId);
+        handleGetDirectConversations(socket);
         break;
       }
 
@@ -216,14 +215,14 @@ async function handleGetJoinableRooms(socket: WebSocket) {
   }
 }
 
-async function handleGetDirectConversations(socket: WebSocket, userId: string) {
-  if (!validateSocketSender(socket, userId)) {
-    console.log(`[ws][handleGetDirectConversations] possible message spoof`, { fromSocket: socket, providedUserId: userId });
+async function handleGetDirectConversations(socket: WebSocket) {
+  if (!socket.user || !socket.user.id) {
+    console.log(`[ws][handleGetDirectConversations] missing socket.user or socket.user.id`, { "socket.user": socket.user });
     return;
   }
   const { db, release } = await DB_POOL.getConnection();
   try {
-    const directConvos = await directConversationService.selectAllByUserId(db, userId);
+    const directConvos = await directConversationService.selectAllByUserId(db, socket.user.id);
     release();
     sendMessage(socket, "get_direct_conversations", { ok: true, conversations: directConvos, error: null });
   } catch (e) {
@@ -284,7 +283,7 @@ function broadcastMemberStatus(roomId: string, userId: string, status: "member_l
 // Handle sending broadcast to all members of a specific room
 function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: string, fromUserName: string, message: string) {
   // Check for spoofing
-  if (!fromUserId || !fromUserName || fromUserId !== socket?.user?.id || fromUserName !== socket.user?.name) {
+  if (!fromUserId || !fromUserName || !validateSocketSender(socket, fromUserId) || fromUserName !== socket.user?.name) {
     console.log("[SPOOF_ATTEMPT] message spoof attempt!", { spoofedMessage: { toRoomId, fromUserId, fromUserName, message }, fromSocket: socket.user });
     return;
   }

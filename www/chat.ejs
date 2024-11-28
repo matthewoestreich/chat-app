@@ -308,7 +308,7 @@
 
       openDirectMessagesDrawer.addEventListener("click", (e) => {
         directMessagesDrawer.classList.toggle("open");
-        sendMessage(ws, "get_direct_conversations", { userId: USER_ID });
+        sendMessage(ws, "get_direct_conversations", {});
       });
 
       // Button at top right of DM's drawer (shown as an X).
