@@ -7,16 +7,65 @@ import server from "../index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import { chatService, directConversationService, messagesService, roomService } from "../db/services";
+import WebSocketApp from "./WebSocketApp";
+import EventType from "./EventType";
 
-const WSS = new WebSocketServer({ server });
+// For when someone first logs in or what not and they aren't in a room, but
+// they're online..
+const ACTIVE_NO_ROOM = "__online_no_room";
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 // How we store references to sockets. Structured so we can track
 // which users are in which rooms.
 const BUCKETS: Map<string, Map<string, WebSocket>> = new Map();
+// Create a room for "online but not currently in a room"..
+BUCKETS.set(ACTIVE_NO_ROOM, new Map());
 
+// When a user first connects to a WebSocket they aren't in any room, but they should still be considered online.
+// Users that are online, but not in a room, should still show online to those that try to DM them.
+const ROOM_ID_UNASSIGNED = "__UNASSIGNED__";
+
+const wsapp = new WebSocketApp({ server });
+
+wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: Buffer) => {
+  if (socket.activeIn) {
+    handleLeaveRoom(socket, socket.activeIn);
+  }
+  let why = { reason: reason.toString(), definition: "" };
+  if (why.reason === "") {
+    why = errorCodeToReason(code);
+  }
+  console.log(`socket closed.`, { user: socket?.user?.id || "NA", code, reason: why });
+});
+
+wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket, req) => {
+  console.log("checking");
+  const cookies = parseCookies(req.headers.cookie);
+  if (!(await isAuthenticated(cookies?.session))) {
+    const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
+    socket.close(code, definition);
+    return;
+  }
+  console.log("authed");
+
+  socket.user = jsonwebtoken.decode(cookies.session) as Account;
+  const { db, release } = await DB_POOL.getConnection();
+
+  const rooms = await chatService.selectRoomsByUserId(db, socket.user.id); // Send user their rooms.
+  console.log(rooms);
+  release();
+  //socket.send(JSON.stringify({msg:"hi"}))
+  wsapp.emitToClient(EventType.LIST_ROOMS, { rooms });
+  rooms.forEach((room) => wsapp.cacheRoom(room.id)); // Add rooms to cache just so we have them there.
+
+  // Add user to "unassigned" room..
+  wsapp.cacheUserInRoom(socket.user.id, ROOM_ID_UNASSIGNED);
+});
+
+//const WSS = new WebSocketServer({ server });
+/*
 WSS.on("connection", async (socket: WebSocket, req) => {
   const cookies = parseCookies(req.headers.cookie || "");
-  const authenticated = await isAuthenticated(cookies?.session, socket);
+  const authenticated = await isAuthenticated(cookies?.session);
   if (!authenticated) {
     const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
     socket.close(code, definition);
@@ -25,7 +74,9 @@ WSS.on("connection", async (socket: WebSocket, req) => {
 
   socket.user = jsonwebtoken.decode(cookies.session) as Account;
 
-  // Send user their rooms on first connection and add each room
+  // - Add user to "active but not in a room" room..
+  BUCKETS.get(ACTIVE_NO_ROOM)!.set(socket.user.id, socket);
+  // - Send user their rooms on first connection and add each room
   // to our data structure that tracks rooms and membership.
   const rooms = await getRoomsByUserId(socket);
   if (rooms) {
@@ -106,11 +157,14 @@ WSS.on("connection", async (socket: WebSocket, req) => {
     }
   });
 });
+*/
 
 async function handleEnteredRoom(socket: WebSocket, roomId: string) {
   if (!socket.user) {
     return;
   }
+  // When someone first joins they're put in an "active, but not in a room" room.. remove them from it..
+  removeFromBucketIfExists(ACTIVE_NO_ROOM, socket.user.id);
   // If they already had an active room, it means they're leaving it. So notify that room they left.
   if (socket.activeIn) {
     handleLeaveRoom(socket, socket.activeIn);
@@ -222,8 +276,14 @@ async function handleGetDirectConversations(socket: WebSocket) {
   }
   const { db, release } = await DB_POOL.getConnection();
   try {
-    const directConvos = await directConversationService.selectAllByUserId(db, socket.user.id);
+    let directConvos = await directConversationService.selectAllByUserId(db, socket.user.id);
     release();
+    if (directConvos && directConvos.length) {
+      directConvos = directConvos.map((dc) => {
+        dc.isActive = isUserActiveInABucket(dc.id);
+        return dc;
+      });
+    }
     sendMessage(socket, "get_direct_conversations", { ok: true, conversations: directConvos, error: null });
   } catch (e) {
     release();
@@ -301,6 +361,21 @@ function broadcastMessage(socket: WebSocket, toRoomId: string, fromUserId: strin
   }
 }
 
+function isUserActiveInABucket(userId: string) {
+  for (const [_roomId, members] of BUCKETS) {
+    if (members.has(userId)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function removeFromBucketIfExists(roomId: string, userId: string) {
+  if (BUCKETS.get(roomId)) {
+    BUCKETS.get(roomId)!.delete(userId);
+  }
+}
+
 function addRoomToBucket(roomId: string) {
   if (!BUCKETS.has(roomId)) {
     BUCKETS.set(roomId, new Map());
@@ -319,15 +394,13 @@ function addRoomAndUserToBucket(roomId: string, userId: string, socket: WebSocke
   BUCKETS.get(roomId)!.set(userId, socket);
 }
 
-async function isAuthenticated(token: string, socket: WebSocket) {
+async function isAuthenticated(token: string) {
   if (!token) {
     return false;
   }
   try {
     const isValidToken = await verifyTokenAsync(token, process.env.JWT_SIGNATURE || "");
     if (!isValidToken) {
-      const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
-      socket.close(code, definition);
       return false;
     }
     return true;
