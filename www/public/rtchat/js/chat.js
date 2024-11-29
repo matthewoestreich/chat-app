@@ -33,7 +33,6 @@ const joinRoomModalAlert = document.getElementById("join-room-alert");
 const joinRoomModalAlertMessage = document.getElementById("join-room-alert-message");
 /* Chat related elements */
 const chatDisplay = document.getElementById("chat-display");
-const sendChatButton = document.getElementById("send-chat-btn");
 const chatTextInput = document.getElementById("chat-text-input");
 const chatTitle = document.getElementById("chat-title");
 /* bootstrap instances/objects */
@@ -177,7 +176,7 @@ function handleRoomClick(event, self, socket) {
   self.classList.add("active-room");
   currentActiveRoom?.classList?.remove("active-room");
   window.rtcActiveRoom = self;
-  sendMessage(ws, "entered_room", { roomId: self.id });
+  sendMessage(ws, "ENTER_ROOM", { roomId: self.id });
 }
 
 function handleDirectConversationClick(event, theElement) {

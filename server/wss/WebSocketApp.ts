@@ -1,19 +1,34 @@
 import EventEmitter from "node:events";
 import { IncomingMessage } from "node:http";
 import { WebSocketServer, WebSocket, ServerOptions, RawData } from "ws";
-import verifyTokenAsync from "./verifyTokenAsync";
 import WebSocketMessage from "./WebSocketMessage";
 import EventType from "./EventType";
 
 export default class WebSocketApp extends EventEmitter {
   private server: WebSocketServer;
-  private socket?: WebSocket;
+  private socket: WebSocket;
 
   private static rooms: Map<string, Map<string, WebSocket>> = new Map();
+
+  private parseRawMessage(rawMessage: RawData): WebSocketMessage {
+    try {
+      const message = WebSocketMessage.from(rawMessage);
+      if (!message.type) {
+        return new WebSocketMessage(EventType.ERROR, new Error("Message missing 'type' key"));
+      }
+      if (!(message.type in EventType)) {
+        return new WebSocketMessage(EventType.ERROR, new Error("Unkown message type."));
+      }
+      return message;
+    } catch (e) {
+      return new WebSocketMessage(EventType.ERROR, e as Error);
+    }
+  }
 
   constructor(options?: ServerOptions) {
     super();
     this.server = new WebSocketServer(options);
+    this.socket = {} as WebSocket;
 
     this.server.on("connection", async (socket: WebSocket, request: IncomingMessage) => {
       this.socket = socket;
@@ -24,26 +39,17 @@ export default class WebSocketApp extends EventEmitter {
       });
 
       socket.on("message", (rawMessage: RawData, _isBinary: boolean) => {
-        console.log({ got: "message", rawMessage });
-        const { type, error, ...messageData } = this.tryParseRawMessage(rawMessage);
+        const { error, type, ...data } = this.parseRawMessage(rawMessage);
         if (error) {
-          console.log({ error });
-          return;
+          return this.emit(EventType.ERROR, error);
         }
-        this.emit(type, messageData);
+        this.emit(type, data);
       });
     });
   }
 
-  emitToClient(eventType: EventType, data: EventData) {
-    if (!this.socket) {
-      console.log("no socket");
-      return;
-    }
-    const stringData = JSON.stringify({ type: eventType, ...data });
-    console.log(stringData);
-    console.log(this.socket);
-    this.socket.send(stringData);
+  emitToClient(eventType: EventType, data: IWebSocketMessageData) {
+    this.socket.send(new WebSocketMessage(eventType, data).toJSONString());
   }
 
   getCachedRoom(roomId: string) {
@@ -58,8 +64,8 @@ export default class WebSocketApp extends EventEmitter {
     const room = this.getCachedRoom(roomId);
     if (room && room.has(userId)) {
       room.delete(userId);
-      // If room has no members in it, remove it..
       if (room.size === 0) {
+        this.removeCachedRoom(roomId);
       }
     }
   }
@@ -78,36 +84,5 @@ export default class WebSocketApp extends EventEmitter {
     }
     this.cacheRoom(roomId);
     this.getCachedRoom(roomId)!.set(userId, this.socket);
-  }
-
-  private tryParseRawMessage(rawMessage: RawData): WebSocketMessage {
-    try {
-      const message = JSON.parse(rawMessage.toString()) as WebSocketMessage;
-      if (!message.type) {
-        return new WebSocketMessage(EventType.ERROR, new Error("Message missing 'type' key"));
-      }
-      if (!(message.type in EventType)) {
-        return new WebSocketMessage(EventType.ERROR, new Error("Unkown message type."));
-      }
-      return message;
-    } catch (e) {
-      console.error(e);
-      return new WebSocketMessage(EventType.ERROR, e as Error);
-    }
-  }
-
-  private async isAuthenticated(token: string) {
-    if (!token) {
-      return false;
-    }
-    try {
-      const isValidToken = await verifyTokenAsync(token, process.env.JWT_SIGNATURE || "");
-      if (!isValidToken) {
-        return false;
-      }
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 }

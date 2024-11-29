@@ -1,4 +1,5 @@
 // Add "emit" to WebSocket proto
+/*
 WebSocket.prototype.emitToServer = function (eventName, ...args) {
   this.send(JSON.stringify({ eventName, payload }));
 };
@@ -30,7 +31,7 @@ class WebSocketApp {
     this.ws.emitToServer(eventType, ...args);
   }
 }
-
+*/
 const ws = new WebSocket(WEBSOCKET_URL);
 
 ws.onopen = () => {

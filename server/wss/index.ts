@@ -30,39 +30,32 @@ wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: 
   if (socket.activeIn) {
     handleLeaveRoom(socket, socket.activeIn);
   }
-  let why = { reason: reason.toString(), definition: "" };
-  if (why.reason === "") {
-    why = errorCodeToReason(code);
-  }
-  console.log(`socket closed.`, { user: socket?.user?.id || "NA", code, reason: why });
+  // Trying to figure out how Render force closes my sockets. Maybe can automate reopening them?
+  const reasonString = reason.toString();
+  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  console.log(`socket closed.`, { user: socket?.user, code, reason: why });
 });
 
 wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket, req) => {
-  console.log("checking");
   const cookies = parseCookies(req.headers.cookie);
   if (!(await isAuthenticated(cookies?.session))) {
     const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
-    socket.close(code, definition);
-    return;
+    return socket.close(code, definition);
   }
-  console.log("authed");
 
   socket.user = jsonwebtoken.decode(cookies.session) as Account;
-  const { db, release } = await DB_POOL.getConnection();
 
+  const { db, release } = await DB_POOL.getConnection();
   const rooms = await chatService.selectRoomsByUserId(db, socket.user.id); // Send user their rooms.
-  console.log(rooms);
   release();
-  //socket.send(JSON.stringify({msg:"hi"}))
+
   wsapp.emitToClient(EventType.LIST_ROOMS, { rooms });
   rooms.forEach((room) => wsapp.cacheRoom(room.id)); // Add rooms to cache just so we have them there.
-
-  // Add user to "unassigned" room..
-  wsapp.cacheUserInRoom(socket.user.id, ROOM_ID_UNASSIGNED);
+  wsapp.cacheUserInRoom(socket.user.id, ROOM_ID_UNASSIGNED); // Add user to "unassigned" room..
 });
 
-//const WSS = new WebSocketServer({ server });
 /*
+const WSS = new WebSocketServer({ server });
 WSS.on("connection", async (socket: WebSocket, req) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const authenticated = await isAuthenticated(cookies?.session);
@@ -80,7 +73,7 @@ WSS.on("connection", async (socket: WebSocket, req) => {
   // to our data structure that tracks rooms and membership.
   const rooms = await getRoomsByUserId(socket);
   if (rooms) {
-    sendMessage(socket, "rooms", { rooms });
+    sendMessage(socket, "LIST_ROOMS", { rooms });
     for (const room of rooms) {
       if (!BUCKETS.has(room.id)) {
         BUCKETS.set(room.id, new Map());
@@ -109,7 +102,7 @@ WSS.on("connection", async (socket: WebSocket, req) => {
 
     // Process message
     switch (message.type) {
-      case "entered_room": {
+      case "ENTER_ROOM": {
         handleEnteredRoom(socket, message?.roomId);
         break;
       }
@@ -177,7 +170,7 @@ async function handleEnteredRoom(socket: WebSocket, roomId: string) {
     return m;
   });
   const messages = await getMessages(roomId);
-  sendMessage(socket, "entered_room", { members, messages });
+  sendMessage(socket, "ENTER_ROOM", { members, messages });
 }
 
 function handleLeaveRoom(socket: WebSocket, roomId: string) {

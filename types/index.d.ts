@@ -72,6 +72,16 @@ interface DirectConversation {
   isActive: boolean; // is other participant currently online
 }
 
+interface IWebSocketMessageData {
+  [key: string]: any;
+}
+
+type IWebSocketMessage = {
+  type: EventType;
+  error?: Error | string | undefined;
+  [key: string]: any;
+};
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;

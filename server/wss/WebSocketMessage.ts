@@ -2,20 +2,29 @@ import EventType from "./EventType";
 
 export default class WebSocketMessage implements IWebSocketMessage {
   type: EventType;
-  error: Error | string | undefined;
+  error?: Error | string;
   [key: string]: any;
 
-  constructor(type: EventType, error?: Error | string, ...rest: IWebSocketMessageData[]);
-  constructor(type: EventType, ...args: (IWebSocketMessageData | Error | string | undefined)[]) {
-    const [error, ...rest] = args;
+  static from(data: ArrayBuffer | Buffer[] | string) {
+    const { type, ...rest } = JSON.parse(String(data));
+    return new WebSocketMessage(type, rest);
+  }
+
+  constructor(type: EventType, data: IWebSocketMessageData);
+  constructor(type: EventType, error: Error | string);
+  constructor(type: EventType, arg: Error | string | IWebSocketMessageData) {
     this.type = type;
-
-    if (error instanceof Error || typeof error === "string") {
-      this.error = error;
+    if (arg instanceof Error || typeof arg === "string") {
+      this.error = arg;
+      return;
     }
-
-    for (const [key, value] of Object.entries(rest as IWebSocketMessageData[])) {
-      this[key] = value;
+    if (typeof arg === "object" && arg !== null) {
+      Object.assign(this, arg);
+      return;
     }
+  }
+
+  toJSONString() {
+    return JSON.stringify(this);
   }
 }
