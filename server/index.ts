@@ -10,8 +10,9 @@ import apiRouter from "@/server/routers/api";
 
 const app = express();
 
-app.set("view engine", "ejs");
-app.set("views", path.resolve(__dirname, "../www"));
+//app.set("view engine", "ejs");
+app.set("view engine", "pug");
+app.set("views", path.resolve(__dirname, "../www/pug"));
 
 app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 
