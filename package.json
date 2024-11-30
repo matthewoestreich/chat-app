@@ -9,7 +9,7 @@
     "postbuild": "tsc-alias -p tsconfig.json",
     "start:nodemon": "nodemon --verbose",
     "tsx": "tsx index.ts",
-    "fmt": "prettier --write \"**/*.{ts,js,json,ejs,pug}\"",
+    "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test": "jest",
     "jest:clearCache": "jest --clearCache",
     "insert:fake:data": "tsx scripts/insertFakeData.ts"
@@ -22,15 +22,7 @@
     ],
     "tabWidth": 2,
     "useTabs": false,
-    "printWidth": 10000,
-    "overrides": [
-      {
-        "files": "*.ejs",
-        "options": {
-          "parser": "html"
-        }
-      }
-    ]
+    "printWidth": 10000
   },
   "nodemonConfig": {
     "delay": 1500,
@@ -51,7 +43,6 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
     "express": "^4.21.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
