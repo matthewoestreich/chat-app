@@ -1,107 +1,102 @@
-doctype html
-html(lang="en", data-bs-theme="dark")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport", content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0")
-    title RTChat | Room
-    link(href="/public/bootstrap@5.3.3/css/bootstrap.min.css", rel="stylesheet")
-    link(href="/public/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css", rel="stylesheet")
-    link(href="/public/rtchat/css/chat.css", rel="stylesheet")
-  body
-    // Toast alerts
-    #toast-container.toast-container.top-0.end-0.p-2
-    // Modals
-    include ./partials/leave-room-confirmation-modal
-    include ./partials/create-room-modal
-    include ./partials/join-room-modal
-    // Navbar
-    header.navbar.navbar-expand-lg.fixed-top.bg-secondary-subtle
-      nav.container
-        .me-auto
-          span.navbar-brand RTChat
-        .mx-auto
-          a.navbar-icon.d-inline-block.d-lg-none(data-bs-toggle="offcanvas", data-bs-target="#members-offcanvas")
-            button.btn.btn-outline-secondary(type="button", title="View Members")
-              i.bi.bi-people
-          | !{ "\n" }
-          a.navbar-icon.d-inline-block.d-lg-none
-            button.btn.btn-outline-secondary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
-              i.bi.bi-door-open
-        .ms-auto.g-1
-          a#toggle-theme.navbar-icon(title="Toggle theme")
-            button.btn.btn-outline-secondary
-              i#dark-theme-icon.d-none.bi.bi-moon-fill
-              i#light-theme-icon.d-none.bi.bi-sun-fill
-          | !{ "\n" }
-          a.navbar-icon(href="logout")
-            button.btn.btn-outline-secondary.flex-fill(type="button", title="Logout")
-              i.bi.bi-power
-    // MAIN CONTENT
-    .container-fluid.h-100.d-flex.flex-column(style="padding-top: 4em")
-      .row.text-center
-        .col
-          h1 #{ name }
-      // Content Row (main row)
-      .row.g-0.flex-fill.justify-content-center.min-h-0
-        #members-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-start
-          .card-header.d-flex.flex-row.display-6.text-center
-            .flex-fill.text-center Members
-            button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#members-offcanvas")
-          #members-container.card-body.overf-y-scroll.p-0.m-1
-            #loading-members-spinner.d-none.d-flex.mt-4.justify-content-center
-              .spinner-border
-                span.visually-hidden Loading...
-            ul#members-list.list-group.list-group-flush
-            #direct-messages-drawer.drawer.card
-              .drawer-header.card-header.fs-3
-                .flex-fill.text-center Direct Messages
-                button#close-direct-messages-drawer.btn.btn-close.btn-sm.drawer-close-button(type="button")
-              #direct-messages-container.drawer-body.card-body
-              .card-footer
-                .row
-                  .col-12.d-flex.p-1
-                    button#close-dms-footer-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Close Direct Messages")
-                      i.bi.bi-x-square
-          .card-footer
-            .row
-              .col-12.d-flex.p-1
-                button#open-direct-messages.btn.btn-outline-secondary.flex-grow-1(type="button", title="Direct Messages")
-                  i.bi.bi-chat-dots-fill
-        .card.col-lg-6.offset-lg-0.col-md-10.offset-md-0.h-90pct.overf-hide.d-flex
-          .card-header.d-flex.flex-row
-            #chat-title.d-flex.w-100.text-center.justify-content-center.align-items-center.chat-title.chat-title-no-room Please join a room
-          #chat-display.card-body.overf-y-scroll
-          .card-footer
-            .input-group
-              textarea#chat-text-input.form-control.custom-control(rows="3", style="resize: none")
-              button#send-chat-btn.input-group-addon.btn.btn-lg.btn-primary Send
-        #rooms-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-end
-          .card-header.d-flex.flex-row.display-6.text-center
-            .flex-fill.text-center Rooms
-            button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#rooms-offcanvas")
-          #rooms-container.card-body.overf-y-scroll.p-0.m-1
-            #loading-rooms-spinner.d-flex.mt-4.justify-content-center
-              .spinner-border
-                span.visually-hidden Loading...
-          .card-footer
-            .row
-              .col-4.d-flex.p-1
-                button#open-join-room-modal.btn.btn-outline-secondary.flex-grow-1(type="button", title="Join room")
-                  i.bi.bi-box-arrow-in-up-right
-              .col-4.d-flex.p-1
-                button#leave-room-btn.btn.btn-outline-danger.flex-grow-1(type="button", title="Leave current room", disabled)
-                  i.bi.bi-box-arrow-down-left
-              .col-4.d-flex.p-1
-                button#open-create-room-modal-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Create room")
-                  i.bi.bi-folder-plus
-    script(type="text/javascript", nonce=nonce).
-      const USER_NAME = "#{name}";
-      const USER_ID = "#{id}";
-      const USER_EMAIL = "#{email}";
-      const WEBSOCKET_URL = "#{websocketUrl}";
-    script(src="/public/bootstrap@5.3.3/js/bootstrap.bundle.min.js", type="text/javascript")
-    script(src="/public/rtchat/js/CustomAlert.js", type="text/javascript")
-    script(src="/public/rtchat/js/addSpinnerToButton.js", type="text/javascript")
-    script(src="/public/rtchat/js/theme.js", type="text/javascript")
-    script(src="/public/rtchat/js/ws.js", type="text/javascript")
-    script(src="/public/rtchat/js/chat.js", type="text/javascript")
+extends ./layouts/main.pug
+
+block css
+  link(href="/public/rtchat/css/chat.css", rel="stylesheet")
+
+block content
+  // Toast alerts
+  #toast-container.toast-container.top-0.end-0.p-2
+  // Modals
+  include ./partials/leave-room-confirmation-modal
+  include ./partials/create-room-modal
+  include ./partials/join-room-modal
+  // Navbar
+  header.navbar.navbar-expand-lg.fixed-top.bg-secondary-subtle
+    nav.container
+      .me-auto
+        span.navbar-brand RTChat
+      .mx-auto
+        a.navbar-icon.d-inline-block.d-lg-none(data-bs-toggle="offcanvas", data-bs-target="#members-offcanvas")
+          button.btn.btn-outline-secondary(type="button", title="View Members")
+            i.bi.bi-people
+        | !{ "\n" }
+        a.navbar-icon.d-inline-block.d-lg-none
+          button.btn.btn-outline-secondary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
+            i.bi.bi-door-open
+      .ms-auto.g-1
+        a#toggle-theme.navbar-icon(title="Toggle theme")
+          button.btn.btn-outline-secondary
+            i#dark-theme-icon.d-none.bi.bi-moon-fill
+            i#light-theme-icon.d-none.bi.bi-sun-fill
+        | !{ "\n" }
+        a.navbar-icon(href="logout")
+          button.btn.btn-outline-secondary.flex-fill(type="button", title="Logout")
+            i.bi.bi-power
+  // MAIN CONTENT
+  .container-fluid.h-100.d-flex.flex-column(style="padding-top: 4em")
+    .row.text-center
+      .col
+        h1 #{ name }
+    // Content Row (main row)
+    .row.g-0.flex-fill.justify-content-center.min-h-0
+      #members-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-start
+        .card-header.d-flex.flex-row.display-6.text-center
+          .flex-fill.text-center Members
+          button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#members-offcanvas")
+        #members-container.card-body.overf-y-scroll.p-0.m-1
+          #loading-members-spinner.d-none.d-flex.mt-4.justify-content-center
+            .spinner-border
+              span.visually-hidden Loading...
+          ul#members-list.list-group.list-group-flush
+          #direct-messages-drawer.drawer.card
+            .drawer-header.card-header.fs-3
+              .flex-fill.text-center Direct Messages
+              button#close-direct-messages-drawer.btn.btn-close.btn-sm.drawer-close-button(type="button")
+            #direct-messages-container.drawer-body.card-body
+            .card-footer
+              .row
+                .col-12.d-flex.p-1
+                  button#close-dms-footer-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Close Direct Messages")
+                    i.bi.bi-x-square
+        .card-footer
+          .row
+            .col-12.d-flex.p-1
+              button#open-direct-messages.btn.btn-outline-secondary.flex-grow-1(type="button", title="Direct Messages")
+                i.bi.bi-chat-dots-fill
+      .card.col-lg-6.offset-lg-0.col-md-10.offset-md-0.h-90pct.overf-hide.d-flex
+        .card-header.d-flex.flex-row
+          #chat-title.d-flex.w-100.text-center.justify-content-center.align-items-center.chat-title.chat-title-no-room Please join a room
+        #chat-display.card-body.overf-y-scroll
+        .card-footer
+          .input-group
+            textarea#chat-text-input.form-control.custom-control(rows="3", style="resize: none")
+            button#send-chat-btn.input-group-addon.btn.btn-lg.btn-primary Send
+      #rooms-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-end
+        .card-header.d-flex.flex-row.display-6.text-center
+          .flex-fill.text-center Rooms
+          button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#rooms-offcanvas")
+        #rooms-container.card-body.overf-y-scroll.p-0.m-1
+          #loading-rooms-spinner.d-flex.mt-4.justify-content-center
+            .spinner-border
+              span.visually-hidden Loading...
+        .card-footer
+          .row
+            .col-4.d-flex.p-1
+              button#open-join-room-modal.btn.btn-outline-secondary.flex-grow-1(type="button", title="Join room")
+                i.bi.bi-box-arrow-in-up-right
+            .col-4.d-flex.p-1
+              button#leave-room-btn.btn.btn-outline-danger.flex-grow-1(type="button", title="Leave current room", disabled)
+                i.bi.bi-box-arrow-down-left
+            .col-4.d-flex.p-1
+              button#open-create-room-modal-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Create room")
+                i.bi.bi-folder-plus
+
+block scripts
+  script(type="text/javascript", nonce=nonce).
+    const USER_NAME = "#{name}";
+    const USER_ID = "#{id}";
+    const USER_EMAIL = "#{email}";
+    const WEBSOCKET_URL = "#{websocketUrl}";
+  script(src="/public/rtchat/js/theme.js", type="text/javascript")
+  script(src="/public/rtchat/js/chat/ws.js", type="text/javascript")
+  script(src="/public/rtchat/js/chat/index.js", type="text/javascript")
