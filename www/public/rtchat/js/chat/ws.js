@@ -54,7 +54,7 @@ class WebSocketApp {
     if (!message?.type) {
       return new WebSocketMessage(EVENT_TYPE.ERROR, new Error(`[ws][parseRawMessage] No type found in message.`));
     }
-    if ((!message.type) in EVENT_TYPE) {
+    if (!(message.type in EVENT_TYPE)) {
       return new WebSocketMessage(EVENT_TYPE.ERROR, new Error(`[ws][parseRawMessage] Message type not recognized. Got : '${message.type}'`));
     }
 
