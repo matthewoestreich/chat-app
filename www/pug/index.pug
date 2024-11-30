@@ -193,7 +193,10 @@ html(lang="en")
         console.log(accCreationResult);
 
         // Change button back to normal from spinner/loading animation
-        removeSpinnerFromBtn();
+        const revert = getSpinnerButtonInstance(createBtn);
+        if (revert) {
+          revert();
+        }
         // Enable btns again.
         [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => e.removeAttribute("disabled"));
         bsCreateAccountModal.hide();
