@@ -1,43 +1,43 @@
-import { RawData, WebSocket, WebSocketServer } from "ws";
+import { IncomingMessage } from "node:http";
+import { WebSocket } from "ws";
 import jsonwebtoken from "jsonwebtoken";
 import { v7 as uuidV7 } from "uuid";
-import parseCookies from "./parseCookies";
-import verifyTokenAsync from "./verifyTokenAsync";
-import server from "../index";
+import { chatService, directConversationService, messagesService, roomService } from "@/server/db/services/index";
+import server from "@/server/index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
-import { chatService, directConversationService, messagesService, roomService } from "../db/services";
+import parseCookies from "./parseCookies";
+import verifyTokenAsync from "./verifyTokenAsync";
 import WebSocketApp from "./WebSocketApp";
 import EventType from "./EventType";
+import WebSocketMessage from "./WebSocketMessage";
 
-// For when someone first logs in or what not and they aren't in a room, but
-// they're online..
+////////////////////////////////////////////////////////////////////////////////////////////////
+// OLDER CODE - CAN REMOVE AFTER REFACTOR
+////////////////////////////////////////////////////////////////////////////////////////////////
+// For when someone first logs in or what not and they aren't in a room, but they're online.
 const ACTIVE_NO_ROOM = "__online_no_room";
-const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 // How we store references to sockets. Structured so we can track
 // which users are in which rooms.
 const BUCKETS: Map<string, Map<string, WebSocket>> = new Map();
 // Create a room for "online but not currently in a room"..
 BUCKETS.set(ACTIVE_NO_ROOM, new Map());
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-// When a user first connects to a WebSocket they aren't in any room, but they should still be considered online.
-// Users that are online, but not in a room, should still show online to those that try to DM them.
-const ROOM_ID_UNASSIGNED = "__UNASSIGNED__";
-
+////////// Updated code starts here
+const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 const wsapp = new WebSocketApp({ server });
 
-wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: Buffer) => {
-  if (socket.activeIn) {
-    handleLeaveRoom(socket, socket.activeIn);
-  }
-  // Trying to figure out how Render force closes my sockets. Maybe can automate reopening them?
-  const reasonString = reason.toString();
-  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  console.log(`socket closed.`, { user: socket?.user, code, reason: why });
-});
-
-wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket, req) => {
-  const cookies = parseCookies(req.headers.cookie);
+/**
+ *
+ * @event {CONNECTION_ESTABLISHED}
+ *
+ * CONNECTION_ESTABLISHED fires when a socket first connects to this server.
+ * It's kind of like an "initial connection" event.
+ *
+ */
+wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket: WebSocket, req: IncomingMessage) => {
+  const cookies = parseCookies(req.headers.cookie || "");
   if (!(await isAuthenticated(cookies?.session))) {
     const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
     return socket.close(code, definition);
@@ -49,9 +49,148 @@ wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket, req) => {
   const rooms = await chatService.selectRoomsByUserId(db, socket.user.id); // Send user their rooms.
   release();
 
-  wsapp.emitToClient(EventType.LIST_ROOMS, { rooms });
+  wsapp.emitToClient(new WebSocketMessage(EventType.LIST_ROOMS, { rooms }));
   rooms.forEach((room) => wsapp.cacheRoom(room.id)); // Add rooms to cache just so we have them there.
   wsapp.cacheUserInRoom(socket.user.id, ROOM_ID_UNASSIGNED); // Add user to "unassigned" room..
+  socket.activeIn = ROOM_ID_UNASSIGNED;
+});
+
+/**
+ *
+ * @event {CONNECTION_CLOSED}
+ *
+ * CONNECTION_CLOSED fires when a socket is closed. This allows us to clean up and
+ * log the reason for socket closure.
+ *
+ */
+wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: Buffer) => {
+  if (socket.activeIn) {
+    handleLeaveRoom(socket, socket.activeIn);
+  }
+
+  // Trying to figure out how Render force closes my sockets. Maybe can automate reopening them?
+  const reasonString = reason.toString();
+  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  console.log(`socket closed.`, { user: socket?.user, code, why });
+});
+
+/**
+ *
+ * @event {SEND_MESSAGE}
+ *
+ * Someone is sending a chat message to a room.
+ *
+ */
+wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, toRoomId: string, userId: string, userName: string, messageText: string) => {
+  if (socket.user!.id !== userId) {
+    const errMsg = `[wsapp][POSSIBLE_SPOOFING_ATTEMPT] sock.user.id !== userId`;
+    const errData = { user: socket.user, message: { toRoomId, userId, userName, messageText } };
+    console.error(errMsg, errData);
+    return;
+  }
+  if (!wsapp.getCachedRoom(toRoomId)?.has(socket.user!.id)) {
+    const errMsg = `[wsapp][POSSIBLE_SPOOFING_ATTEMPT] user attempted to send a message to a room they are not active in`;
+    const errData = { user: socket.user, message: { toRoomId, userId, userName, messageText } };
+    console.error(errMsg, errData);
+    return;
+  }
+
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    wsapp.broadcast(toRoomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId, userName, messageText }));
+    // No need to await this, we don't need a response, and nothing depends on the result.
+    messagesService.insertMessage(db, toRoomId, userId, messageText);
+    release();
+  } catch (e) {
+    release();
+  }
+});
+
+/**
+ *
+ * @event {ENTER_ROOM}
+ *
+ * ENTER_ROOM is for when a user enters an already joined room.
+ * JOIN_ROOM is used when a user has joined a room they were not a member of prior.
+ *
+ */
+wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, roomId: string) => {
+  const user = socket.user!;
+
+  if (socket.activeIn) {
+    wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
+    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
+  }
+
+  socket.activeIn = roomId;
+  wsapp.broadcast(roomId, new WebSocketMessage(EventType.MEMBER_ENTERED_ROOM, user.id));
+  wsapp.cacheUserInRoom(user.id, roomId);
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    let members = await chatService.selectRoomMembersExcludingUser(db, roomId, user.id);
+    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedRoom(roomId)!.has(m.userId) }));
+    const messages = await messagesService.selectByRoomId(db, roomId);
+    release();
+    wsapp.emitToClient(new WebSocketMessage(EventType.ENTER_ROOM, { members, messages }));
+  } catch (e) {
+    release();
+  }
+});
+
+/**
+ *
+ * @event {JOIN_ROOM}
+ *
+ * JOIN_ROOM is used when a user has joined a room they were not a member of prior.
+ * ENTER_ROOM is for when a user enters an already joined room.
+ *
+ */
+wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, roomId: string) => {
+  const user = socket.user!;
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    const rooms = await chatService.addUserByIdToRoomById(db, user.id, roomId, true);
+    release();
+    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, rooms));
+  } catch (error) {
+    release();
+    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, error as Error));
+  }
+});
+
+/**
+ *
+ * @event {UNJOIN_ROOM}
+ *
+ * UNJOIN_ROOM is named "unjoin" as to not cause confusion with "enter" or "leave/left".
+ * UNJOIN_ROOM fires when a user has removed a room from their "memberships", if you will.
+ * (NOTE: a "membership" isn't a term/keyword/concept that exists in this app, just using the term for explanation)
+ * `*_(LEAVE|LEFT)_*` events are different as the user has just "exited" the chat room.
+ *
+ */
+wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, roomId: string) => {
+  const user = socket.user!;
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    await chatService.deleteRoomMember(db, roomId, user.id);
+    const rooms = await chatService.selectRoomsByUserId(db, user.id);
+    release();
+
+    // Covers the case for when a user unjoins a room they are currently chatting in.
+    if (socket.activeIn) {
+      wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
+      wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
+    }
+
+    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, rooms));
+  } catch (error) {
+    release();
+    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, error as Error));
+  }
 });
 
 /*
@@ -225,21 +364,23 @@ async function handleJoinRoom(socket: WebSocket, userId: string, roomId: string)
 }
 
 async function handleUnjoinRoom(socket: WebSocket, roomId: string) {
-  const { db, release } = await DB_POOL.getConnection();
+  const connection = await DB_POOL.getConnection();
   try {
     if (!socket.user || !socket.user.id) {
       console.log(`[ws][handleUnjoinRoom] empty user or user.id`, { user: socket?.user });
       sendMessage(socket, "unjoin", { ok: false, error: "empty user or user.id" });
       return;
     }
-    await chatService.deleteRoomMember(db, roomId, socket.user.id);
-    const updatedRooms = await chatService.selectRoomsByUserId(db, socket.user.id);
-    release();
+    await chatService.deleteRoomMember(connection.db, roomId, socket.user.id);
+    const updatedRooms = await chatService.selectRoomsByUserId(connection.db, socket.user.id);
+    connection.release();
     handleLeaveRoom(socket, roomId);
     sendMessage(socket, "unjoin", { ok: true, rooms: updatedRooms });
   } catch (e) {
     console.error(`[ws][handleUnjoinRoom][ERROR]`, e);
-    release();
+    if (!connection.isStale) {
+      connection.release();
+    }
     sendMessage(socket, "unjoin", { ok: false, error: e });
   }
 }
@@ -301,7 +442,7 @@ async function getMessages(roomId: string): Promise<Message[]> {
 async function getRoomMembers(roomId: string, ignoreUserId?: string): Promise<RoomMember[] | null> {
   const connection = await DB_POOL.getConnection();
   if (ignoreUserId) {
-    const m = await chatService.selectRoomMembersByRoomIdIgnoreUserId(connection.db, roomId, ignoreUserId);
+    const m = await chatService.selectRoomMembersExcludingUser(connection.db, roomId, ignoreUserId);
     connection.release();
     return m;
   }

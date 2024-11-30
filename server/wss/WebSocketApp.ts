@@ -4,12 +4,21 @@ import { WebSocketServer, WebSocket, ServerOptions, RawData } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
 import EventType from "./EventType";
 
+/**
+ * Wrapper around WebSocketServer that emits events based on WebSocket message(s).
+ */
 export default class WebSocketApp extends EventEmitter {
   private server: WebSocketServer;
   private socket: WebSocket;
 
   private static rooms: Map<string, Map<string, WebSocket>> = new Map();
 
+  /**
+   * Parses a raw incoming websocket message.
+   *
+   * @param rawMessage
+   * @returns {WebSocketMessage}
+   */
   private parseRawMessage(rawMessage: RawData): WebSocketMessage {
     try {
       const message = WebSocketMessage.from(rawMessage);
@@ -43,24 +52,82 @@ export default class WebSocketApp extends EventEmitter {
         if (error) {
           return this.emit(EventType.ERROR, error);
         }
-        this.emit(type, data);
+        this.emit(type, this.socket, data);
       });
     });
   }
 
-  emitToClient(eventType: EventType, data: IWebSocketMessageData) {
-    this.socket.send(new WebSocketMessage(eventType, data).toJSONString());
+  /**
+   * Wrapper for calling `this.socket.send`.
+   *
+   * @param message Message to sned to the current socket (this.socket)
+   */
+  emitToClient(message: WebSocketMessage): void {
+    this.socket.send(message.toJSONString());
   }
 
-  getCachedRoom(roomId: string) {
+  /**
+   * Send a message "directly" to another socket (vs to current socket (aka `this.socket`)).
+   * Useful for brokering direct messages.
+   *
+   * @param socket Socket to send message to.
+   * @param message Message to send
+   */
+  emitToSocket(socket: WebSocket, message: WebSocketMessage): void {
+    socket.send(message.toJSONString());
+  }
+
+  /**
+   * *IMPORTANT*; `broadcast` offers no protection against spoofing, etc..
+   * If you need these protections, implement them prior to calling `broadcast`.
+   * Sends a message to every socket that is in a cached room.
+   *
+   * @param toRoomId
+   * @param message
+   * @returns {void}
+   */
+  broadcast(toRoomId: string, message: WebSocketMessage): void {
+    if (toRoomId === ROOM_ID_UNASSIGNED) {
+      return;
+    }
+
+    const room = this.getCachedRoom(toRoomId);
+    if (!room) {
+      return;
+    }
+
+    for (const [_userId, userSocket] of room) {
+      this.emitToSocket(userSocket, message);
+    }
+  }
+
+  /**
+   * Get a room from our room cache.
+   *
+   * @param roomId ID of room to get.
+   * @returns {Map<string, WebSocket> | undefined}
+   */
+  getCachedRoom(roomId: string): Map<string, WebSocket> | undefined {
     return WebSocketApp.rooms.get(roomId);
   }
 
-  removeCachedRoom(roomId: string) {
+  /**
+   * Deletes a room from our room cache.
+   *
+   * @param roomId ID of room to delete.
+   */
+  removeCachedRoom(roomId: string): void {
     WebSocketApp.rooms.delete(roomId);
   }
 
-  removeCachedUserFromRoom(roomId: string, userId: string) {
+  /**
+   * Removes user from room, if they exist in said room,
+   * oherwise we do nothing. No error is thrown.
+   *
+   * @param userId ID of user to remove
+   * @param roomId ID of room that user is currently in
+   */
+  removeCachedUserFromRoom(userId: string, roomId: string): void {
     const room = this.getCachedRoom(roomId);
     if (room && room.has(userId)) {
       room.delete(userId);
@@ -70,15 +137,25 @@ export default class WebSocketApp extends EventEmitter {
     }
   }
 
-  // Creates a room within our "rooms" cache if it doesn't exist.
-  cacheRoom(roomId: string) {
+  /**
+   * Creates a room within our "rooms" cache if it doesn't exist.
+   *
+   * @param roomId ID of room to cache
+   */
+  cacheRoom(roomId: string): void {
     if (!WebSocketApp.rooms.has(roomId)) {
       WebSocketApp.rooms.set(roomId, new Map());
     }
   }
 
-  // Will create a room if it doesn't exist and add a user to it.
-  cacheUserInRoom(userId: string, roomId: string) {
+  /**
+   * Will create a room if it doesn't exist and add a user + socket (this.socket) to it.
+   *
+   * @param userId ID of user to cache
+   * @param roomId ID of room to cache user in
+   * @returns
+   */
+  cacheUserInRoom(userId: string, roomId: string): void {
     if (!this.socket) {
       return;
     }

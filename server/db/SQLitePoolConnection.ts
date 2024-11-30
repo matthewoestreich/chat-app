@@ -6,10 +6,16 @@ export default class SQLitePoolConnection implements DatabasePoolConnection<sqli
   id: string;
   db: sqlite3.Database;
   release: () => void;
+  isStale: boolean = false;
 
   constructor(db: sqlite3.Database, parent: SQLitePool) {
     this.db = db;
-    this.release = () => parent.releaseConnection(this);
+    this.release = () => {
+      if (this.isStale) {
+        return;
+      }
+      parent.releaseConnection(this);
+    };
     this.id = uuidV7();
   }
 }

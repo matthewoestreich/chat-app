@@ -82,6 +82,10 @@ type IWebSocketMessage = {
   [key: string]: any;
 };
 
+// When a user first connects to a WebSocket they aren't in any room, but they should still be considered online.
+// Users that are online, but not in a room, should still show online to those that try to DM them.
+const ROOM_ID_UNASSIGNED: string = "__UNASSIGNED__";
+
 declare namespace Express {
   export interface Request {
     databasePool: DatabasePool<T>;
