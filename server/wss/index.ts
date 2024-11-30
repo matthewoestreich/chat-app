@@ -181,7 +181,7 @@ wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, roomId: string) => {
     release();
 
     // Covers the case for when a user unjoins a room they are currently chatting in.
-    if (socket.activeIn) {
+    if (socket.activeIn === roomId) {
       wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
       wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
     }
