@@ -1,6 +1,6 @@
 import verifyTokenAsync from "./verifyTokenAsync";
 
-export default async function isAuthenticated(token: string) {
+export default async function isAuthenticated(token: string): Promise<boolean> {
   if (!token) {
     return false;
   }

@@ -98,7 +98,7 @@ export default class WebSocketApp extends EventEmitter {
       return;
     }
 
-    for (const [_userId, userSocket] of room) {
+    for (const [_, userSocket] of room) {
       this.emitToSocket(userSocket, message);
     }
   }
@@ -140,7 +140,7 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   /**
-   * Essentially checks if a user is active or not.
+   * Essentially checks if a user is active in any cached room.
    *
    * @param userId ID of user that we check for.
    * @returns {boolean}

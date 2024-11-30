@@ -85,10 +85,11 @@ wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { toRoomId, userId, u
     return;
   }
 
+  wsapp.broadcast(toRoomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId, userName, messageText }));
+
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    wsapp.broadcast(toRoomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId, userName, messageText }));
     // No need to await this, we don't need a response, and nothing depends on the result.
     messagesService.insertMessage(db, toRoomId, userId, messageText);
     release();
@@ -113,20 +114,20 @@ wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPa
     wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
   }
 
-  socket.activeIn = roomId;
   wsapp.broadcast(roomId, new WebSocketMessage(EventType.MEMBER_ENTERED_ROOM, user.id));
   wsapp.cacheUserInRoom(user.id, roomId);
+  socket.activeIn = roomId;
 
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     let members = await chatService.selectRoomMembersExcludingUser(db, roomId, user.id);
-    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedRoom(roomId)!.has(m.userId) }));
     const messages = await messagesService.selectByRoomId(db, roomId);
     release();
+    // Add `isActive` property for each user in this room based upon if they're cached in this room.
+    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedRoom(roomId)!.has(m.userId) }));
     wsapp.emitToClient(new WebSocketMessage(EventType.ENTER_ROOM, { members, messages }));
   } catch (e) {
-    console.log(e);
     release();
   }
 });
