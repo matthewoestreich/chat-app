@@ -57,6 +57,9 @@ export default class WebSocketApp extends EventEmitter {
     });
   }
 
+  // For when someone first logs in or what not and they aren't in a room, but they're online.
+  static ROOM_ID_UNASSIGNED: string = "__UNASSIGNED__";
+
   /**
    * Wrapper for calling `this.socket.send`.
    *
@@ -84,10 +87,9 @@ export default class WebSocketApp extends EventEmitter {
    *
    * @param toRoomId
    * @param message
-   * @returns {void}
    */
   broadcast(toRoomId: string, message: WebSocketMessage): void {
-    if (toRoomId === ROOM_ID_UNASSIGNED) {
+    if (toRoomId === WebSocketApp.ROOM_ID_UNASSIGNED) {
       return;
     }
 
@@ -138,6 +140,21 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   /**
+   * Essentially checks if a user is active or not.
+   *
+   * @param userId ID of user that we check for.
+   * @returns {boolean}
+   */
+  cacheContainsUser(userId: string): boolean {
+    for (const [_roomId, userMap] of WebSocketApp.rooms) {
+      if (userMap.has(userId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Creates a room within our "rooms" cache if it doesn't exist.
    *
    * @param roomId ID of room to cache
@@ -153,7 +170,6 @@ export default class WebSocketApp extends EventEmitter {
    *
    * @param userId ID of user to cache
    * @param roomId ID of room to cache user in
-   * @returns
    */
   cacheUserInRoom(userId: string, roomId: string): void {
     if (!this.socket) {
