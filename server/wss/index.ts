@@ -88,7 +88,7 @@ wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, toRoomId: string, use
     console.error(errMsg, errData);
     return;
   }
-  if (!wsapp.getCachedRoom(toRoomId)?.has(socket.user!.id)) {
+  if (!wsapp.getCachedRoom(toRoomId)!.has(socket.user!.id)) {
     const errMsg = `[wsapp][POSSIBLE_SPOOFING_ATTEMPT] user attempted to send a message to a room they are not active in`;
     const errData = { user: socket.user, message: { toRoomId, userId, userName, messageText } };
     console.error(errMsg, errData);
