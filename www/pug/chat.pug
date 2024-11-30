@@ -23,12 +23,19 @@ html(lang="en", data-bs-theme="dark")
           a.navbar-icon.d-inline-block.d-lg-none(data-bs-toggle="offcanvas", data-bs-target="#members-offcanvas")
             button.btn.btn-outline-secondary(type="button", title="View Members")
               i.bi.bi-people
+          | !{ "\n" }
           a.navbar-icon.d-inline-block.d-lg-none
             button.btn.btn-outline-secondary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
               i.bi.bi-door-open
-        .ms-auto
+        .ms-auto.g-1
           a#toggle-theme.navbar-icon(title="Toggle theme")
+            button.btn.btn-outline-secondary
+              i#dark-theme-icon.d-none.bi.bi-moon-fill
+              i#light-theme-icon.d-none.bi.bi-sun-fill
+          | !{ "\n" }
           a.navbar-icon(href="logout")
+            button.btn.btn-outline-secondary.flex-fill(type="button", title="Logout")
+              i.bi.bi-power
     // MAIN CONTENT
     .container-fluid.h-100.d-flex.flex-column(style="padding-top: 4em")
       .row.text-center
