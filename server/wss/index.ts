@@ -42,7 +42,7 @@ wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket: WebSocket, req: Incomi
   const rooms = await chatService.selectRoomsByUserId(db, socket.user.id);
   release();
 
-  wsapp.emitToClient(new WebSocketMessage(EventType.LIST_ROOMS, { rooms }));
+  wsapp.send(new WebSocketMessage(EventType.LIST_ROOMS, { rooms }));
   rooms.forEach((room) => wsapp.cacheRoom(room.id)); // Add rooms to cache just so we have them there.
   wsapp.cacheUserInRoom(socket.user.id, WebSocketApp.ROOM_ID_UNASSIGNED); // Add user to "unassigned" room..
   socket.activeIn = WebSocketApp.ROOM_ID_UNASSIGNED;
@@ -132,7 +132,7 @@ wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPa
     release();
     // Add `isActive` property for each user in this room based upon if they're cached in this room.
     members = members.map((m) => ({ ...m, isActive: wsapp.getCachedRoom(roomId)!.has(m.userId) }));
-    wsapp.emitToClient(new WebSocketMessage(EventType.ENTER_ROOM, { members, messages }));
+    wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { members, messages }));
   } catch (e) {
     release();
   }
@@ -153,10 +153,10 @@ wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { roomId }: JoinRoomPayl
   try {
     const rooms = await chatService.addUserByIdToRoomById(db, user.id, roomId, true);
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, { rooms }));
-  } catch (error) {
+    wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { rooms }));
+  } catch (e) {
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, error as Error));
+    wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { error: e as Error }));
   }
 });
 
@@ -179,16 +179,16 @@ wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { roomId }: UnjoinRoom
     const rooms = await chatService.selectRoomsByUserId(db, user.id);
     release();
 
+    wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { rooms }));
+
     // Covers the case for when a user unjoins a room they are currently chatting in.
     if (socket.activeIn === roomId) {
       wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
       wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
     }
-
-    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, { rooms }));
-  } catch (error) {
+  } catch (e) {
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, error as Error));
+    wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { error: e as Error }));
   }
 });
 
@@ -211,11 +211,11 @@ wsapp.on(EventType.CREATE_ROOM, async (socket: WebSocket, { name, isPrivate }: C
     const room = await roomService.insert(db, name, uuidV7(), isPrivate);
     const rooms = await chatService.addUserByIdToRoomById(db, user.id, room.id, true);
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.CREATE_ROOM, { id: room.id, rooms }));
-    wsapp.cacheUserInRoom(user.id, room.id);
-  } catch (error) {
+    wsapp.send(new WebSocketMessage(EventType.CREATE_ROOM, { id: room.id, rooms }));
+    wsapp.cacheRoom(room.id);
+  } catch (e) {
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.CREATE_ROOM, error as Error));
+    wsapp.send(new WebSocketMessage(EventType.CREATE_ROOM, { error: e as Error }));
   }
 });
 
@@ -229,13 +229,14 @@ wsapp.on(EventType.CREATE_ROOM, async (socket: WebSocket, { name, isPrivate }: C
 wsapp.on(EventType.LIST_JOINABLE_ROOMS, async (socket: WebSocket) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
+
   try {
     const rooms = await roomService.selectUnjoinedRooms(db, user.id);
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { rooms }));
-  } catch (error) {
+    wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { rooms }));
+  } catch (e) {
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, error as Error));
+    wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { error: e as Error }));
   }
 });
 
@@ -249,14 +250,15 @@ wsapp.on(EventType.LIST_JOINABLE_ROOMS, async (socket: WebSocket) => {
 wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, async (socket: WebSocket) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
+  const data: IWebSocketMessageData = {};
 
   try {
-    let dc = await directConversationService.selectAllByUserId(db, user.id);
-    release();
-    dc = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { directConversations: dc }));
+    const dc = await directConversationService.selectAllByUserId(db, user.id);
+    data.directConversations = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
   } catch (error) {
+    data.error = error as Error;
+  } finally {
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, error as Error));
+    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, data));
   }
 });

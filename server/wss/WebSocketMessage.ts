@@ -19,6 +19,7 @@ export default class WebSocketMessage implements IWebSocketMessage {
     return JSON.stringify(this);
   }
 }
+
 /*
 export default class WebSocketMessage implements IWebSocketMessage {
   type: EventType;

@@ -67,7 +67,7 @@ export default class WebSocketApp extends EventEmitter {
    * Wrapper for calling `this.socket.send`.
    * @param message Message to sned to the current socket (this.socket)
    */
-  emitToClient(message: WebSocketMessage): void {
+  send(message: WebSocketMessage): void {
     this.socket.send(message.toJSONString());
   }
 
@@ -77,7 +77,7 @@ export default class WebSocketApp extends EventEmitter {
    * @param socket Socket to send message to.
    * @param message Message to send
    */
-  emitToSocket(socket: WebSocket, message: WebSocketMessage): void {
+  sendToSocket(socket: WebSocket, message: WebSocketMessage): void {
     socket.send(message.toJSONString());
   }
 
@@ -99,7 +99,7 @@ export default class WebSocketApp extends EventEmitter {
     }
 
     for (const [_, userSocket] of room) {
-      this.emitToSocket(userSocket, message);
+      this.sendToSocket(userSocket, message);
     }
   }
 
@@ -142,8 +142,8 @@ export default class WebSocketApp extends EventEmitter {
    * @returns {boolean}
    */
   cacheContainsUser(userId: string): boolean {
-    for (const [_roomId, userMap] of WebSocketApp.rooms) {
-      if (userMap.has(userId)) {
+    for (const [_, members] of WebSocketApp.rooms) {
+      if (members.has(userId)) {
         return true;
       }
     }

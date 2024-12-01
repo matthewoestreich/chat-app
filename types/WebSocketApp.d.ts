@@ -1,10 +1,10 @@
 interface IWebSocketMessageData {
+  error?: Error;
   [key: string]: any;
 }
 
 type IWebSocketMessage = {
   type: EventType;
-  error?: Error | string | undefined;
   [key: string]: any;
 };
 
