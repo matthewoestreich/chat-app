@@ -4,7 +4,7 @@ import path from "node:path";
 console.log("~~~~~~~~~~ RUNNING _BUILD SCRIPT!");
 console.log("~~~~~~~~~~ This script copies assets into build destination specified in tsconfig.json outDir\n");
 
-const TS_CONFIG_PATH = "../tsconfig.server.json";
+const TS_CONFIG_PATH = "../tsconfig.json";
 
 try {
   const CWD = __dirname;
