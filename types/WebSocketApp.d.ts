@@ -8,6 +8,8 @@ type IWebSocketMessage = {
   [key: string]: any;
 };
 
+type IWebSocketErrorHandler = (error: Error, socket: WebSocket.WebSocket) => void;
+
 interface EnterRoomPayload {
   roomId: string;
 }

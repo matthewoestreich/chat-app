@@ -7,8 +7,6 @@ block css
   link(href="/public/rtchat/css/chat.css", rel="stylesheet")
 
 block content
-  // Toast alerts
-  #toast-container.toast-container.top-0.end-0.p-2
   // Modals
   include ./partials/leave-room-confirmation-modal
   include ./partials/create-room-modal
@@ -20,11 +18,11 @@ block content
         span.navbar-brand RTChat
       .mx-auto
         a.navbar-icon.d-inline-block.d-lg-none(data-bs-toggle="offcanvas", data-bs-target="#members-offcanvas")
-          button.btn.btn-outline-secondary(type="button", title="View Members")
+          button.btn.btn-outline-primaryy(type="button", title="View Members")
             i.bi.bi-people
         | !{ "\n" }
         a.navbar-icon.d-inline-block.d-lg-none
-          button.btn.btn-outline-secondary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
+          button.btn.btn-outline-primary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
             i.bi.bi-door-open
       .ms-auto.g-1
         a#toggle-theme.navbar-icon(title="Toggle theme")
@@ -59,12 +57,12 @@ block content
             .card-footer
               .row
                 .col-12.d-flex.p-1
-                  button#close-dms-footer-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Close Direct Messages")
+                  button#close-dms-footer-btn.btn.btn-outline-primary.flex-grow-1(type="button", title="Close Direct Messages")
                     i.bi.bi-x-square
         .card-footer
           .row
             .col-12.d-flex.p-1
-              button#open-direct-messages.btn.btn-outline-secondary.flex-grow-1(type="button", title="Direct Messages")
+              button#open-direct-messages.btn.btn-outline-primary.flex-grow-1(type="button", title="Direct Messages")
                 i.bi.bi-chat-dots-fill
       .card.col-lg-6.offset-lg-0.col-md-10.offset-md-0.h-90pct.overf-hide.d-flex
         .card-header.d-flex.flex-row
@@ -85,13 +83,13 @@ block content
         .card-footer
           .row
             .col-4.d-flex.p-1
-              button#open-join-room-modal.btn.btn-outline-secondary.flex-grow-1(type="button", title="Join room")
+              button#open-join-room-modal.btn.btn-outline-primary.flex-grow-1(type="button", title="Join room")
                 i.bi.bi-box-arrow-in-up-right
             .col-4.d-flex.p-1
               button#leave-room-btn.btn.btn-outline-danger.flex-grow-1(type="button", title="Leave current room", disabled)
                 i.bi.bi-box-arrow-down-left
             .col-4.d-flex.p-1
-              button#open-create-room-modal-btn.btn.btn-outline-secondary.flex-grow-1(type="button", title="Create room")
+              button#open-create-room-modal-btn.btn.btn-outline-primary.flex-grow-1(type="button", title="Create room")
                 i.bi.bi-folder-plus
 
 block scripts

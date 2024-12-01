@@ -15,6 +15,12 @@ import WebSocketMessage from "./WebSocketMessage";
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 const wsapp = new WebSocketApp({ server });
 
+// Catch any errors.
+// Wanted to be more explicit with this as opposed to emitting an 'ERROR' event type.
+wsapp.catch((error: Error, socket: WebSocket) => {
+  console.error({ error, user: socket.user! });
+});
+
 /**
  *
  * @event {CONNECTION_ESTABLISHED}
@@ -54,7 +60,7 @@ wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: 
   const user = socket.user!;
 
   if (socket.activeIn) {
-    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
+    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
     wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
   }
 
@@ -86,7 +92,6 @@ wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { toRoomId, userId, u
   }
 
   wsapp.broadcast(toRoomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId, userName, messageText }));
-
   const { db, release } = await DB_POOL.getConnection();
 
   try {
@@ -109,12 +114,13 @@ wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { toRoomId, userId, u
 wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPayload) => {
   const user = socket.user!;
 
+  // Notify existing room (which user is now leaving) that user is leaving.
   if (socket.activeIn) {
     wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
-    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
+    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
   }
 
-  wsapp.broadcast(roomId, new WebSocketMessage(EventType.MEMBER_ENTERED_ROOM, user.id));
+  wsapp.broadcast(roomId, new WebSocketMessage(EventType.MEMBER_ENTERED_ROOM, { id: user.id }));
   wsapp.cacheUserInRoom(user.id, roomId);
   socket.activeIn = roomId;
 
@@ -147,7 +153,7 @@ wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { roomId }: JoinRoomPayl
   try {
     const rooms = await chatService.addUserByIdToRoomById(db, user.id, roomId, true);
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, rooms));
+    wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, { rooms }));
   } catch (error) {
     release();
     wsapp.emitToClient(new WebSocketMessage(EventType.JOIN_ROOM, error as Error));
@@ -175,11 +181,11 @@ wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { roomId }: UnjoinRoom
 
     // Covers the case for when a user unjoins a room they are currently chatting in.
     if (socket.activeIn === roomId) {
-      wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, user.id));
+      wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
       wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
     }
 
-    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, rooms));
+    wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, { rooms }));
   } catch (error) {
     release();
     wsapp.emitToClient(new WebSocketMessage(EventType.UNJOIN_ROOM, error as Error));
@@ -226,7 +232,7 @@ wsapp.on(EventType.LIST_JOINABLE_ROOMS, async (socket: WebSocket) => {
   try {
     const rooms = await roomService.selectUnjoinedRooms(db, user.id);
     release();
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, rooms));
+    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { rooms }));
   } catch (error) {
     release();
     wsapp.emitToClient(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, error as Error));
@@ -245,10 +251,10 @@ wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, async (socket: WebSocket) => {
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    let conversations = await directConversationService.selectAllByUserId(db, user.id);
+    let dc = await directConversationService.selectAllByUserId(db, user.id);
     release();
-    conversations = conversations.map((convo) => ({ ...convo, isActive: wsapp.cacheContainsUser(convo.id) }));
-    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, conversations));
+    dc = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
+    wsapp.emitToClient(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { directConversations: dc }));
   } catch (error) {
     release();
     wsapp.emitToClient(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, error as Error));

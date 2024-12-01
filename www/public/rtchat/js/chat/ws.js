@@ -1,11 +1,15 @@
+/**
+ * A handler for an emitted event.
+ * @typedef {(socket: WebSocket, data: { [key: string]: any }) => void} EventHandler
+ */
+
 // Add "emit" to WebSocket proto
-WebSocket.prototype.emitToServer = function (eventName, ...payload) {
-  this.send(JSON.stringify({ eventName, payload }));
+WebSocket.prototype.emitToServer = function (eventType, payload) {
+  this.send(JSON.stringify({ type: eventType, payload }));
 };
 
-const EVENT_TYPE = {
+const EventType = {
   SEND_MESSAGE: "SEND_MESSAGE",
-  ERROR: "ERROR",
   CREATE_ROOM: "CREATE_ROOM",
   JOIN_ROOM: "JOIN_ROOM",
   UNJOIN_ROOM: "UNJOIN_ROOM",
@@ -22,9 +26,16 @@ const EVENT_TYPE = {
 };
 
 class WebSocketMessage {
+  /** @type {EventType} */
   type = undefined;
+  /** @type {Error} */
   error = undefined;
 
+  /**
+   * Parses RawData from WebSocket into WebSocketMessage.
+   * @param {ArrayBuffer | Buffer[] | string} data
+   * @returns {WebSocketMessage}
+   */
   static from(data) {
     const { type, ...rest } = JSON.parse(String(data));
     return new WebSocketMessage(type, rest);
@@ -44,20 +55,29 @@ class WebSocketMessage {
 }
 
 class WebSocketApp {
+  /** @type {WebSocket} */
+  #socket;
+  /** @type {{ [key: string]: EventHandler }} */
+  #listeners;
+
+  /**
+   * Error handler
+   * @param {Error} error
+   * @param {WebSocket} socket
+   */
+  #catchFn = (error, socket) => {};
+
   #parseRawMessage = (rawMessage) => {
     if (!rawMessage?.data) {
-      return new WebSocketMessage(EVENT_TYPE.ERROR, new Error(`[ws][parseRawMessage] No data found on message.`));
+      return new Error(`[ws][parseRawMessage] No data found on message.`);
     }
-
     const message = WebSocketMessage.from(rawMessage.data);
-
     if (!message?.type) {
-      return new WebSocketMessage(EVENT_TYPE.ERROR, new Error(`[ws][parseRawMessage] No type found in message.`));
+      new Error(`[ws][parseRawMessage] No type found in message.`);
     }
-    if (!(message.type in EVENT_TYPE)) {
-      return new WebSocketMessage(EVENT_TYPE.ERROR, new Error(`[ws][parseRawMessage] Message type not recognized. Got : '${message.type}'`));
+    if (!(message.type in EventType)) {
+      return new Error(`[ws][parseRawMessage] Message type not recognized. Got : '${message.type}'`);
     }
-
     return message;
   };
 
@@ -70,47 +90,60 @@ class WebSocketApp {
       throw new Error(`WebSocketApp : webSocketUrl is required!`);
     }
 
-    this.socket = new WebSocket(webSocketUrl);
-    this.listeners = {};
+    this.#socket = new WebSocket(webSocketUrl);
+    this.#listeners = {};
 
-    this.socket.onopen = () => {
+    this.#socket.onopen = () => {
       console.log(`ws connected`);
     };
 
-    this.socket.onclose = (ws, event) => {
+    this.#socket.onclose = (ws, event) => {
       console.log({ socket: "closed", ws, event });
     };
 
-    this.socket.onmessage = (rawMessage) => {
-      const { error, type, ...data } = this.#parseRawMessage(rawMessage);
-      if (error) {
-        return this.emit(EVENT_TYPE.ERROR, error);
+    this.#socket.onmessage = (rawMessage) => {
+      const messageOrError = this.#parseRawMessage(rawMessage);
+      if (messageOrError instanceof Error) {
+        return this.#catchFn(messageOrError, this.#socket);
       }
-      this.emit(type, this.socket, data);
+      const { type, data } = messageOrError;
+      this.emit(type, this.#socket, data);
     };
   }
 
-  on(eventName, listener) {
-    if (!this.listeners[eventName]) {
-      this.listeners[eventName] = [];
-    }
-    this.listeners[eventName].push(listener);
+  catch(handler = (error, socket) => {}) {
+    this.#catchFn = handler;
   }
 
-  emit(eventName, ...args) {
-    if (this.listeners[eventName]) {
-      this.listeners[eventName].forEach((listener) => listener(...args));
+  /**
+   * @param {EventType} eventType
+   * @param {EventHandler} handler
+   */
+  on(eventType, handler) {
+    if (!this.#listeners[eventType]) {
+      this.#listeners[eventType] = [];
+    }
+    this.#listeners[eventType].push(handler);
+  }
+
+  emit(eventType, ...args) {
+    if (this.#listeners[eventType]) {
+      this.#listeners[eventType].forEach((handler) => handler(...args));
     }
   }
 
-  emitToServer(eventType, ...args) {
-    this.ws.emitToServer(eventType, ...args);
+  /**
+   * @param {EventType} eventType
+   * @param {{ [key: string]: any } | null} data
+   */
+  emitToServer(eventType, data) {
+    this.#socket.emitToServer(eventType, data);
   }
 }
 
 const wsapp = new WebSocketApp(WEBSOCKET_URL);
 
-wsapp.on(EVENT_TYPE.LIST_ROOMS, (data) => {
+wsapp.on(EventType.LIST_ROOMS, (data) => {
   console.log(data);
 });
 

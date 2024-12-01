@@ -3,6 +3,7 @@ import { IncomingMessage } from "node:http";
 import { WebSocketServer, WebSocket, ServerOptions, RawData } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
 import EventType from "./EventType";
+import { EventTypeMissingError, EventTypeUnknownError } from "../errors";
 
 /**
  * Wrapper around WebSocketServer that emits events based on WebSocket message(s).
@@ -10,28 +11,24 @@ import EventType from "./EventType";
 export default class WebSocketApp extends EventEmitter {
   private server: WebSocketServer;
   private socket: WebSocket;
+  private catchFn: IWebSocketErrorHandler = (_error: Error, _socket: WebSocket) => {};
 
   private static rooms: Map<string, Map<string, WebSocket>> = new Map();
 
   /**
    * Parses a raw incoming websocket message.
-   *
    * @param rawMessage
    * @returns {WebSocketMessage}
    */
   private parseRawMessage(rawMessage: RawData): WebSocketMessage {
-    try {
-      const message = WebSocketMessage.from(rawMessage);
-      if (!message.type) {
-        return new WebSocketMessage(EventType.ERROR, new Error("Message missing 'type' key"));
-      }
-      if (!(message.type in EventType)) {
-        return new WebSocketMessage(EventType.ERROR, new Error("Unkown message type."));
-      }
-      return message;
-    } catch (e) {
-      return new WebSocketMessage(EventType.ERROR, e as Error);
+    const message = WebSocketMessage.from(rawMessage);
+    if (!message.type) {
+      throw new EventTypeMissingError({ message: "Message missing 'type' key" });
     }
+    if (!(message.type in EventType)) {
+      throw new EventTypeUnknownError({ message: "Unkown message type.", data: { type: message.type } });
+    }
+    return message;
   }
 
   constructor(options?: ServerOptions) {
@@ -48,13 +45,19 @@ export default class WebSocketApp extends EventEmitter {
       });
 
       socket.on("message", (rawMessage: RawData, _isBinary: boolean) => {
-        const { error, type, ...data } = this.parseRawMessage(rawMessage);
-        if (error) {
-          return this.emit(EventType.ERROR, error);
+        try {
+          const { type, data } = this.parseRawMessage(rawMessage);
+          this.emit(type, this.socket, data);
+        } catch (e) {
+          this.catchFn(e as Error, this.socket);
         }
-        this.emit(type, this.socket, data);
       });
     });
+  }
+
+  // Error handling
+  catch(handler: IWebSocketErrorHandler) {
+    this.catchFn = handler;
   }
 
   // For when someone first logs in or what not and they aren't in a room, but they're online.
@@ -62,7 +65,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Wrapper for calling `this.socket.send`.
-   *
    * @param message Message to sned to the current socket (this.socket)
    */
   emitToClient(message: WebSocketMessage): void {
@@ -72,7 +74,6 @@ export default class WebSocketApp extends EventEmitter {
   /**
    * Send a message "directly" to another socket (vs to current socket (aka `this.socket`)).
    * Useful for brokering direct messages.
-   *
    * @param socket Socket to send message to.
    * @param message Message to send
    */
@@ -84,7 +85,6 @@ export default class WebSocketApp extends EventEmitter {
    * *IMPORTANT*; `broadcast` offers no protection against spoofing, etc..
    * If you need these protections, implement them prior to calling `broadcast`.
    * Sends a message to every socket that is in a cached room.
-   *
    * @param toRoomId
    * @param message
    */
@@ -105,7 +105,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Get a room from our room cache.
-   *
    * @param roomId ID of room to get.
    * @returns {Map<string, WebSocket> | undefined}
    */
@@ -115,7 +114,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Deletes a room from our room cache.
-   *
    * @param roomId ID of room to delete.
    */
   removeCachedRoom(roomId: string): void {
@@ -125,7 +123,6 @@ export default class WebSocketApp extends EventEmitter {
   /**
    * Removes user from room, if they exist in said room,
    * oherwise we do nothing. No error is thrown.
-   *
    * @param userId ID of user to remove
    * @param roomId ID of room that user is currently in
    */
@@ -141,7 +138,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Essentially checks if a user is active in any cached room.
-   *
    * @param userId ID of user that we check for.
    * @returns {boolean}
    */
@@ -156,7 +152,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Creates a room within our "rooms" cache if it doesn't exist.
-   *
    * @param roomId ID of room to cache
    */
   cacheRoom(roomId: string): void {
@@ -167,7 +162,6 @@ export default class WebSocketApp extends EventEmitter {
 
   /**
    * Will create a room if it doesn't exist and add a user + socket (this.socket) to it.
-   *
    * @param userId ID of user to cache
    * @param roomId ID of room to cache user in
    */
