@@ -6,7 +6,7 @@ export default class WebSocketMessage implements IWebSocketMessage {
   [key: string]: any;
 
   static from(rawData: RawData): WebSocketMessage {
-    const { type, data } = JSON.parse(rawData.toString());
+    const { type, ...data } = JSON.parse(rawData.toString());
     return new WebSocketMessage(type, data);
   }
 

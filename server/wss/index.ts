@@ -2,7 +2,7 @@ import { IncomingMessage } from "node:http";
 import { WebSocket } from "ws";
 import jsonwebtoken from "jsonwebtoken";
 import { v7 as uuidV7 } from "uuid";
-import { chatService, directConversationService, messagesService, roomService } from "@/server/db/services/index";
+import { chatService, directConversationService, directMessagesService, messagesService, roomService } from "@/server/db/services/index";
 import server from "@/server/index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
@@ -77,26 +77,15 @@ wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: 
  * Someone is sending a chat message to a room.
  *
  */
-wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { toRoomId, userId, userName, messageText }: SendMessagePayload) => {
-  if (socket.user!.id !== userId) {
-    const errMsg = `[wsapp][POSSIBLE_SPOOFING_ATTEMPT] sock.user.id !== userId`;
-    const errData = { user: socket.user, message: { toRoomId, userId, userName, messageText } };
-    console.error(errMsg, errData);
-    return;
-  }
-  if (!wsapp.getCachedRoom(toRoomId)!.has(socket.user!.id)) {
-    const errMsg = `[wsapp][POSSIBLE_SPOOFING_ATTEMPT] user attempted to send a message to a room they are not active in`;
-    const errData = { user: socket.user, message: { toRoomId, userId, userName, messageText } };
-    console.error(errMsg, errData);
-    return;
-  }
+wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { roomId, messageText }: SendMessagePayload) => {
+  const user = socket.user!;
+  wsapp.broadcast(roomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId: user.id, userName: user.name, messageText }));
 
-  wsapp.broadcast(toRoomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId, userName, messageText }));
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     // No need to await this, we don't need a response, and nothing depends on the result.
-    messagesService.insertMessage(db, toRoomId, userId, messageText);
+    messagesService.insertMessage(db, roomId, user.id, messageText);
     release();
   } catch (e) {
     release();
@@ -146,12 +135,12 @@ wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPa
  * ENTER_ROOM is for when a user enters an already joined room.
  *
  */
-wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { roomId }: JoinRoomPayload) => {
+wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { id }: JoinRoomPayload) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    const rooms = await chatService.addUserByIdToRoomById(db, user.id, roomId, true);
+    const rooms = await chatService.addUserByIdToRoomById(db, user.id, id, true);
     release();
     wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { rooms }));
   } catch (e) {
@@ -250,15 +239,42 @@ wsapp.on(EventType.LIST_JOINABLE_ROOMS, async (socket: WebSocket) => {
 wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, async (socket: WebSocket) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
-  const data: IWebSocketMessageData = {};
 
   try {
     const dc = await directConversationService.selectAllByUserId(db, user.id);
-    data.directConversations = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
-  } catch (error) {
-    data.error = error as Error;
-  } finally {
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, data));
+    const directConversations = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
+    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { directConversations }));
+  } catch (error) {
+    release();
+    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { error: error as Error }));
+  }
+});
+
+/**
+ * TODO: ADD SOME VERIFICATION SO PPL CAN'T RANDOMLY REQUEST OTHER PPLS DM'S IF THEY HAVE THE CONVO ID
+ *
+ * @event {LIST_DIRECT_MESSAGES}
+ *
+ * Gets all messages in a direct conversation.
+ *
+ */
+wsapp.on(EventType.LIST_DIRECT_MESSAGES, async (socket: WebSocket, { id }: DirectMessagesPayload) => {
+  const user = socket.user!;
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    const messages = await directMessagesService.selectByConversationId(db, id);
+    release();
+    if (user.id !== messages[0].fromUserId && user.id !== messages[0].toUserId) {
+      const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
+      const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: user };
+      console.log(errMsg, errData);
+      return;
+    }
+    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { messages }));
+  } catch (e) {
+    release();
+    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { error: e as Error }));
   }
 });

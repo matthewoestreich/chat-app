@@ -62,7 +62,7 @@ function selectRoomMembersExcludingUser(db: sqlite3.Database, roomId: string, ex
   return new Promise((resolve, reject) => {
     const query = `
     SELECT 
-        r.id AS roomId,
+        r.id AS id,
         u.name AS userName,
         u.id AS userId
     FROM 

@@ -26,12 +26,12 @@ function insert(db: sqlite3.Database, conversationId: string, userA_Id: string, 
 function selectAllByUserId(db: sqlite3.Database, userId: string): Promise<DirectConversation[]> {
   return new Promise((resolve, reject) => {
     const query = `
-    SELECT dc.id AS directConversationId, u.id AS id, u.name AS name
+    SELECT dc.id AS id, u.id AS userId, u.name AS userName
     FROM direct_conversation dc
     JOIN "user" u 
     ON u.id = CASE WHEN dc.userA_Id = ? THEN dc.userB_Id ELSE dc.userA_Id END
     WHERE ? IN (dc.userA_Id, dc.userB_Id)
-    ORDER BY name ASC;
+    ORDER BY userName ASC;
     `;
     db.all(query, [userId, userId], (err, rows: DirectConversation[]) => {
       if (err) {

@@ -15,7 +15,7 @@ interface EnterRoomPayload {
 }
 
 interface JoinRoomPayload {
-  roomId: string;
+  id: string; // roomId
 }
 
 interface UnjoinRoomPayload {
@@ -28,8 +28,10 @@ interface CreateRoomPayload {
 }
 
 interface SendMessagePayload {
-  toRoomId: string;
-  userId: string;
-  userName: string;
+  roomId: string;
   messageText: string;
+}
+
+interface DirectMessagesPayload {
+  id: string; // direct conversation id
 }

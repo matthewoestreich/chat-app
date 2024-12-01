@@ -46,8 +46,9 @@ export default class WebSocketApp extends EventEmitter {
 
       socket.on("message", (rawMessage: RawData, _isBinary: boolean) => {
         try {
-          const { type, data } = this.parseRawMessage(rawMessage);
-          this.emit(type, this.socket, data);
+          const { type, ...data } = this.parseRawMessage(rawMessage);
+          console.log({ type, ...data });
+          this.emit(type, this.socket, data || {});
         } catch (e) {
           this.catchFn(e as Error, this.socket);
         }
@@ -98,7 +99,11 @@ export default class WebSocketApp extends EventEmitter {
       return;
     }
 
-    for (const [_, userSocket] of room) {
+    for (const [userId, userSocket] of room) {
+      // Don't send message back to ourselves..
+      if (this.socket.user!.id === userId) {
+        continue;
+      }
       this.sendToSocket(userSocket, message);
     }
   }

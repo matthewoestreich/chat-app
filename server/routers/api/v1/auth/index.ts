@@ -32,6 +32,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
     }
     const { db, release } = await req.databasePool.getConnection();
     const result = (await accountService.insert(db, username, uuidv7(), password, email)) as Account;
+    // add user to general room
     release();
 
     res.status(200).send({ ok: true, ...result });

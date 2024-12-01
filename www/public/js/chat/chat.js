@@ -64,13 +64,8 @@ sendChatBtn.addEventListener("click", (e) => {
   if (!chatTextInput.value) {
     return;
   }
-  if (ws.readyState !== ws.OPEN) {
-    const opts = { message: "Unable to send message", displayName: USER_NAME, isSending: true, isError: true };
-    chatDisplay.appendChild(generateChatHTML(opts));
-    scrollToBottomOfElement(chatDisplay);
-    return;
-  }
-  sendMessage(ws, "send_message", { fromUserId: USER_ID, fromUserName: USER_NAME, toRoom: activeRoom?.id, value: chatTextInput.value });
+  const message = { roomId: activeRoom?.id, messageText: chatTextInput.value };
+  wsapp.send(new WebSocketMessage(EventType.SEND_MESSAGE, message));
   const opts = { message: chatTextInput.value, displayName: USER_NAME, isSending: true, isError: false };
   const msgHTML = generateChatHTML(opts);
   chatTextInput.value = "";
@@ -88,9 +83,9 @@ createRoomBtn.addEventListener("click", (event) => {
     revert();
     return;
   }
-  const roomName = createRoomRoomNameInput.value;
+  const name = createRoomRoomNameInput.value;
   const isPrivate = createRoomIsPrivateCheckbox.checked === true ? 1 : 0;
-  sendMessage(ws, "create_room", { roomName, isPrivate });
+  wsapp.send(new WebSocketMessage(EventType.CREATE_ROOM, { name, isPrivate }));
 });
 
 joinRoomBtn.addEventListener("click", (event) => {
@@ -99,7 +94,7 @@ joinRoomBtn.addEventListener("click", (event) => {
     return;
   }
   addSpinnerToButton(joinRoomBtn, "Please wait...");
-  sendMessage(ws, "join", { userId: USER_ID, roomId: selected.id });
+  wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { id: selected.id }));
 });
 
 openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
@@ -111,7 +106,7 @@ openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
 });
 
 openJoinRoomModalBtn.addEventListener("click", (event) => {
-  sendMessage(ws, "joinable_rooms", {});
+  wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, {}));
   bsJoinRoomModal.show();
 });
 
@@ -125,7 +120,7 @@ confirmedLeaveRoomBtn.addEventListener("click", (event) => {
     return;
   }
   addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
-  sendMessage(ws, "unjoin", { roomId: window.rtcActiveRoom.id });
+  wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { id: window.rtcActiveRoom.id }));
 });
 
 joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
@@ -145,7 +140,7 @@ createRoomModal.addEventListener("hidden.bs.modal", (event) => {
 
 openDirectMessagesDrawer.addEventListener("click", (e) => {
   directMessagesDrawer.classList.toggle("open");
-  sendMessage(ws, "get_direct_conversations", {});
+  wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, {}));
 });
 
 // Button at top right of DM's drawer (shown as an X).
@@ -162,7 +157,7 @@ closeDirectMessagesDrawerFooterBtn.addEventListener("click", (e) => {
  * HTML related functions/handlers
  */
 
-function handleRoomClick(event, self, socket) {
+function handleRoomClick(event, self) {
   openLeaveRoomConfirmModalBtn.disabled = false;
   // If DM's are open, close them..
   directMessagesDrawer.classList.remove("open");
@@ -176,12 +171,12 @@ function handleRoomClick(event, self, socket) {
   self.classList.add("active-room");
   currentActiveRoom?.classList?.remove("active-room");
   window.rtcActiveRoom = self;
-  sendMessage(ws, "ENTER_ROOM", { roomId: self.id });
+  wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { roomId: self.id }));
 }
 
 function handleDirectConversationClick(event, theElement) {
   console.log({ toUserId: theElement.id, toUserName: theElement.getAttribute("name") });
-  sendMessage(ws, "get_direct_messages", { fromUserId: USER_ID, toUserId: theElement.id });
+  wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { id: theElement.id }));
 }
 
 /**
@@ -194,12 +189,7 @@ function handleRooms(appendToElement, rooms, onRenderDone = () => {}) {
   renderRooms(appendToElement, rooms, onRenderDone);
 }
 
-function handleJoinableRooms(appendToElement, ok, rooms, error) {
-  if (!ok) {
-    joinRoomCallout.showWithIcon("danger", "Something went wrong. Please close this box and try again.", "bi-exclamation");
-    console.log(`[handleJoinableRooms][ERROR]`, error);
-    return;
-  }
+function handleJoinableRooms(appendToElement, rooms) {
   appendToElement.replaceChildren(); // clear anything existing..
   for (const room of rooms) {
     const roomEl = generateJoinableRoomHTML(room.name, room.id);
@@ -217,24 +207,15 @@ function handleJoinableRooms(appendToElement, ok, rooms, error) {
   }
 }
 
-function handleDirectConversations(ok, conversations, error, appendToElement = directMessagesDrawerContainer) {
-  if (!ok) {
-    console.error(`handleDirectConversations][ERROR]`, error);
-    return;
-  }
+function handleDirectConversations(conversations, appendToElement = directMessagesDrawerContainer) {
   sortObjects(conversations);
   renderDirectConversations(conversations, appendToElement);
 }
 
-function handleJoinedRoom(ok, rooms, joinedRoomId, error) {
+function handleJoinedRoom(rooms, joinedRoomId) {
   const revert = getSpinnerButtonInstance(joinRoomBtn);
   if (revert) {
     revert();
-  }
-  if (!ok) {
-    joinRoomCallout.showWithIcon("danger", "Something went wrong. Please close this box and try again.", "bi-exclamation");
-    console.log(`[handleJoinedRoom][ERROR]`, error);
-    return;
   }
   rooms.sort((a, b) => a.name.localeCompare(b.name));
   handleRooms(roomsContainer, rooms, () => {
@@ -270,22 +251,17 @@ function handleCreatedRoom(ok, rooms, createdRoomId, error) {
 }
 
 // Received message
-function handleMessage(broadcast) {
-  const opts = { message: broadcast.message, displayName: broadcast.from, isSending: false };
+function handleMessage(userName, messageText, userId) {
+  const opts = { message: messageText, displayName: userName, isSending: false, userId };
   const msgHTML = generateChatHTML(opts);
   chatDisplay.appendChild(msgHTML);
   scrollToBottomOfElement(chatDisplay);
 }
 
-function handleUnjoined(isSuccess, updatedRooms, error) {
+function handleUnjoined(updatedRooms) {
   const revert = getSpinnerButtonInstance(confirmedLeaveRoomBtn);
   if (revert) {
     revert();
-  }
-  if (!isSuccess) {
-    console.error(`[handleUnjoined][ERROR]`, error);
-    leaveRoomConfirmationModalBody.innerText = "Something went wrong, please try again.";
-    return;
   }
   bsLeaveConfirmationModal.hide();
   handleRooms(roomsContainer, updatedRooms);
@@ -354,20 +330,13 @@ function createMessage(type = "", data = {}) {
 function renderMembers(members, containerElement = membersContainer) {
   const membersListElement = document.getElementById("members-list");
   membersListElement.replaceChildren();
-
   if (!members.length) {
     return;
-    //const p = document.createElement("p");
-    //p.classList.add("text-body-tertiary");
-    //p.innerText = "None";
-    //return containerElement.appendChild(p);
   }
-
   for (const m of members) {
     const memberHTML = generateMemberHTML(m.userName, m.userId, m.isActive);
     membersListElement.appendChild(memberHTML);
   }
-
   if (containerElement) {
     containerElement.appendChild(membersListElement);
   }
@@ -384,7 +353,7 @@ function renderRooms(containerElement, rooms, onCompleted = () => {}) {
   for (const r of rooms) {
     const roomHtml = generateRoomHTML(r.name, r.id);
     roomHtml.addEventListener("click", function (e) {
-      handleRoomClick(e, this, ws);
+      handleRoomClick(e, this);
     });
     roomsListElement.appendChild(roomHtml);
   }
@@ -396,7 +365,7 @@ function renderDirectConversations(conversations, appendToElement) {
   const convoListElement = document.createElement("ul");
   convoListElement.classList.add("list-group", "list-group-flush");
   for (const convo of conversations) {
-    const html = generateDirectConversationHTML(convo.name, convo.id, convo.isActive);
+    const html = generateDirectConversationHTML(convo.id, convo.userName, convo.userId, convo.isActive);
     html.setAttribute("role", "button");
     html.addEventListener("click", function (event) {
       handleDirectConversationClick(event, this);
@@ -511,12 +480,12 @@ function generateJoinableRoomHTML(roomName, roomId) {
 }
 
 // Generates an "li" element with participant info..
-function generateDirectConversationHTML(participantName, participantId, isActive) {
+function generateDirectConversationHTML(conversationId, participantName, participantId, isActive) {
   const li = document.createElement("li");
   const divUnContainer = document.createElement("div");
   const divUn = document.createElement("div");
   const span = document.createElement("span");
-  li.id = participantId;
+  li.id = conversationId; //participantId;
   li.setAttribute("name", participantName);
   li.classList.add("list-group-item", "list-group-item-action", "d-flex", "justify-content-between", "align-items-start");
   divUnContainer.classList.add("ms-2", "me-auto");
@@ -544,11 +513,12 @@ function generateDirectConversationHTML(participantName, participantId, isActive
 // - example : `{ user: 'foo', isActive: true, ...rest }` is NOT acceptable
 // The "*(N|n)ame" key just has to have "name" in it somewhere..
 // If no suitable keys are found, we return nothing since sort is in place anyway..
-function sortObjects(members = []) {
+function sortObjects(objects = []) {
   let nameKey = null;
   let hasIsValueKey = false;
 
-  const object = members[0];
+  const object = objects[0];
+  console.log(object);
   const objectKeys = Object.keys(object);
 
   for (const key of objectKeys) {
@@ -565,14 +535,14 @@ function sortObjects(members = []) {
     }
   }
   if (!nameKey) {
-    console.error(`[sortRoomMembers] no suitable "*(N|n)ame" key found on objects. We got:`, { objectKeys });
+    console.error(`[sortObjects] no suitable "*(N|n)ame" key found on objects. We got:`, { objectKeys });
     return;
   }
   if (!hasIsValueKey) {
-    console.error(`[sortRoomMembers] no suitable "isActive" key found on objects. We got:`, { objectKeys });
+    console.error(`[sortObjects] no suitable "isActive" key found on objects. We got:`, { objectKeys });
     return;
   }
-  members.sort((a, b) => {
+  objects.sort((a, b) => {
     if (a.isActive && b.isActive) {
       return a[nameKey].localeCompare(b[nameKey]);
     }

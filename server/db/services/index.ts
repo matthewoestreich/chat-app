@@ -4,3 +4,4 @@ export { default as chatService } from "./chat";
 export { default as sessionService } from "./session";
 export { default as messagesService } from "./messages";
 export { default as directConversationService } from "./directConversation";
+export { default as directMessagesService } from "./directMessages";

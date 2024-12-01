@@ -4,9 +4,11 @@ import path from "node:path";
 console.log("~~~~~~~~~~ RUNNING _BUILD SCRIPT!");
 console.log("~~~~~~~~~~ This script copies assets into build destination specified in tsconfig.json outDir\n");
 
+const TS_CONFIG_PATH = "../tsconfig.server.json";
+
 try {
   const CWD = __dirname;
-  const tsconfig = JSON.parse(fs.readFileSync(path.resolve(CWD, "../tsconfig.json"), "utf-8"));
+  const tsconfig = JSON.parse(fs.readFileSync(path.resolve(CWD, TS_CONFIG_PATH), "utf-8"));
 
   const COPY_MAP = [
     {

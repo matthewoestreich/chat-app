@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc && tsx scripts/_build.ts",
+    "build": "tsc -p tsconfig.json && tsx scripts/_build.ts",
     "postbuild": "tsc-alias -p tsconfig.json",
     "start:nodemon": "nodemon --verbose",
     "tsx": "tsx index.ts",

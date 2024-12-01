@@ -18,7 +18,7 @@ sqlite3.verbose();
  * CHANGE THIS TO TRUE/FALSE WHETHER YOU WANT TO ACTUALLY INSERT DATA
  * AND NOT JUST TEST GENERATION..
  */
-const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = false;
+const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = true;
 const NUM_ITEMS_EACH = 100;
 const DATABASE_PATH = path.resolve(__dirname, "../server/db/rtchat.db");
 
@@ -179,6 +179,12 @@ for (let i = 0; i < users.length; i++) {
 
 console.log({ numberOfDirectMessages: directMessages.length });
 
+// GENERAL ROOM for everyone
+// ONLY ADD GENERAL ROOM TO ROOMS AFTER GENERATING ALL FAKE DATA should be obvious why
+const GENERAL_ROOM_ID = uuidV7();
+const GENERAL_ROOM = { name: "#general", id: GENERAL_ROOM_ID, isPrivate: 0 };
+rooms.push(GENERAL_ROOM);
+
 async function insertUsers(db: sqlite3.Database, users: { id: string; username: string; password: string; email: string }[]) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -223,6 +229,8 @@ async function insertChatRooms(db: sqlite3.Database, members: ChatRoomMember[]) 
         for (const room of user.rooms) {
           stmt.run(user.id, room.id);
         }
+        // user to general room..
+        stmt.run(user.id, GENERAL_ROOM_ID);
       }
       stmt.finalize(() => {
         console.log(" - chat rooms stmt finalized");

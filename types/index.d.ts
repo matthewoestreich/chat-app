@@ -13,7 +13,7 @@ interface DatabasePool<T> {
 interface RoomMember {
   userName: string;
   userId: string;
-  roomId: string;
+  id: string; // Room ID
   isActive: boolean;
 }
 
@@ -66,10 +66,19 @@ interface Cookies {
 }
 
 interface DirectConversation {
-  directConversationId: string; // convo id
-  id: string; // other participant id in DM
-  name: string; // other participant name in DM
+  id: string; // convo id
+  userId: string; // other participant id in DM
+  userName: string; // other participant name in DM
   isActive: boolean; // is other participant currently online
+}
+
+interface DirectMessage {
+  id: string;
+  directConversationId: string;
+  fromUserId: string;
+  toUserId: string;
+  message: string;
+  timestamp: Date;
 }
 
 declare namespace Express {
