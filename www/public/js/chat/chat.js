@@ -235,13 +235,8 @@ function handleRoomMembers(members, containerElement) {
   renderMembers(members, containerElement);
 }
 
-function handleCreatedRoom(ok, rooms, createdRoomId, error) {
+function handleCreatedRoom(rooms, createdRoomId) {
   getSpinnerButtonInstance(createRoomBtn)();
-  if (!ok) {
-    console.log(`[handleCreatedRooms]`, error);
-    createRoomCallout.showWithIcon("danger", "Something went wrong creating room. Please try again.", "bi-exclamation-triangle-fill");
-    return;
-  }
   createRoomCallout.showWithIcon("success", "Success! Room created successfully.", "bi-check");
   rooms.sort((a, b) => a.name.localeCompare(b.name));
   handleRooms(roomsContainer, rooms, () => {

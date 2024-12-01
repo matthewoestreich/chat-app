@@ -16,7 +16,7 @@ Backend Technologies:
  - [TypeScript](https://www.typescriptlang.org/)
  - [WebSockets](https://en.wikipedia.org/wiki/WebSocket)
  - [SQLite3](https://www.sqlite.org/)
- - [EJS](https://ejs.co/)
+ - [Pug](https://pugjs.org/)
 
 Frontend Technologies:
  - [Vanilla JS](http://vanilla-js.com/)
