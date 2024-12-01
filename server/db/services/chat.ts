@@ -7,7 +7,7 @@ export default {
   addUserByIdToRoomById: insertUserByIdToRoomById,
   selectAllRoomsAndMembersByUserId: selectAllRoomsAndRoomMembersByUserId,
   selectRoomMembersByRoomId: selectRoomMembersByRoomId,
-  selectRoomMembersByRoomIdIgnoreUserId,
+  selectRoomMembersExcludingUser,
   deleteRoomMember,
 };
 
@@ -58,11 +58,11 @@ function selectRoomMembersByRoomId(db: sqlite3.Database, roomId: string): Promis
 }
 
 // Like when you want to get all roooms but not for "yourself".
-function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: string, userToIgnore: string): Promise<RoomMember[]> {
+function selectRoomMembersExcludingUser(db: sqlite3.Database, roomId: string, excludingUserId: string): Promise<RoomMember[]> {
   return new Promise((resolve, reject) => {
     const query = `
     SELECT 
-        r.id AS roomId,
+        r.id AS id,
         u.name AS userName,
         u.id AS userId
     FROM 
@@ -75,7 +75,7 @@ function selectRoomMembersByRoomIdIgnoreUserId(db: sqlite3.Database, roomId: str
         r.id = ? AND u.id != ? ;
   `;
 
-    db.all(query, [roomId, userToIgnore], (err, rows: RoomMember[]) => {
+    db.all(query, [roomId, excludingUserId], (err, rows: RoomMember[]) => {
       if (err) {
         return reject(err);
       }

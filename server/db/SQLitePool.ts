@@ -86,6 +86,7 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
             return reject(err);
           }
         });
+        connection.isStale = true;
         this._activeConnections = this._activeConnections.filter((ac) => ac.id !== connection.id);
         this._idleConnections = this._idleConnections.filter((ic) => ic.id !== connection.id);
         return resolve(true);
@@ -132,7 +133,7 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     // Cannot release an active connection to idle if we have no active connections.
     // This means a connection that was "leased" prior to a drain (or closeAll) is requesting to be released.
     // We consider this connection stale.
-    if (this._activeConnections.length === 0) {
+    if (connection.isStale || this._activeConnections.length === 0) {
       console.warn(`[releaseConnection] Stale connection (${connection.id}) requested release. Pool has no active connections to release.`);
       this._mutex.unlock();
       return;

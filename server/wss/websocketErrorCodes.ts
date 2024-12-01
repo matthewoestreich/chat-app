@@ -27,7 +27,7 @@ export const WEBSOCKET_ERROR_CODE = {
   },
   AbnormalClosure: {
     code: 1006,
-    definition: "Transport layer broke (e.g. couldn't connect, TCP RST",
+    definition: "Transport layer broke (e.g. couldn't connect, TCP RST)",
   },
   InvalidFramePayloadData: {
     code: 1007,

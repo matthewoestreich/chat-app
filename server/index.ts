@@ -10,37 +10,40 @@ import apiRouter from "@/server/routers/api";
 
 const app = express();
 
-app.set("view engine", "ejs");
+app.set("view engine", "pug");
 app.set("views", path.resolve(__dirname, "../www"));
 
 app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 
 const dbFilePath = process.env.ABSOLUTE_DB_PATH!;
 const sqlitePool = new SQLitePool(dbFilePath, 5);
-morgan.token("body", (req: any) => JSON.stringify(req.body || {}, null, 2)); // custom logging 'token' to log req bodies.
+
+// Custom token to log body of requests
+morgan.token("body", (req: Request) => {
+  return JSON.stringify(req.body || {}, null, 2);
+});
+
+const useJwt = useJwtSession({
+  onError: (_, res: Response) => res.redirect("/"),
+});
 
 app.use(express.json());
-console.log(`[SQLITEPOOL][DB_PATH] ${sqlitePool.databasePath}`);
 app.use(useDatabasePool(sqlitePool));
 app.use(useCookieParser);
 app.use(useCspNonce);
-
-const useJwt = useJwtSession({
-  onError: (_req: Request, res: Response) => res.redirect("/"),
-});
 
 app.use(
   helmet({
     contentSecurityPolicy: {
       // @ts-ignore
-      directives: { scriptSrc: ["'self'", (_req: Request, res: Response) => `'nonce-${res.locals.cspNonce}'`] },
+      directives: { scriptSrc: ["'self'", (_, res: Response) => `'nonce-${res.locals.cspNonce}'`] },
     },
   }),
 );
 
 app.use(
   morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
-    skip: (req, _res) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
+    skip: (req) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
   }),
 );
 
@@ -79,11 +82,12 @@ app.get("/logout", async (req: Request, res: Response) => {
       res.clearCookie("session");
       console.log({ sessionAfterRemove: req.cookies.session });
     }
-
     return res.render("logout");
   } catch (e) {
     console.log({ logoutError: e });
-    return res.render("error", { error: "Error logging you out." });
+    res.clearCookie("session");
+    //return res.render("error", { error: "Error logging you out." });
+    return res.render("logout");
   }
 });
 
@@ -91,7 +95,7 @@ app.get("/logout", async (req: Request, res: Response) => {
  * 404 route
  * @route {GET} *
  */
-app.get("*", (_req, res) => {
+app.get("*", (_, res: Response) => {
   res.send("<h1>404 Not Found</h1>");
 });
 

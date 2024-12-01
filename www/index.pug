@@ -1,0 +1,39 @@
+extends ./layouts/main.pug
+
+block title
+  title RTChat | Welcome!
+
+block css
+  link(href="/public/css/index.css", rel="stylesheet")
+
+block content
+  include ./partials/create-account-modal
+  .container.d-flex.flex-column.h-100.justify-content-center.align-items-center
+    .row
+      .text-center.mb-3
+        h1.display-5 Welcome to RTChat!
+    .row(style="max-height: 400px")
+      .col.mh-100
+        #alert-display.alert.d-none.d-flex.flex-row.align-items-center.justify-content-between.mh-100(role="alert")
+          i(class="")
+          #alert-message.mb-0.max-h-100px.overf-scroll
+          button.btn-close(type="button", data-bs-dismiss="alert", aria-label="Close")
+    .row.w-100
+      .col-lg-6.offset-lg-3
+        .form-group
+          form#login-form
+            .form-floating.mb-3
+              input#login-email-input.form-control(type="text", placeholder="Email Address", required)
+              label.form-label(for="login-email-input") Email
+              .invalid-feedback Email is required!
+            .form-floating.mb-3
+              input#login-password-input.form-control(type="password", placeholder="Password", required)
+              label.form-label(for="login-password-input") Password
+              .invalid-feedback Password is required!
+            .d-flex.justify-content-end
+              button#open-create-account-modal-btn.btn.btn-outline-secondary.me-2(type="button") Create Account
+              button#login-btn.btn.btn-primary Login
+
+block scripts
+  script(src="/public/js/index/index.js", type="text/javascript")
+  script(src="/public/js/index/createAccountModal.js", type="text/javascript")

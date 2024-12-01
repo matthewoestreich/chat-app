@@ -5,11 +5,11 @@
   "main": "index.ts",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc && tsx scripts/_build.ts",
+    "build": "tsc -p tsconfig.json && tsx scripts/_build.ts",
     "postbuild": "tsc-alias -p tsconfig.json",
     "start:nodemon": "nodemon --verbose",
     "tsx": "tsx index.ts",
-    "fmt": "prettier --write \"**/*.{ts,js,json,ejs}\"",
+    "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test": "jest",
     "jest:clearCache": "jest --clearCache",
     "insert:fake:data": "tsx scripts/insertFakeData.ts"
@@ -17,17 +17,12 @@
   "keywords": [],
   "author": "Matt Oestreich",
   "prettier": {
+    "plugins": [
+      "@prettier/plugin-pug"
+    ],
     "tabWidth": 2,
     "useTabs": false,
-    "printWidth": 10000,
-    "overrides": [
-      {
-        "files": "*.ejs",
-        "options": {
-          "parser": "html"
-        }
-      }
-    ]
+    "printWidth": 10000
   },
   "nodemonConfig": {
     "delay": 1500,
@@ -48,7 +43,6 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
     "express": "^4.21.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
@@ -61,6 +55,7 @@
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@faker-js/faker": "^9.2.0",
+    "@prettier/plugin-pug": "^3.2.0",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/helmet": "^4.0.0",
@@ -77,6 +72,7 @@
     "morgan": "^1.10.0",
     "nodemon": "^3.1.7",
     "prettier": "^3.3.3",
+    "pug": "^3.0.3",
     "ts-jest": "^29.2.5",
     "tsc-alias": "^1.8.10",
     "tsx": "^4.19.2"
