@@ -8,7 +8,14 @@ export default {
 function selectByConversationId(db: sqlite3.Database, convoId: string): Promise<DirectMessage[]> {
   return new Promise((resolve, reject) => {
     try {
-      db.all(`SELECT * from direct_messages WHERE directConversationId = ? ORDER BY timestamp ASC`, [convoId], (err, rows: DirectMessage[]) => {
+      const query = `
+        SELECT dm.*, u.name AS fromUserName
+        FROM direct_messages dm 
+        JOIN "user" u
+        ON u.id = dm.fromUserId 
+        WHERE dm.directConversationId = ?
+        ORDER BY timestamp ASC;`;
+      db.all(query, [convoId], (err, rows: DirectMessage[]) => {
         if (err) {
           return reject(err);
         }

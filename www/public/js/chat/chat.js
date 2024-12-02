@@ -265,9 +265,22 @@ function handleUnjoined(updatedRooms) {
   handleRoomMembers([], membersContainer);
 }
 
+function handleDirectMessages(messages = []) {
+  if (!messages.length) {
+    return;
+  }
+  chatDisplay.replaceChildren();
+  messages.forEach(({ message, fromUserId, fromUserName }) => {
+    const opts = { message, displayName: fromUserName, isSending: fromUserId === USER_ID };
+    const html = generateChatHTML(opts);
+    chatDisplay.appendChild(html);
+  });
+  scrollToBottomOfElement(chatDisplay);
+}
+
 function handleEnteredRoom(members, messages) {
   handleRoomMembers(members);
-  messages.forEach(({ message, userId, userName, roomId, color }) => {
+  messages.forEach(({ message, userId, userName }) => {
     const isSending = userId === USER_ID;
     const opts = { message, isSending, displayName: userName };
     const html = generateChatHTML(opts);
