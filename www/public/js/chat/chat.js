@@ -35,10 +35,14 @@ const joinRoomModalAlertMessage = document.getElementById("join-room-alert-messa
 const chatDisplay = document.getElementById("chat-display");
 const chatTextInput = document.getElementById("chat-text-input");
 const chatTitle = document.getElementById("chat-title");
+/* Join direct convo modal */
+const joinDirectConvoModal = document.getElementById("join-direct-convo-modal");
+const createDirectConvoBtn = document.getElementById("create-direct-conversation-btn");
 /* bootstrap instances/objects */
 const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
 const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
 const bsJoinRoomModal = bootstrap.Modal.getOrCreateInstance(joinRoomModal);
+const bsJoinDirectConvoModal = bootstrap.Modal.getOrCreateInstance(joinDirectConvoModal);
 //#endregion
 
 const createRoomCallout = new CustomAlert(createRoomAlert, createRoomAlertMessage);
@@ -71,6 +75,12 @@ sendChatBtn.addEventListener("click", (e) => {
   chatTextInput.value = "";
   chatDisplay.appendChild(msgHTML);
   scrollToBottomOfElement(chatDisplay);
+});
+
+createDirectConvoBtn.addEventListener("click", (event) => {
+  // open join new direct convo modal
+  bsJoinDirectConvoModal.show();
+  wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, {}));
 });
 
 createRoomBtn.addEventListener("click", (event) => {
@@ -176,6 +186,9 @@ function handleRoomClick(event, self) {
 }
 
 function handleDirectConversationClick(event, theElement) {
+  chatTitle.classList.remove("chat-title-no-room");
+  chatTitle.innerText = theElement.getAttribute("name") || `Direct Message`;
+  directMessagesDrawer.classList.toggle("open");
   wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { id: theElement.id }));
 }
 

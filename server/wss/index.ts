@@ -277,3 +277,17 @@ wsapp.on(EventType.LIST_DIRECT_MESSAGES, async (socket: WebSocket, { id }: Direc
     wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { error: e as Error }));
   }
 });
+
+wsapp.on(EventType.LIST_INVITABLE_USERS, async (socket: WebSocket, {}) => {
+  const user = socket.user!;
+  const { db, release } = await DB_POOL.getConnection();
+
+  try {
+    const users = await directConversationService.selectInvitableUsers(db, user.id);
+    release();
+    wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, { users }));
+  } catch (e) {
+    release();
+    wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, { error: e as Error }));
+  }
+});

@@ -11,6 +11,7 @@ block content
   include ./partials/leave-room-confirmation-modal
   include ./partials/create-room-modal
   include ./partials/join-room-modal
+  include ./partials/join-direct-convo-modal
   // Navbar
   header.navbar.navbar-expand-lg.fixed-top.bg-secondary-subtle
     nav.container
@@ -18,20 +19,20 @@ block content
         span.navbar-brand RTChat
       .mx-auto
         a.navbar-icon.d-inline-block.d-lg-none(data-bs-toggle="offcanvas", data-bs-target="#members-offcanvas")
-          button.btn.btn-outline-primary(type="button", title="View Members")
+          button.btn.btn-primary.shadow(type="button", title="View Members")
             i.bi.bi-people-fill
         | !{ "\n" }
         a.navbar-icon.d-inline-block.d-lg-none
-          button.btn.btn-outline-primary(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
+          button.btn.btn-primary.shadow(type="button", title="View Rooms", data-bs-toggle="offcanvas", data-bs-target="#rooms-offcanvas")
             i.bi.bi-door-open-fill
       .ms-auto.g-1
         a#toggle-theme.navbar-icon(title="Toggle theme")
-          button.btn.btn-outline-secondary
+          button.btn.btn-light.shadow
             i#dark-theme-icon.d-none.bi.bi-moon-fill
             i#light-theme-icon.d-none.bi.bi-sun-fill
         | !{ "\n" }
         a.navbar-icon(href="logout")
-          button.btn.btn-outline-secondary.flex-fill(type="button", title="Logout")
+          button.btn.btn-light.flex-fill.shadow(type="button", title="Logout")
             i.bi.bi-power
   // MAIN CONTENT
   .container-fluid.h-100.d-flex.flex-column(style="padding-top: 4em")
@@ -43,7 +44,7 @@ block content
       #members-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-start
         .card-header.d-flex.flex-row.display-6.text-center
           .flex-fill.text-center Members
-          button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#members-offcanvas")
+          button.btn.btn-close.btn-sm.d-lg-none.ms-auto.shadow(type="button", data-bs-dismiss="offcanvas", data-bs-target="#members-offcanvas")
         #members-container.card-body.overf-y-scroll.p-0.m-1
           #loading-members-spinner.d-none.d-flex.mt-4.justify-content-center
             .spinner-border
@@ -52,17 +53,23 @@ block content
           #direct-messages-drawer.drawer.card
             .drawer-header.card-header.fs-3
               .flex-fill.text-center Direct Messages
-              button#close-direct-messages-drawer.btn.btn-close.btn-sm.drawer-close-button(type="button")
+              button#close-direct-messages-drawer.btn.btn-close.btn-sm.shadow.drawer-close-button(type="button")
             #direct-messages-container.drawer-body.card-body
             .card-footer
               .row
-                .col-12.d-flex.p-1
-                  button#close-dms-footer-btn.btn.btn-outline-danger.flex-grow-1(type="button", title="Close Direct Messages")
+                .col-4.d-flex.p-1
+                  button#create-direct-conversation-btn.btn.btn-success.shadow.flex-grow-1(type="button", title="New")
+                    i.bi.bi-person-plus-fill
+                .col-4.d-flex.p-1
+                  button#leave-direct-conversation-btn.btn.btn-warning.shadow.flex-grow-1(type="button", title="Leave")
+                    i.bi.bi-person-dash-fill
+                .col-4.d-flex.p-1
+                  button#close-dms-footer-btn.btn.btn-danger.shadow.flex-grow-1(type="button", title="Close Direct Messages")
                     i.bi.bi-x-square
         .card-footer
           .row
             .col-12.d-flex.p-1
-              button#open-direct-messages.btn.btn-outline-primary.flex-grow-1(type="button", title="Direct Messages")
+              button#open-direct-messages.btn.btn-primary.flex-grow-1.shadow(type="button", title="Direct Messages")
                 i.bi.bi-chat-dots-fill
       .card.col-lg-6.offset-lg-0.col-md-10.offset-md-0.h-90pct.overf-hide.d-flex
         .card-header.d-flex.flex-row
@@ -75,7 +82,7 @@ block content
       #rooms-offcanvas.card.col-xl-2.col-3.d-lg-flex.flex-column.h-lg-90pct.min-h-0.overf-hide.offcanvas-lg.offcanvas-end
         .card-header.d-flex.flex-row.display-6.text-center
           .flex-fill.text-center Rooms
-          button.btn.btn-close.btn-sm.d-lg-none.ms-auto(type="button", data-bs-dismiss="offcanvas", data-bs-target="#rooms-offcanvas")
+          button.btn.btn-close.btn-sm.d-lg-none.ms-auto.shadow(type="button", data-bs-dismiss="offcanvas", data-bs-target="#rooms-offcanvas")
         #rooms-container.card-body.overf-y-scroll.p-0.m-1
           #loading-rooms-spinner.d-flex.mt-4.justify-content-center
             .spinner-border
@@ -83,13 +90,13 @@ block content
         .card-footer
           .row
             .col-4.d-flex.p-1
-              button#open-join-room-modal.btn.btn-outline-primary.flex-grow-1(type="button", title="Join room")
+              button#open-join-room-modal.btn.btn-primary.shadow.flex-grow-1(type="button", title="Join room")
                 i.bi.bi-box-arrow-in-up-right
             .col-4.d-flex.p-1
-              button#leave-room-btn.btn.btn-outline-danger.flex-grow-1(type="button", title="Leave current room", disabled)
+              button#leave-room-btn.btn.btn-warning.shadow.flex-grow-1(type="button", title="Leave current room", disabled)
                 i.bi.bi-box-arrow-down-left
             .col-4.d-flex.p-1
-              button#open-create-room-modal-btn.btn.btn-outline-primary.flex-grow-1(type="button", title="Create room")
+              button#open-create-room-modal-btn.btn.btn-primary.shadow.flex-grow-1(type="button", title="Create room")
                 i.bi.bi-folder-plus
 
 block scripts
