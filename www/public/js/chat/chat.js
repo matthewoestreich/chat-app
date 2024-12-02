@@ -166,6 +166,7 @@ function handleRoomClick(event, self) {
     return;
   }
   chatDisplay.replaceChildren();
+  document.getElementById("members-list").replaceChildren();
   chatTitle.classList.remove("chat-title-no-room");
   chatTitle.innerText = self.innerText;
   self.classList.add("active-room");
@@ -175,7 +176,6 @@ function handleRoomClick(event, self) {
 }
 
 function handleDirectConversationClick(event, theElement) {
-  console.log({ toUserId: theElement.id, toUserName: theElement.getAttribute("name") });
   wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { id: theElement.id }));
 }
 
@@ -212,19 +212,19 @@ function handleDirectConversations(conversations, appendToElement = directMessag
   renderDirectConversations(conversations, appendToElement);
 }
 
-function handleJoinedRoom(rooms, joinedRoomId) {
+function handleJoinedRoom(rooms) {
   const revert = getSpinnerButtonInstance(joinRoomBtn);
   if (revert) {
     revert();
   }
   rooms.sort((a, b) => a.name.localeCompare(b.name));
   handleRooms(roomsContainer, rooms, () => {
-    const r = document.getElementById(joinedRoomId);
+    const r = joinRoomModalRoomsContainer.querySelector(".active");
     joinRoomModalRoomsContainer.removeChild(r);
     // Even tho the id is the same, it is a different element.
     // We removed it from the 'list of rooms to join' and added it
     // to the 'list of rooms we are currently in'.
-    scrollToElement(document.getElementById(joinedRoomId));
+    scrollToElement(document.getElementById(r.id));
   });
   joinRoomCallout.showWithIcon("success", "Successfully joined room!", "bi-check");
 }
@@ -298,15 +298,6 @@ function handleMemberLeft(id) {
   }
   sortObjects(window.rtcRoomMembers);
   renderMembers(window.rtcRoomMembers);
-}
-
-function sendMessage(socket, type, data) {
-  if (!socket || !type || !data) {
-    console.error(`[sendMessage] Unable to send. Missing either socket, type, or data!`, { socketProvided: socket ? true : false, type, data });
-    return;
-  }
-  const msg = createMessage(type, data);
-  socket.send(msg);
 }
 
 function createMessage(type = "", data = {}) {
@@ -509,12 +500,18 @@ function generateDirectConversationHTML(conversationId, participantName, partici
 // The "*(N|n)ame" key just has to have "name" in it somewhere..
 // If no suitable keys are found, we return nothing since sort is in place anyway..
 function sortObjects(objects = []) {
+  if (!objects.length) {
+    return;
+  }
+
   let nameKey = null;
   let hasIsValueKey = false;
 
-  const object = objects[0];
-  console.log(object);
-  const objectKeys = Object.keys(object);
+  const objectKeys = Object.keys(objects[0]);
+
+  if (!objectKeys.length) {
+    return;
+  }
 
   for (const key of objectKeys) {
     const keyLower = key.toLowerCase();

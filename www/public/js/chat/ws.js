@@ -73,7 +73,6 @@ class WebSocketApp {
     if (!(message.type in EventType)) {
       throw new Error(`[ws][parseRawMessage] Message type not recognized. Got : '${message.type}'`);
     }
-    console.log({ parsedRawMessage: message, asJSONString: message.toJSONString() });
     return message;
   };
 
@@ -100,10 +99,9 @@ class WebSocketApp {
     this.#socket.onmessage = (rawMessage) => {
       try {
         const { type, ...data } = this.#parseRawMessage(rawMessage);
-        console.log({ got: "message", type, ...data });
+        console.log("received", { type, ...data });
         this.emit(type, this.#socket, data);
       } catch (e) {
-        console.log("error", e);
         this.#catchFn(e, this.#socket);
       }
     };
@@ -125,7 +123,6 @@ class WebSocketApp {
     if (!this.#events[eventType]) {
       this.#events[eventType] = [];
     }
-    console.log({ registering: eventType, eventHandler });
     this.#events[eventType].push(eventHandler);
   }
 
@@ -145,95 +142,10 @@ class WebSocketApp {
    * @param {WebSocketMessage} message
    */
   send(message) {
-    const str = message.toJSONString();
-    console.log({ send: str });
-    this.#socket.send(str);
+    console.log("send", { ...message });
+    this.#socket.send(message.toJSONString());
   }
 }
-
-/*
-class EventEmitter {
-  constructor() {
-    this.events = {}; // Store event listeners
-  }
-
-  // Register a listener
-  on(event, callback) {
-    if (!this.events[event]) {
-      this.events[event] = [];
-    }
-    this.events[event].push(callback);
-  }
-
-  // Unregister a listener
-  off(event, callback) {
-    if (!this.events[event]) return;
-
-    this.events[event] = this.events[event].filter(listener => listener !== callback);
-  }
-
-  // Emit an event to all listeners
-  emit(event, ...args) {
-    if (!this.events[event]) return;
-
-    this.events[event].forEach(callback => callback(...args));
-  }
-
-  // Register a one-time listener
-  once(event, callback) {
-    const wrapper = (...args) => {
-      callback(...args); // Call the original callback
-      this.off(event, wrapper); // Remove the listener
-    };
-
-    this.on(event, wrapper);
-  }
-}
-
-class WebSocketApp extends EventEmitter {
-  constructor(websocketUrl) {
-    super();
-    this.socket = new WebSocket(websocketUrl);
-    console.log(this.socket)
-
-    this.socket.onopen = (event) => {
-      console.log({socket: "open"});
-    };
-
-    this.socket.onclose = (event) => {
-      console.log({socket: "closed"});
-    };
-
-    this.socket.onmessage = (rawData) => {
-      try {
-        const { type, ...rest } = this.parseRawMessage(rawData);
-        this.emit(type, this.socket, rest);
-      } catch (e) {
-        this.emit(EventType.ERROR, e);
-      }
-    };
-  }
-
-  catch(handlerFn) {
-    this.on(EventType.ERROR, handlerFn);
-  }
-
-  parseRawMessage = (rawMessage) => {
-    console.log({rawMessage})
-    if (!rawMessage?.data) {
-      throw new Error(`[ws][parseRawMessage] No data found on message.`);
-    }
-    const message = JSON.parse(rawMessage.data);
-    if (!message?.type) {
-      throw new Error(`[ws][parseRawMessage] No type found in message.`);
-    }
-    if (!(message.type in EventType)) {
-      throw new Error(`[ws][parseRawMessage] Message type not recognized. Got : '${message.type}'`);
-    }
-    return message;
-  }
-}
-*/
 
 const wsapp = new WebSocketApp(WEBSOCKET_URL);
 
@@ -274,11 +186,11 @@ wsapp.on(EventType.LIST_ROOMS, (_socket, { error, rooms }) => {
  * @event {JOIN_ROOM}
  *
  */
-wsapp.on(EventType.JOIN_ROOM, (_socket, { error, id, rooms }) => {
+wsapp.on(EventType.JOIN_ROOM, (_socket, { error, rooms }) => {
   if (error) {
     throw error;
   }
-  handleJoinedRoom(rooms, id);
+  handleJoinedRoom(rooms);
 });
 
 /**
@@ -355,7 +267,7 @@ wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, (_socket, { error, directConversat
 });
 
 wsapp.on(EventType.LIST_DIRECT_MESSAGES, (_socket, { messages }) => {
-  console.log("SUCCESS!", messages);
+  // TODO: finish this...
 });
 
 ////////////////////////////////////////////////////////////////////////
