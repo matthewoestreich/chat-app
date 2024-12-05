@@ -163,6 +163,11 @@ body {
   overflow: hidden;
 }
 
+.member-joined-bubble {
+  font-style: italic;
+  background-color: lightgray;
+}
+
 .message > .message-body {
   /*margin-top: auto;
         margin-bottom: auto;*/

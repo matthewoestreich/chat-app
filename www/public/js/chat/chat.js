@@ -434,6 +434,13 @@ function generateChatHTML(opts = { message: "", displayName: "", isError: false 
   return messageDiv;
 }
 
+function generateMemberJoinedChatHTML(name = "foo") {
+  const div = document.createElement("div");
+  div.classList.add("member-joined-bubble", "text-center", "text-dark");
+  div.innerText = `${name} has entered the chat!`;
+  return div;
+}
+
 function generateMemberHTML(name, id, isActive) {
   const li = document.createElement("li");
   const divUnContainer = document.createElement("div");
