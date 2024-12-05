@@ -45,7 +45,7 @@ function selectAllByUserId(db: sqlite3.Database, userId: string): Promise<Direct
 function selectInvitableUsers(db: sqlite3.Database, userId: string): Promise<Account[]> {
   return new Promise((resolve, reject) => {
     const query = `
-    SELECT * FROM "user" u WHERE u.id != ?
+    SELECT u.id, u.name FROM "user" u WHERE u.id != ?
     AND u.id NOT IN (
         SELECT userA_Id FROM direct_conversation WHERE userB_Id = ?
         UNION

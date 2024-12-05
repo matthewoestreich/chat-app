@@ -38,6 +38,7 @@ const chatTitle = document.getElementById("chat-title");
 /* Join direct convo modal */
 const joinDirectConvoModal = document.getElementById("join-direct-convo-modal");
 const createDirectConvoBtn = document.getElementById("create-direct-conversation-btn");
+const joinDirectConvoModalPeopleContainer = document.getElementById("join-direct-convo-modal-people-container");
 /* bootstrap instances/objects */
 const bsLeaveConfirmationModal = bootstrap.Modal.getOrCreateInstance(leaveRoomConfirmationModal);
 const bsCreateRoomModal = bootstrap.Modal.getOrCreateInstance(createRoomModal);
@@ -61,7 +62,7 @@ chatTextInput.addEventListener("keydown", (e) => {
 });
 
 sendChatBtn.addEventListener("click", (e) => {
-  const activeRoom = window?.rtcActiveRoom;
+  const activeRoom = roomsContainer.querySelector(".active-room");
   if (!activeRoom) {
     return;
   }
@@ -108,10 +109,11 @@ joinRoomBtn.addEventListener("click", (event) => {
 });
 
 openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
-  if (!window?.rtcActiveRoom) {
+  const activeRoom = roomsContainer.querySelector(".active-room");
+  if (!activeRoom) {
     return;
   }
-  leaveRoomConfirmationModalBody.innerText = `Are you sure you want to leave room '${window.rtcActiveRoom.getAttribute("name")}'?`;
+  leaveRoomConfirmationModalBody.innerText = `Are you sure you want to leave room '${activeRoom.getAttribute("name")}'?`;
   bsLeaveConfirmationModal.show();
 });
 
@@ -125,12 +127,13 @@ openCreateRoomModalBtn.addEventListener("click", (event) => {
 });
 
 confirmedLeaveRoomBtn.addEventListener("click", (event) => {
-  if (!window?.rtcActiveRoom) {
+  const activeRoom = roomsContainer.querySelector(".active-room");
+  if (!activeRoom) {
     bsLeaveConfirmationModal.hide();
     return;
   }
   addSpinnerToButton(confirmedLeaveRoomBtn, "Please wait...");
-  wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { id: window.rtcActiveRoom.id }));
+  wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { id: activeRoom.id }));
 });
 
 joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
@@ -171,7 +174,7 @@ function handleRoomClick(event, self) {
   openLeaveRoomConfirmModalBtn.disabled = false;
   // If DM's are open, close them..
   directMessagesDrawer.classList.remove("open");
-  const currentActiveRoom = window?.rtcActiveRoom;
+  const currentActiveRoom = roomsContainer.querySelector(".active-room");
   if (currentActiveRoom === self) {
     return;
   }
@@ -181,14 +184,17 @@ function handleRoomClick(event, self) {
   chatTitle.innerText = self.innerText;
   self.classList.add("active-room");
   currentActiveRoom?.classList?.remove("active-room");
-  window.rtcActiveRoom = self;
   wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { roomId: self.id }));
 }
 
 function handleDirectConversationClick(event, theElement) {
   chatTitle.classList.remove("chat-title-no-room");
   chatTitle.innerText = theElement.getAttribute("name") || `Direct Message`;
-  directMessagesDrawer.classList.toggle("open");
+  // Only auto-close drawer if we are on small screens
+  const currBp = getCurrentBreakpoint();
+  if (currBp === "sm" || currBp === "xs") {
+    directMessagesDrawer.classList.toggle("open");
+  }
   wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { id: theElement.id }));
 }
 
@@ -196,17 +202,17 @@ function handleDirectConversationClick(event, theElement) {
  * WebSocket related functions/handlers
  */
 
-// Active room element is stored at `window.rtcActiveRoom`.
 function handleRooms(appendToElement, rooms, onRenderDone = () => {}) {
   rooms.sort((a, b) => a.name.localeCompare(b.name));
   renderRooms(appendToElement, rooms, onRenderDone);
 }
 
-function handleJoinableRooms(appendToElement, rooms) {
+// Joinable entity is like a room or direct conversation
+function handleJoinableEntity(appendToElement, entities) {
   appendToElement.replaceChildren(); // clear anything existing..
-  for (const room of rooms) {
-    const roomEl = generateJoinableRoomHTML(room.name, room.id);
-    roomEl.addEventListener("click", function (event) {
+  for (const entity of entities) {
+    const entityEl = generateJoinableEntityHTML(entity.name, entity.id);
+    entityEl.addEventListener("click", function (event) {
       const currentActive = appendToElement.querySelector(".active");
       if (currentActive === this) {
         return;
@@ -216,7 +222,7 @@ function handleJoinableRooms(appendToElement, rooms) {
       }
       this.classList.add("active");
     });
-    appendToElement.appendChild(roomEl);
+    appendToElement.appendChild(entityEl);
   }
 }
 
@@ -395,8 +401,8 @@ function renderDirectConversations(conversations, appendToElement) {
  * Generate HTML functions
  */
 
-function generateChatHTML(opts = { message: "", displayName: "", isSending: true, isError: false }) {
-  let { message, displayName, isSending, isError } = opts;
+function generateChatHTML(opts = { message: "", displayName: "", isError: false }) {
+  let { message, displayName, isError } = opts;
   const messageDiv = document.createElement("div");
   messageDiv.setAttribute("name", displayName);
   const messageBodyDiv = document.createElement("div");
@@ -473,21 +479,23 @@ function generateRoomHTML(roomName, roomId, text) {
   return listItemLi;
 }
 
-function generateJoinableRoomHTML(roomName, roomId) {
+function generateJoinableEntityHTML(entityName, entityId, showIdInDisplay = true) {
   const li = document.createElement("li");
-  const pRoomName = document.createElement("div");
-  const pRoomId = document.createElement("p");
+  const pEntityName = document.createElement("div");
+  const pEntityId = document.createElement("p");
   li.classList.add("list-group-item", "list-group-item-action");
   li.type = "button";
-  li.id = roomId;
-  li.setAttribute("name", roomName);
-  pRoomName.innerText = roomName;
-  pRoomName.classList.add("fw-bold", "fs-5");
-  pRoomName.style.textDecoration = "bold";
-  pRoomId.style.fontSize = "0.6em";
-  pRoomId.innerText = roomId;
-  li.appendChild(pRoomName);
-  li.appendChild(pRoomId);
+  li.id = entityId;
+  li.setAttribute("name", entityName);
+  pEntityName.innerText = entityName;
+  pEntityName.classList.add("fw-bold", "fs-5");
+  pEntityName.style.textDecoration = "bold";
+  pEntityId.style.fontSize = "0.6em";
+  if (showIdInDisplay) {
+    pEntityId.innerText = entityId;
+  }
+  li.appendChild(pEntityName);
+  li.appendChild(pEntityId);
   return li;
 }
 
@@ -586,4 +594,20 @@ function scrollToElement(element) {
 
 function scrollToBottomOfElement(element) {
   element.scrollTop = element.scrollHeight;
+}
+
+function getCurrentBreakpoint() {
+  if (window.innerWidth < 576) {
+    return "xs";
+  } else if (window.innerWidth >= 576 && window.innerWidth < 768) {
+    return "sm";
+  } else if (window.innerWidth >= 768 && window.innerWidth < 992) {
+    return "md";
+  } else if (window.innerWidth >= 992 && window.innerWidth < 1200) {
+    return "lg";
+  } else if (window.innerWidth >= 1200 && window.innerWidth < 1400) {
+    return "xl";
+  } else {
+    return "xxl";
+  }
 }

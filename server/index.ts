@@ -65,6 +65,10 @@ app.get("/chat", [useJwt], (req: Request, res: Response) => {
   res.render("chat", { nonce: res.locals.cspNonce, name, email, id, websocketUrl: process.env.WSS_URL });
 });
 
+app.get("/chatv2", (req: Request, res: Response) => {
+  res.render("chatv2");
+});
+
 /**
  * @route {GET} /logout
  */

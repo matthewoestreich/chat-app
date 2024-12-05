@@ -19,7 +19,7 @@ interface JoinRoomPayload {
 }
 
 interface UnjoinRoomPayload {
-  roomId: string;
+  id: string; // room id
 }
 
 interface CreateRoomPayload {

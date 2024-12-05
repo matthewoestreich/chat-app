@@ -159,19 +159,22 @@ wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { id }: JoinRoomPayload)
  * `*_(LEAVE|LEFT)_*` events are different as the user has just "exited" the chat room.
  *
  */
-wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { roomId }: UnjoinRoomPayload) => {
+wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { id }: UnjoinRoomPayload) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    await chatService.deleteRoomMember(db, roomId, user.id);
+    if (!(await chatService.deleteRoomMember(db, id, user.id))) {
+      throw new Error("Something went wrong while removing.");
+    }
+
     const rooms = await chatService.selectRoomsByUserId(db, user.id);
     release();
 
     wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { rooms }));
 
     // Covers the case for when a user unjoins a room they are currently chatting in.
-    if (socket.activeIn === roomId) {
+    if (socket.activeIn && socket.activeIn === id) {
       wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
       wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
     }
@@ -278,6 +281,13 @@ wsapp.on(EventType.LIST_DIRECT_MESSAGES, async (socket: WebSocket, { id }: Direc
   }
 });
 
+/**
+ *
+ * @event {LIST_INVITABLE_USERS}
+ *
+ * Gets all users you are not currently in a direct conversation with..
+ *
+ */
 wsapp.on(EventType.LIST_INVITABLE_USERS, async (socket: WebSocket, {}) => {
   const user = socket.user!;
   const { db, release } = await DB_POOL.getConnection();
