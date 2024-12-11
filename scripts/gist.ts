@@ -117,13 +117,15 @@ export async function updateGist(filePaths: string[], gistId: string, apiKey: st
 export async function getGistFiles(gistId: string, apiKey: string): Promise<GistFile[]> {
   return new Promise(async (resolve, reject) => {
     const URL = `https://api.github.com/gists/${gistId}`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-      Accept: "application/vnd.github+json",
-    };
 
     try {
-      const response = await fetch(URL, { method: "GET", headers });
+      const response = await fetch(URL, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/vnd.github+json",
+        },
+      });
 
       const { status, ok, statusText } = response;
       if (!ok || (status < 200 && status > 300 && status !== 304)) {
@@ -164,12 +166,13 @@ export async function getGistFiles(gistId: string, apiKey: string): Promise<Gist
 async function getRawGist(url: string, apiKey: string): Promise<string> {
   return new Promise(async (resolve, reject) => {
     try {
-      const headers = {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/vnd.github+json",
-      };
-
-      const response = await fetch(url, { method: "GET", headers });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/vnd.github+json",
+        },
+      });
 
       const { status, ok, statusText } = response;
       if (!ok || (status < 200 && status > 300 && status !== 304)) {
