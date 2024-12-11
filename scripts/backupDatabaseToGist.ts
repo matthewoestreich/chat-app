@@ -5,6 +5,13 @@ import { backupDatabase } from "./database";
 
 const { log, error } = console;
 
+// @ts-ignore
+if (import.meta.url === `file://${process.argv[1]}`) {
+  (async () => {
+    await backupDatabaseToGist();
+  })();
+}
+
 export default async function backupDatabaseToGist() {
   if (!process.env.GH_GISTS_API_KEY) {
     error("[backupDbAndUploadGist] gists api key not found.");

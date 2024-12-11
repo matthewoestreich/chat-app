@@ -5,6 +5,13 @@ import { restoreDatabase } from "./database";
 
 const { log, error } = console;
 
+// @ts-ignore
+if (import.meta.url === `file://${process.argv[1]}`) {
+  (async () => {
+    await restoreDatabaseFromGist();
+  })();
+}
+
 export default async function restoreDatabaseFromGist() {
   if (!process.env.GH_GISTS_API_KEY) {
     return error("[restoreDatabaseFromGist] gists api key not found.");
@@ -26,7 +33,7 @@ export default async function restoreDatabaseFromGist() {
       return console.error(errMsg);
     }
 
-    nodeFs.writeFileSync(DATABASE_PATH, file.content);
+    nodeFs.writeFileSync(BACKUP_FILE_PATH, file.content);
     log(`  -> Wrote contents to file`);
 
     log(` -> Starting restore`);
@@ -37,6 +44,7 @@ export default async function restoreDatabaseFromGist() {
 
     log(`\n[restoreDatabaseFromGist][SUCCESS] Database restored.\n`);
   } catch (e) {
+    nodeFs.unlinkSync(BACKUP_FILE_PATH);
     error(`[restoreDatabaseFromGist] something went wrong restoring db from gist`, e);
   }
 }
