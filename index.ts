@@ -9,38 +9,40 @@ process.env.WSS_URL = process.env.WSS_URL || "";
 process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || "";
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
 
-const IS_PRODUCTION = process.env.WSS_URL.endsWith("onrender.com");
-
 if (!process.env.ABSOLUTE_DB_PATH || process.env.ABSOLUTE_DB_PATH === "") {
-  console.log("missing db path via 'process.env.ABSOLUTE_DB_PATH', unable to resolve it.");
+  console.log("[MAIN][ERROR] missing db path via 'process.env.ABSOLUTE_DB_PATH', unable to resolve it.");
   process.exit(1);
 }
 if (!process.env.JWT_SIGNATURE) {
   console.log("[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.");
   process.exit(1);
 }
-if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com")) {
-  // Add port to wss url if we are running local.
-  process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
-} else {
-  // If we are running on Render, start CronJob
-  // so our free-tier container isn't spun down due to inactivity.
-  keepAliveJob().start();
-  // Backup database to private gist.
-  backupDatabaseJob().start();
+if (!process.env.WSS_URL || process.env.WSS_URL === "") {
+  console.error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
+  process.exit(1);
 }
 
+const IS_PRODUCTION = process.env.WSS_URL.endsWith("onrender.com");
+
 async function Main() {
-  try {
-    if (IS_PRODUCTION) {
-      await restoreDatabaeFromGist();
-    } else {
-      await initDatabase();
+  return new Promise(async (resolve) => {
+    try {
+      if (IS_PRODUCTION) {
+        await restoreDatabaeFromGist();
+        // If we are running on Render, start CronJob so our free-tier container isn't spun down due to inactivity.
+        keepAliveJob().start();
+        backupDatabaseJob().start();
+      } else {
+        // Add port to wss url if we are running local.
+        process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
+        await initDatabase();
+      }
+      resolve(null);
+    } catch (e) {
+      console.log(`[MAIN][ERROR] Error during startup!`, { error: e });
+      process.exit(1);
     }
-  } catch (e) {
-    console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
-    process.exit(1);
-  }
+  });
 }
 
 (async () => await Main())();
