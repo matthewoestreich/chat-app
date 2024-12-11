@@ -100,33 +100,27 @@ export async function restoreDatabase(dbPath = DATABASE_PATH, backupPath = BACKU
         }
       });
 
-      // Read the dump file
-      nodeFs.readFile(backupPath, "utf-8", (err, data) => {
-        if (err) {
-          console.error("[restoreDb] Error reading backup file:", err.message);
-          db.close();
-          return reject(err);
-        }
+      // Read 'dump' file.
+      const data = nodeFs.readFileSync(backupPath, "utf-8");
+      // Split the SQL statements and execute them one by one
+      const sqlStatements = data.split(delimiter).map((s) => s.trim());
 
-        // Split the SQL statements and execute them one by one
-        const sqlStatements = data.split(delimiter).map((s) => s.trim());
-        db.serialize(() => {
-          sqlStatements.forEach((stmt) => {
-            db.run(stmt, (err) => {
-              if (err) {
-                console.error("[restoreDb] Error executing statement:", stmt, err.message);
-                return reject(err);
-              }
-            });
+      db.serialize(() => {
+        sqlStatements.forEach((statement) => {
+          db.run(statement, (err) => {
+            if (err) {
+              console.error("[restoreDb] Error executing statement:", statement, err.message);
+              return reject(err);
+            }
           });
         });
+      });
 
-        db.close((err) => {
-          if (err) {
-            console.error("[restoreDb] Database restored successfully, but we encountered an error closing database:", err);
-          }
-          resolve(null);
-        });
+      db.close((err) => {
+        if (err) {
+          console.error("[restoreDb] Database restored successfully, but we encountered an error closing database:", err);
+        }
+        resolve(null);
       });
     } catch (e) {
       console.error(`[restoreDb] something went wrong`, e);
