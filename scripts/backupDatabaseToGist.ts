@@ -8,7 +8,7 @@ import { backupDatabase } from "./database";
 
 const { log, error } = console;
 
-(async () => {
+export default async function backupDatabaseToGist() {
   if (!process.env.GH_GISTS_API_KEY) {
     error("[backupDbAndUploadGist] gists api key not found.");
     return;
@@ -36,4 +36,4 @@ const { log, error } = console;
     nodeFs.unlinkSync(BACKUP_FILE_PATH);
     error(`[backupDbAndUploadGist][ERROR]`, e);
   }
-})();
+}

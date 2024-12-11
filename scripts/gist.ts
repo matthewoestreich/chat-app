@@ -1,3 +1,4 @@
+// @ts-nocheck
 import nodePath from "node:path";
 import nodeFs from "node:fs";
 import dotenv from "dotenv";

@@ -8,38 +8,38 @@ import { restoreDatabase } from "./database";
 
 const { log, error } = console;
 
-(async () => {
+export default async function restoreDatabaseFromGist() {
   if (!process.env.GH_GISTS_API_KEY) {
-    error("[restoreDatabaseFromGist] gists api key not found.");
-    return;
+    return error("[restoreDatabaseFromGist] gists api key not found.");
   }
   if (!process.env.GIST_ID) {
-    error("[restoreDatabaseFromGist] gist id not found");
-    return;
+    return error("[restoreDatabaseFromGist] gist id not found");
   }
 
   try {
     log(`[restoreDatabaseFromGist][BEGIN]`);
-    console.log(` -> Getting Gist`);
+    log(` -> Getting Gist`);
     const files = await getGistFiles(process.env.GIST_ID, process.env.GH_GISTS_API_KEY);
-    console.log(`  -> Got Gist`);
+    log(`  -> Got Gist`);
 
-    console.log(` -> Writing contents to file`);
+    log(` -> Writing contents to file`);
     const file = files.find((f) => f.filename === BACKUP_FILE_NAME);
     if (!file) {
       const errMsg = `[restoreDbFromGist] backup file not found in gist.`;
       return console.error(errMsg);
     }
-    const tempBackupPath = nodePath.resolve(__dirname, `./${BACKUP_FILE_NAME}`);
-    const tempDbPath = nodePath.resolve(__dirname, "./testrestore.db");
 
-    nodeFs.writeFileSync(tempBackupPath, file.content);
-    console.log(`  -> Wrote contents to file`);
+    nodeFs.writeFileSync(DATABASE_PATH, file.content);
+    log(`  -> Wrote contents to file`);
 
-    console.log(` -> Starting restore`);
-    await restoreDatabase(tempDbPath, tempBackupPath);
-    console.log(`\n[restoreDatabaseFromGist][SUCCESS] Database restored.\n`);
+    log(` -> Starting restore`);
+    await restoreDatabase(DATABASE_PATH, BACKUP_FILE_PATH);
+
+    log(` -> Removing backup file..`);
+    nodeFs.unlinkSync(BACKUP_FILE_PATH);
+
+    log(`\n[restoreDatabaseFromGist][SUCCESS] Database restored.\n`);
   } catch (e) {
-    console.error(`[restoreDatabaseFromGist] something went wrong restoring db from gist`, e);
+    error(`[restoreDatabaseFromGist] something went wrong restoring db from gist`, e);
   }
-})();
+}

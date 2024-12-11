@@ -1,12 +1,15 @@
 import "dotenv/config";
 import "./server/wss/index";
 import initDatabase from "@/server/db/initDatabase";
-import keepalive from "@/scripts/keepAlive";
+import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
+import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
 process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || "";
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
+
+const IS_PRODUCTION = process.env.WSS_URL.endsWith("onrender.com");
 
 if (!process.env.ABSOLUTE_DB_PATH || process.env.ABSOLUTE_DB_PATH === "") {
   console.log("missing db path via 'process.env.ABSOLUTE_DB_PATH', unable to resolve it.");
@@ -22,12 +25,18 @@ if (process.env.WSS_URL !== "" && !process.env.WSS_URL.endsWith("onrender.com"))
 } else {
   // If we are running on Render, start CronJob
   // so our free-tier container isn't spun down due to inactivity.
-  keepalive.start();
+  keepAliveJob().start();
+  // Backup database to private gist.
+  backupDatabaseJob().start();
 }
 
 async function Main() {
   try {
-    await initDatabase();
+    if (IS_PRODUCTION) {
+      await restoreDatabaeFromGist();
+    } else {
+      await initDatabase();
+    }
   } catch (e) {
     console.log(`[MAIN][DB][ERROR] Error with database!`, { error: e });
     process.exit(1);

@@ -1,6 +1,7 @@
 import { CronJob } from "cron";
+import backupDatabaseToGist from "./backupDatabaseToGist";
 
-function keepaliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
+export function keepAliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   return new CronJob(
     "*/3 * * * *", // Every 3 minutes..
     function () {
@@ -12,4 +13,9 @@ function keepaliveJob(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   );
 }
 
-export default keepaliveJob();
+export function backupDatabaseJob() {
+  return new CronJob(
+    "0 * * * *", // Every hour
+    backupDatabaseToGist,
+  );
+}
