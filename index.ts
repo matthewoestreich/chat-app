@@ -1,6 +1,6 @@
 import "dotenv/config";
 import "./server/wss/index";
-import initDatabase from "@/server/db/initDatabase";
+import initDatabase from "@/scripts/initDatabase";
 import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
 import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
 
