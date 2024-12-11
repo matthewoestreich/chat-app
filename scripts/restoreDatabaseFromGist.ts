@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config({ path: nodePath.resolve(__dirname, "../.env") });
-import nodePath from "node:path";
 import nodeFs from "node:fs";
 import { BACKUP_FILE_PATH, BACKUP_FILE_NAME, DATABASE_PATH } from "./database";
 import { getGistFiles } from "./gist";
