@@ -6,7 +6,7 @@ import { restoreDatabase } from "./database";
 const { log, error } = console;
 
 // @ts-ignore
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   (async () => {
     await restoreDatabaseFromGist();
   })();
