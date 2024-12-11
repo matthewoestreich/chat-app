@@ -28,8 +28,7 @@ export default async function restoreDatabaseFromGist() {
     log(` -> Writing contents to file`);
     const file = files.find((f) => f.filename === BACKUP_FILE_NAME);
     if (!file) {
-      const errMsg = `[restoreDbFromGist] backup file not found in gist.`;
-      return console.error(errMsg);
+      return console.error(`[restoreDbFromGist] backup file not found in gist.`);
     }
 
     nodeFs.writeFileSync(BACKUP_FILE_PATH, file.content);
