@@ -17,12 +17,6 @@ try {
       from: "../www",
       to: tsconfig.compilerOptions.outDir,
     },
-    {
-      isDir: false,
-      isRecursive: false,
-      from: "../server/db/rtchat.db",
-      to: `${tsconfig.compilerOptions.outDir}/server/db`,
-    },
   ];
 
   for (const job of COPY_MAP) {
