@@ -12,7 +12,9 @@
     "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test": "jest",
     "jest:clearCache": "jest --clearCache",
-    "insert:fake:data": "tsx scripts/insertFakeData.ts"
+    "insert:fake:data": "tsx scripts/insertFakeData.ts",
+    "db:backup": "tsx scripts/backupDatabaseToGist.ts",
+    "db:restore": "tsx scripts/restoreDatabaseFromGist.ts"
   },
   "keywords": [],
   "author": "Matt Oestreich",
