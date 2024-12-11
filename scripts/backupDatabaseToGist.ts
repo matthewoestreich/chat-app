@@ -1,7 +1,6 @@
 import nodeFs from "node:fs";
-import { BACKUP_FILE_PATH, DATABASE_PATH } from "./database";
+import { backupDatabase, BACKUP_FILE_PATH, DATABASE_PATH } from "./database";
 import { updateGist } from "./gist";
-import { backupDatabase } from "./database";
 
 const { log, error } = console;
 
