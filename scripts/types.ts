@@ -66,3 +66,7 @@ interface GistChangeStatus {
   additions: number;
   deletions: number;
 }
+
+interface FilesObject {
+  [fileName: string]: { content: string };
+}

@@ -1,8 +1,6 @@
-// @ts-nocheck
+import "./types";
 import nodePath from "node:path";
 import nodeFs from "node:fs";
-import dotenv from "dotenv";
-dotenv.config();
 
 /**
  * Creates a new gist.
@@ -12,25 +10,16 @@ dotenv.config();
  * @param description?
  * @returns
  */
-export async function createNewGist(filePaths: string[], isPublic: boolean, apiKey: string, description?: string): Promise<Gist> {
+export async function createNewGist(apiKey: string, filePaths: string[], isPublic: boolean, description?: string): Promise<Gist> {
   const URL = "https://api.github.com/gists";
   const DEFAULT_DESCRIPTION = `Uploaded via script @ ${new Date().toUTCString()} UTC`;
 
   return new Promise(async (resolve, reject) => {
     try {
-      const files = {};
-      for (const filePath of filePaths) {
-        if (!isFile(filePath)) {
-          return reject(`[createGist] filePath:'${filePath}' not a file`);
-        }
-        const fileName = nodePath.basename(filePath);
-        files[fileName] = { content: nodeFs.readFileSync(filePath, "utf-8") };
-      }
-
       const gistData = {
         description: description === undefined ? DEFAULT_DESCRIPTION : description,
         public: isPublic,
-        files,
+        files: createFilesObject(filePaths),
       };
 
       const response = await fetch(URL, {
@@ -43,9 +32,8 @@ export async function createNewGist(filePaths: string[], isPublic: boolean, apiK
         body: JSON.stringify(gistData),
       });
 
-      const { status, ok, statusText } = response;
-      if (!ok || (status < 200 && status > 300 && status !== 304)) {
-        return reject(`[createGist] something went wrong during updating : ${statusText} | ${status}`);
+      if (!isResponseOk(response)) {
+        return reject(`[createGist] something went wrong during updating : ${response.statusText} | ${response.status}`);
       }
 
       const result = await response.json();
@@ -65,25 +53,16 @@ export async function createNewGist(filePaths: string[], isPublic: boolean, apiK
  * @param description? : description
  * @returns
  */
-export async function updateGist(filePaths: string[], gistId: string, apiKey: string, description?: string): Promise<Gist> {
+export async function updateGist(apiKey: string, gistId: string, filePaths: string[], description?: string): Promise<Gist> {
   return new Promise(async (resolve, reject) => {
     const URL = `https://api.github.com/gists/${gistId}`;
     const DEFAULT_DESCRIPTION = `Updated via script @ ${new Date().toUTCString()} UTC`;
 
     try {
-      const files = {};
-      for (const filePath of filePaths) {
-        if (!isFile(filePath)) {
-          return reject(`[updateGist] filePath:'${filePath}' not a file`);
-        }
-        const fileName = nodePath.basename(filePath);
-        files[fileName] = { content: nodeFs.readFileSync(filePath, "utf-8") };
-      }
-
       const gistData = {
         gist_id: gistId,
         description: description === undefined ? DEFAULT_DESCRIPTION : description,
-        files,
+        files: createFilesObject(filePaths),
       };
 
       const response = await fetch(URL, {
@@ -95,9 +74,8 @@ export async function updateGist(filePaths: string[], gistId: string, apiKey: st
         body: JSON.stringify(gistData),
       });
 
-      const { status, ok, statusText } = response;
-      if (!ok || (status < 200 && status > 300 && status !== 304)) {
-        return reject(`[updateGist] something went wrong during updating : ${statusText} | ${status}`);
+      if (!isResponseOk(response)) {
+        return reject(`[updateGist] something went wrong updating gist : ${response.statusText} | ${response.status}`);
       }
 
       const result = await response.json();
@@ -114,7 +92,7 @@ export async function updateGist(filePaths: string[], gistId: string, apiKey: st
  * @param apiKey
  * @returns
  */
-export async function getGistFiles(gistId: string, apiKey: string): Promise<GistFile[]> {
+export async function getGistFiles(apiKey: string, gistId: string): Promise<GistFile[]> {
   return new Promise(async (resolve, reject) => {
     const URL = `https://api.github.com/gists/${gistId}`;
 
@@ -127,29 +105,23 @@ export async function getGistFiles(gistId: string, apiKey: string): Promise<Gist
         },
       });
 
-      const { status, ok, statusText } = response;
-      if (!ok || (status < 200 && status > 300 && status !== 304)) {
-        return reject(`[getGistFiles] something went wrong getting gist files : ${statusText} | ${status}`);
+      if (!isResponseOk(response)) {
+        return reject(`[getGistFiles] something went wrong getting gist files : ${response.statusText} | ${response.status}`);
       }
 
       const result: Gist = await response.json();
-
-      const fileContents: GistFile[] = [];
       const files: GistFile[] = Object.values(result.files);
 
-      // We have to check if any files are truncated.
-      // GitHub only allows 1mb file size by default. If a file is truncated
-      // we have to get the raw file. This only works for anything under 10mb.
-      // If a file is > 10mb you have to use git to pull down the file...
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // We have to check if any files are truncated. GitHub only allows 1mb file size by default. If a file is truncated
+      // we have to get the raw file. This only works for anything under 10mb. If a file is > 10mb you have to use git to
+      // pull down the file...
+      for (let file of files) {
         if (file.truncated) {
           file.content = await getRawGist(file.raw_url, apiKey);
         }
-        fileContents.push(file);
       }
 
-      resolve(fileContents);
+      resolve(files);
     } catch (e) {
       reject(e);
     }
@@ -174,9 +146,8 @@ async function getRawGist(url: string, apiKey: string): Promise<string> {
         },
       });
 
-      const { status, ok, statusText } = response;
-      if (!ok || (status < 200 && status > 300 && status !== 304)) {
-        return reject(`[getRawGist] something went wrong getting raw gist : ${statusText} | ${status}`);
+      if (!isResponseOk(response)) {
+        return reject(`[getRawGist] something went wrong getting raw gist : ${response.statusText} | ${response.status}`);
       }
 
       const result = await response.text();
@@ -188,20 +159,49 @@ async function getRawGist(url: string, apiKey: string): Promise<string> {
 }
 
 /**
+ * Validates GitHub Gists API response.
+ * @param response
+ */
+function isResponseOk(response: Response): boolean {
+  const { status, ok } = response;
+  if (!ok || (status < 200 && status > 300 && status !== 304)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Returns a files object in "Gist acceptable format" for GitHub API.
+ * Files object shape = key is file name, 'content' field is contents of file.
+ * @param filePaths
+ */
+function createFilesObject(filePaths: string[]): FilesObject {
+  const files: FilesObject = {};
+
+  for (const filePath of filePaths) {
+    if (!isFile(filePath)) {
+      throw new Error(`[createFilesObject] filePath:'${filePath}' not a file`);
+    }
+
+    const fileName = nodePath.basename(filePath);
+    const content = nodeFs.readFileSync(filePath, "utf-8");
+
+    files[fileName] = { content };
+  }
+
+  return files;
+}
+
+/**
  * Determines if path is to a file.
  * @param path
- * @returns
  */
-function isFile(path) {
+function isFile(path: string): boolean {
   try {
     const stats = nodeFs.statSync(path);
     return stats.isFile();
   } catch (err) {
-    if (err.code === "ENOENT") {
-      console.error("Path does not exist.");
-      return false;
-    }
-    console.error("Error:", err);
+    console.error("[isFile][ERROR]", err);
     return false;
   }
 }

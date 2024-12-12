@@ -1,6 +1,8 @@
 import nodeFs from "node:fs";
 import { restoreDatabase, BACKUP_FILE_PATH, BACKUP_FILE_NAME, DATABASE_PATH } from "./database";
 import { getGistFiles } from "./gist";
+import dotenv from "dotenv";
+dotenv.config();
 
 const { log, error } = console;
 
@@ -22,7 +24,7 @@ export default async function restoreDatabaseFromGist() {
   try {
     log(`[restoreDatabaseFromGist][BEGIN]`);
     log(` -> Getting Gist`);
-    const files = await getGistFiles(process.env.GIST_ID, process.env.GH_GISTS_API_KEY);
+    const files = await getGistFiles(process.env.GH_GISTS_API_KEY, process.env.GIST_ID);
     log(`  -> Got Gist`);
 
     log(` -> Writing contents to file`);

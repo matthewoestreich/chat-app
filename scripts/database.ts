@@ -13,6 +13,10 @@ const DELIMITER = "~~__~~";
 export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP_FILE_PATH, delimiter = DELIMITER) {
   return new Promise((resolve, reject) => {
     try {
+      if (!nodeFs.existsSync(dbPath)) {
+        return reject(`No database found at dbPath:'${dbPath}'`);
+      }
+
       const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY);
       const backupStream = nodeFs.createWriteStream(backupPath);
 
@@ -27,8 +31,10 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
           }
 
           rows.forEach((row) => {
-            //@ts-ignore
-            backupStream.write(`${row.sql.trim()};${delimiter}\n`);
+            // @ts-ignore
+            const sql = String(row.sql).trim().replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS").replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS").replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
+            // @ts-ignore
+            backupStream.write(`${sql};${delimiter}\n`);
           });
 
           // Write data
@@ -55,7 +61,7 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
                   // @ts-ignore
                   const values = Object.values(row).map((value) => (value === null ? "NULL" : `'${value.toString().replace(/'/g, "''")}'`));
 
-                  const insertStmt = `INSERT INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
+                  const insertStmt = `INSERT OR IGNORE INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
                   backupStream.write(insertStmt + delimiter + "\n");
                 },
                 (err) => {

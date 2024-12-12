@@ -1,6 +1,8 @@
 import nodeFs from "node:fs";
 import { backupDatabase, BACKUP_FILE_PATH, DATABASE_PATH } from "./database";
 import { updateGist } from "./gist";
+import dotenv from "dotenv";
+dotenv.config();
 
 const { log, error } = console;
 
@@ -28,7 +30,7 @@ export default async function backupDatabaseToGist() {
 
     log(" -> Uploading gist.");
     // Update our gist with new data
-    await updateGist([BACKUP_FILE_PATH], process.env.GIST_ID, process.env.GH_GISTS_API_KEY);
+    await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [BACKUP_FILE_PATH]);
     log("  -> Uploaded gist.");
 
     // Delete local backup file after uploading gist
@@ -37,7 +39,9 @@ export default async function backupDatabaseToGist() {
 
     log("\n[backupDbAndUploadGist][SUCCESS] Done.\n");
   } catch (e) {
-    nodeFs.unlinkSync(BACKUP_FILE_PATH);
+    if (nodeFs.existsSync(BACKUP_FILE_PATH)) {
+      nodeFs.unlinkSync(BACKUP_FILE_PATH);
+    }
     error(`[backupDbAndUploadGist][ERROR]`, e);
   }
 }
