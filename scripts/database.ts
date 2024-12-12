@@ -80,7 +80,6 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
             db.close(() => {
               backupStream.write("COMMIT;\n");
               backupStream.end(() => {
-                console.log("Database backup complete.");
                 resolve(null);
               });
             });
