@@ -65,7 +65,7 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
                   // @ts-ignore
                   const values = Object.values(row).map((value) => (value === null ? "NULL" : `'${value.toString().replace(/'/g, "''")}'`));
 
-                  const insertStmt = `INSERT OR IGNORE INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
+                  const insertStmt = `INSERT INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
                   backupStream.write(insertStmt + delimiter + "\n");
                 },
                 (err) => {

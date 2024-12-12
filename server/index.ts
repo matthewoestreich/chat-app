@@ -1,3 +1,4 @@
+import { Server, IncomingMessage, ServerResponse } from "node:http";
 import path from "path";
 import express, { Request, Response } from "express";
 import helmet from "helmet";
@@ -9,6 +10,16 @@ import SQLitePool from "@/server/db/SQLitePool.js";
 import apiRouter from "@/server/routers/api";
 
 const app = express();
+
+export default function startExpressApp(): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> {
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(app.listen(process.env.EXPRESS_PORT));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
 
 app.set("view engine", "pug");
 app.set("views", path.resolve(__dirname, "../www"));
@@ -103,7 +114,3 @@ app.get("*", (_, res: Response) => {
  * Catch-all error handler
  */
 app.use(useErrorCatchall);
-
-export default app.listen(process.env.EXPRESS_PORT, () => {
-  console.log(`Listening on port ${process.env.EXPRESS_PORT}`);
-});

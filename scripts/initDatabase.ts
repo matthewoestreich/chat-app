@@ -28,6 +28,7 @@ export default async function () {
           CREATE TABLE IF NOT EXISTS chat (
             roomId TEXT NOT NULL,
             userId TEXT NOT NULL,
+            PRIMARY KEY (userId, roomId),
             CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES room(id),
             CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
             CHECK(length(roomId) = 36 AND length(userId) = 36)

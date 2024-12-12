@@ -1,5 +1,6 @@
 import "dotenv/config";
-import "./server/wss/index";
+import startExpressApp from "@/server/index";
+import startWebSocketApp from "@/server/wss/index";
 import initDatabase from "@/scripts/initDatabase";
 import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
 import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
@@ -37,6 +38,20 @@ async function Main() {
         process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
         await initDatabase();
       }
+
+      /**
+       * Start Express App + WebSocketApp
+       */
+
+      // Start Express
+      const server = await startExpressApp();
+      console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
+
+      // Start WebSocketApp
+      startWebSocketApp(server, () => {
+        console.log(`WebSocketApp listening via Express server`);
+      });
+
       resolve(null);
     } catch (e) {
       console.log(`[MAIN][ERROR] Error during startup!`, { error: e });

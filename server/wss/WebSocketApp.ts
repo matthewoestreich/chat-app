@@ -7,6 +7,11 @@ import { EventTypeMissingError, EventTypeUnknownError } from "../errors";
 
 /**
  * Wrapper around WebSocketServer that emits events based on WebSocket message(s).
+ *
+ * Must call `.listen` to actually start WebSocketApp!!
+ * For example:
+ *  const mywsapp = new WebSocketApp();
+ *  mywsapp.listen(options, () => { console.log(`mywsapp listening`) });
  */
 export default class WebSocketApp extends EventEmitter {
   private server: WebSocketServer;
@@ -31,8 +36,11 @@ export default class WebSocketApp extends EventEmitter {
     return message;
   }
 
-  constructor(options?: ServerOptions) {
+  constructor() {
     super();
+  }
+
+  listen(options: ServerOptions, callback?: () => void) {
     this.server = new WebSocketServer(options);
     this.socket = {} as WebSocket;
 
@@ -54,6 +62,10 @@ export default class WebSocketApp extends EventEmitter {
         }
       });
     });
+
+    if (callback) {
+      callback();
+    }
   }
 
   // Error handling

@@ -1,9 +1,8 @@
-import { IncomingMessage } from "node:http";
+import { IncomingMessage, Server, ServerResponse } from "node:http";
 import { WebSocket } from "ws";
 import jsonwebtoken from "jsonwebtoken";
 import { v7 as uuidV7 } from "uuid";
 import { chatService, directConversationService, directMessagesService, messagesService, roomService } from "@/server/db/services/index";
-import server from "@/server/index";
 import SQLitePool from "@/server/db/SQLitePool";
 import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
@@ -13,7 +12,11 @@ import EventType from "./EventType";
 import WebSocketMessage from "./WebSocketMessage";
 
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
-const wsapp = new WebSocketApp({ server });
+const wsapp = new WebSocketApp();
+
+export default function startWebSocketApp(server: Server<typeof IncomingMessage, typeof ServerResponse>, callback?: () => void): void {
+  wsapp.listen({ server }, callback);
+}
 
 // Catch any errors.
 // Wanted to be more explicit with this as opposed to emitting an 'ERROR' event type.
