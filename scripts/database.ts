@@ -32,7 +32,11 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
 
           rows.forEach((row) => {
             // @ts-ignore
-            const sql = String(row.sql).trim().replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS").replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS").replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
+            // prettier-ignore
+            const sql = String(row.sql).trim()
+              .replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+              .replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
+              .replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
             // @ts-ignore
             backupStream.write(`${sql};${delimiter}\n`);
           });
