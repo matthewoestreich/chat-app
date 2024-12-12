@@ -14,7 +14,7 @@ dotenv.config();
  */
 export async function createNewGist(filePaths: string[], isPublic: boolean, apiKey: string, description?: string): Promise<Gist> {
   const URL = "https://api.github.com/gists";
-  const DEFAULT_DESCRIPTION = `Uploaded via script @ ${new Date().toLocaleString()}`;
+  const DEFAULT_DESCRIPTION = `Uploaded via script @ ${new Date().toUTCString()} UTC`;
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -68,7 +68,7 @@ export async function createNewGist(filePaths: string[], isPublic: boolean, apiK
 export async function updateGist(filePaths: string[], gistId: string, apiKey: string, description?: string): Promise<Gist> {
   return new Promise(async (resolve, reject) => {
     const URL = `https://api.github.com/gists/${gistId}`;
-    const DEFAULT_DESCRIPTION = `Updated via script @ ${new Date().toLocaleString()}`;
+    const DEFAULT_DESCRIPTION = `Updated via script @ ${new Date().toUTCString()} UTC`;
 
     try {
       const files = {};
