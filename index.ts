@@ -31,8 +31,8 @@ async function Main() {
       if (IS_PRODUCTION) {
         await restoreDatabaeFromGist();
         // If we are running on Render, start CronJob so our free-tier container isn't spun down due to inactivity.
-        keepAliveJob().start();
-        backupDatabaseJob().start();
+        keepAliveJob.start();
+        backupDatabaseJob.start();
       } else {
         // Add port to wss url if we are running local.
         process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
