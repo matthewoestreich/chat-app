@@ -8,8 +8,6 @@ import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
-import EventType from "./EventType";
-import WebSocketMessage from "./WebSocketMessage";
 
 const DB_POOL = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 const wsapp = new WebSocketApp();
@@ -19,7 +17,6 @@ export default function startWebSocketApp(server: Server<typeof IncomingMessage,
 }
 
 // Catch any errors.
-// Wanted to be more explicit with this as opposed to emitting an 'ERROR' event type.
 wsapp.catch((error: Error, socket: WebSocket) => {
   console.error({ error, user: socket.user! });
 });
@@ -32,23 +29,27 @@ wsapp.catch((error: Error, socket: WebSocket) => {
  * It's kind of like an "initial connection" event.
  *
  */
-wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket: WebSocket, req: IncomingMessage) => {
-  const cookies = parseCookies(req.headers.cookie || "");
+wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
+  const cookies = parseCookies(request.headers.cookie || "");
+
   if (!(await isAuthenticated(cookies?.session))) {
     const { code, definition } = WEBSOCKET_ERROR_CODE.Unauthorized;
-    return socket.close(code, definition);
+    return client.socket.close(code, definition);
   }
 
-  socket.user = jsonwebtoken.decode(cookies.session) as Account;
+  client.user = jsonwebtoken.decode(cookies.session) as Account;
 
   const { db, release } = await DB_POOL.getConnection();
-  const rooms = await chatService.selectRoomsByUserId(db, socket.user.id);
+  const rooms = await chatService.selectRoomsByUserId(db, client.user.id);
+
   release();
 
-  wsapp.send(new WebSocketMessage(EventType.LIST_ROOMS, { rooms }));
-  rooms.forEach((room) => wsapp.cacheRoom(room.id)); // Add rooms to cache just so we have them there.
-  wsapp.cacheUserInRoom(socket.user.id, WebSocketApp.ROOM_ID_UNASSIGNED); // Add user to "unassigned" room..
-  socket.activeIn = WebSocketApp.ROOM_ID_UNASSIGNED;
+  client.send("LIST_ROOMS", { rooms });
+
+  rooms.forEach((room) => wsapp.addContainerToCache(room.id));
+
+  const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
+  client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
 });
 
 /**
@@ -59,18 +60,14 @@ wsapp.on(EventType.CONNECTION_ESTABLISHED, async (socket: WebSocket, req: Incomi
  * log the reason for socket closure.
  *
  */
-wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: Buffer) => {
-  const user = socket.user!;
-
-  if (socket.activeIn) {
-    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
-    wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
+wsapp.on("CONNECTION_CLOSED", (client, { code, reason }) => {
+  if (client.activeIn.container) {
+    client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
+    wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
-
-  // Trying to figure out how Render force closes my sockets. Maybe can automate reopening them?
   const reasonString = reason.toString();
   const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  console.log(`socket closed.`, { user: socket?.user, code, why });
+  console.log(`socket closed.`, { user: client.user, code, why });
 });
 
 /**
@@ -80,15 +77,18 @@ wsapp.on(EventType.CONNECTION_CLOSED, (socket: WebSocket, code: number, reason: 
  * Someone is sending a chat message to a room.
  *
  */
-wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { roomId, messageText }: SendMessagePayload) => {
-  const user = socket.user!;
-  wsapp.broadcast(roomId, new WebSocketMessage(EventType.SEND_MESSAGE, { userId: user.id, userName: user.name, messageText }));
+wsapp.on("SEND_MESSAGE", async (client, { message }) => {
+  client.broadcast("RECEIVE_MESSAGE", {
+    userId: client.user.id,
+    userName: client.user.name,
+    message,
+  });
 
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     // No need to await this, we don't need a response, and nothing depends on the result.
-    messagesService.insertMessage(db, roomId, user.id, messageText);
+    messagesService.insertMessage(db, client.activeIn.id, client.user.id, message);
     release();
   } catch (e) {
     release();
@@ -103,28 +103,29 @@ wsapp.on(EventType.SEND_MESSAGE, async (socket: WebSocket, { roomId, messageText
  * JOIN_ROOM is used when a user has joined a room they were not a member of prior.
  *
  */
-wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPayload) => {
-  const user = socket.user!;
-
+wsapp.on("ENTER_ROOM", async (client, { id }) => {
   // Notify existing room (which user is now leaving) that user is leaving.
-  if (socket.activeIn) {
-    wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
-    wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
+  if (client.activeIn) {
+    client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
+    wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
 
-  wsapp.broadcast(roomId, new WebSocketMessage(EventType.MEMBER_ENTERED_ROOM, { id: user.id }));
-  wsapp.cacheUserInRoom(user.id, roomId);
-  socket.activeIn = roomId;
+  const container = wsapp.addClientToCache(client, id);
+  client.setActiveIn(id, container);
+  client.broadcast("MEMBER_ENTERED_ROOM", { id: client.user.id });
 
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    let members = await chatService.selectRoomMembersExcludingUser(db, roomId, user.id);
-    const messages = await messagesService.selectByRoomId(db, roomId);
+    let members = await chatService.selectRoomMembersExcludingUser(db, id, client.user.id);
+    const messages = await messagesService.selectByRoomId(db, id);
+
     release();
+
     // Add `isActive` property for each user in this room based upon if they're cached in this room.
-    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedRoom(roomId)!.has(m.userId) }));
-    wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { members, messages }));
+    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedContainer(id)!.has(m.userId) }));
+
+    client.send("ENTERED_ROOM", { members, messages });
   } catch (e) {
     release();
   }
@@ -138,17 +139,17 @@ wsapp.on(EventType.ENTER_ROOM, async (socket: WebSocket, { roomId }: EnterRoomPa
  * ENTER_ROOM is for when a user enters an already joined room.
  *
  */
-wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { id }: JoinRoomPayload) => {
-  const user = socket.user!;
+wsapp.on("JOIN_ROOM", async (client, { id }) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     const rooms = await chatService.addUserByIdToRoomById(db, user.id, id, true);
     release();
-    wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { rooms }));
+    client.send("JOINED_ROOM", { rooms });
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.JOIN_ROOM, { error: e as Error }));
+    client.send("ERROR", { event: "JOIN_ROOM", error: e as Error });
   }
 });
 
@@ -162,28 +163,27 @@ wsapp.on(EventType.JOIN_ROOM, async (socket: WebSocket, { id }: JoinRoomPayload)
  * `*_(LEAVE|LEFT)_*` events are different as the user has just "exited" the chat room.
  *
  */
-wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { id }: UnjoinRoomPayload) => {
-  const user = socket.user!;
+wsapp.on("UNJOIN_ROOM", async (client, { id }) => {
   const { db, release } = await DB_POOL.getConnection();
 
   try {
-    if (!(await chatService.deleteRoomMember(db, id, user.id))) {
+    if (!(await chatService.deleteRoomMember(db, id, client.user.id))) {
       throw new Error("Something went wrong while removing.");
     }
 
-    const rooms = await chatService.selectRoomsByUserId(db, user.id);
+    const rooms = await chatService.selectRoomsByUserId(db, client.user.id);
     release();
 
-    wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { rooms }));
+    client.send("LIST_ROOMS", { rooms });
 
     // Covers the case for when a user unjoins a room they are currently chatting in.
-    if (socket.activeIn && socket.activeIn === id) {
-      wsapp.broadcast(socket.activeIn, new WebSocketMessage(EventType.MEMBER_LEFT_ROOM, { id: user.id }));
-      wsapp.removeCachedUserFromRoom(user.id, socket.activeIn);
+    if (client.activeIn.container && client.activeIn.id === id) {
+      client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
+      wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
     }
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { error: e as Error }));
+    client.send("ERROR", { event: "UNJOIN_ROOM", error: e as Error });
   }
 });
 
@@ -194,113 +194,114 @@ wsapp.on(EventType.UNJOIN_ROOM, async (socket: WebSocket, { id }: UnjoinRoomPayl
  * Creates a new room. The creator of the room is auto-joined.
  *
  */
-wsapp.on(EventType.CREATE_ROOM, async (socket: WebSocket, { name, isPrivate }: CreateRoomPayload) => {
-  const user = socket.user!;
+wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
-  if (!isPrivate) {
-    isPrivate = 0;
+  if (isPrivate === undefined) {
+    isPrivate = false;
   }
 
   try {
-    const room = await roomService.insert(db, name, uuidV7(), isPrivate);
+    const room = await roomService.insert(db, name, uuidV7(), isPrivate === true ? 1 : 0);
     const rooms = await chatService.addUserByIdToRoomById(db, user.id, room.id, true);
     release();
-    wsapp.send(new WebSocketMessage(EventType.CREATE_ROOM, { id: room.id, rooms }));
-    wsapp.cacheRoom(room.id);
+    client.send("CREATED_ROOM", { id: room.id, rooms });
+    wsapp.addContainerToCache(room.id);
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.CREATE_ROOM, { error: e as Error }));
+    client.send("ERROR", { event: "CREATE_ROOM", error: e as Error });
   }
 });
 
 /**
  *
- * @event {LIST_JOINABLE_ROOMS}
+ * @event {GET_JOINABLE_ROOMS}
  *
  * Gets all rooms that a user is not already a member of.
  *
  */
-wsapp.on(EventType.LIST_JOINABLE_ROOMS, async (socket: WebSocket) => {
-  const user = socket.user!;
+wsapp.on("GET_JOINABLE_ROOMS", async (client) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     const rooms = await roomService.selectUnjoinedRooms(db, user.id);
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { rooms }));
+    client.send("LIST_JOINABLE_ROOMS", { rooms });
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, { error: e as Error }));
+    client.send("ERROR", { event: "LIST_JOINABLE_ROOMS", error: e as Error });
   }
 });
 
 /**
  *
- * @event {LIST_DIRECT_CONVERSATIONS}
+ * @event {GET_DIRECT_CONVERSATIONS}
  *
  * Gets all direct conversations (DMs) that a user is currently in.
  *
  */
-wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, async (socket: WebSocket) => {
-  const user = socket.user!;
+wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     const dc = await directConversationService.selectAllByUserId(db, user.id);
     release();
-    const directConversations = dc.map((c) => ({ ...c, isActive: wsapp.cacheContainsUser(c.id) }));
-    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { directConversations }));
-  } catch (error) {
+    const directConversations = dc.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) }));
+    client.send("LIST_DIRECT_CONVERSATIONS", { directConversations });
+  } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, { error: error as Error }));
+    client.send("ERROR", { event: "GET_DIRECT_CONVERSATIONS", error: e as Error });
   }
 });
 
 /**
  *
- * @event {LIST_DIRECT_MESSAGES}
+ * @event {GET_DIRECT_MESSAGES}
  *
  * Gets all messages in a direct conversation.
  *
  */
-wsapp.on(EventType.LIST_DIRECT_MESSAGES, async (socket: WebSocket, { id }: DirectMessagesPayload) => {
-  const user = socket.user!;
+wsapp.on("GET_DIRECT_MESSAGES", async (client, { id }) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     const messages = await directMessagesService.selectByConversationId(db, id);
     release();
+
     if (user.id !== messages[0].fromUserId && user.id !== messages[0].toUserId) {
       const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
       const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: user };
-      console.log(errMsg, errData);
-      return;
+      return console.log(errMsg, errData);
     }
-    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { messages }));
+
+    client.send("LIST_DIRECT_MESSAGES", { directMessages: messages });
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { error: e as Error }));
+    client.send("ERROR", { event: "GET_DIRECT_MESSAGES", error: e as Error });
   }
 });
 
 /**
  *
- * @event {LIST_INVITABLE_USERS}
+ * @event {GET_INVITABLE_USERS}
  *
  * Gets all users you are not currently in a direct conversation with..
  *
  */
-wsapp.on(EventType.LIST_INVITABLE_USERS, async (socket: WebSocket, {}) => {
-  const user = socket.user!;
+wsapp.on("GET_INVITABLE_USERS", async (client) => {
+  const user = client.user;
   const { db, release } = await DB_POOL.getConnection();
 
   try {
     const users = await directConversationService.selectInvitableUsers(db, user.id);
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, { users }));
+    client.send("LIST_INVITABLE_USERS", { users });
   } catch (e) {
     release();
-    wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, { error: e as Error }));
+    client.send("ERROR", { event: "GET_INVITABLE_USERS", error: e as Error });
   }
 });

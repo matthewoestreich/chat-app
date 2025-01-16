@@ -2,8 +2,8 @@ import EventEmitter from "node:events";
 import { IncomingMessage } from "node:http";
 import { WebSocketServer, WebSocket, ServerOptions, RawData } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
-import EventType from "./EventType";
-import { EventTypeMissingError, EventTypeUnknownError } from "../errors";
+import { EventTypeMissingError } from "../errors";
+import WebSocketClient from "./WebSocketClient";
 
 /**
  * Wrapper around WebSocketServer that emits events based on WebSocket message(s).
@@ -14,51 +14,63 @@ import { EventTypeMissingError, EventTypeUnknownError } from "../errors";
  *  mywsapp.listen(options, () => { console.log(`mywsapp listening`) });
  */
 export default class WebSocketApp extends EventEmitter {
+  on<K extends EventTypes>(event: K, handler: (client: WebSocketClient, payload: EventPayload<K>) => void): this {
+    return super.on(event, handler);
+  }
+
+  emit<K extends EventTypes>(event: K, client: WebSocketClient, payload: EventPayload<K>): boolean {
+    return super.emit(event, client, payload);
+  }
+
   private server: WebSocketServer;
-  private socket: WebSocket;
   private catchFn: IWebSocketErrorHandler = (_error: Error, _socket: WebSocket) => {};
 
-  private static rooms: Map<string, Map<string, WebSocket>> = new Map();
+  /**
+   * cache
+   * Look at cache as containers that hold items.
+   * For example, chat rooms that hold members/users.
+   */
+  private static cache: Map<string, Map<string, WebSocketClient>> = new Map();
 
   /**
    * Parses a raw incoming websocket message.
    * @param rawMessage
    * @returns {WebSocketMessage}
    */
-  private parseRawMessage(rawMessage: RawData): WebSocketMessage {
+  private parseRawMessage(rawMessage: RawData): WebSocketMessage<EventTypes> {
     const message = WebSocketMessage.from(rawMessage);
+
     if (!message.type) {
       throw new EventTypeMissingError({ message: "Message missing 'type' key" });
     }
-    if (!(message.type in EventType)) {
-      throw new EventTypeUnknownError({ message: "Unkown message type.", data: { type: message.type } });
-    }
+
     return message;
   }
 
   constructor() {
     super();
+    WebSocketApp.cache.set(WebSocketApp.ID_UNASSIGNED, new Map());
   }
 
   listen(options: ServerOptions, callback?: () => void) {
     this.server = new WebSocketServer(options);
-    this.socket = {} as WebSocket;
 
     this.server.on("connection", async (socket: WebSocket, request: IncomingMessage) => {
-      this.socket = socket;
-      this.emit(EventType.CONNECTION_ESTABLISHED, socket, request);
+      const client = new WebSocketClient(socket);
+
+      this.emit("CONNECTION_ESTABLISHED", client, { request });
 
       socket.on("close", (code: number, reason: Buffer) => {
-        this.emit(EventType.CONNECTION_CLOSED, socket, code, reason);
+        this.emit("CONNECTION_CLOSED", client, { code, reason });
       });
 
       socket.on("message", (rawMessage: RawData, _isBinary: boolean) => {
         try {
           const { type, ...data } = this.parseRawMessage(rawMessage);
           console.log({ type, ...data });
-          this.emit(type, this.socket, data || {});
+          this.emit(type, client, data || {});
         } catch (e) {
-          this.catchFn(e as Error, this.socket);
+          this.catchFn(e as Error, socket);
         }
       });
     });
@@ -68,99 +80,62 @@ export default class WebSocketApp extends EventEmitter {
     }
   }
 
+  // Close the WebSocketServer
+  shutdown() {
+    if (this.server) {
+      this.server.close();
+    }
+  }
+
   // Error handling
   catch(handler: IWebSocketErrorHandler) {
     this.catchFn = handler;
   }
 
   // For when someone first logs in or what not and they aren't in a room, but they're online.
-  static ROOM_ID_UNASSIGNED: string = "__UNASSIGNED__";
+  static ID_UNASSIGNED: string = "__UNASSIGNED__";
 
   /**
-   * Wrapper for calling `this.socket.send`.
-   * @param message Message to sned to the current socket (this.socket)
+   * Get a 'container' from our room cache.
+   * @param containerId ID of container to get.
    */
-  send(message: WebSocketMessage): void {
-    this.socket.send(message.toJSONString());
+  getCachedContainer(containerId: string): Container {
+    return WebSocketApp.cache.get(containerId) || new Map();
   }
 
   /**
-   * Send a message "directly" to another socket (vs to current socket (aka `this.socket`)).
-   * Useful for brokering direct messages.
-   * @param socket Socket to send message to.
-   * @param message Message to send
+   * Deletes a container from cache.
+   * @param containerId ID of container to delete.
    */
-  sendToSocket(socket: WebSocket, message: WebSocketMessage): void {
-    socket.send(message.toJSONString());
+  deleteCachedContainer(containerId: string): void {
+    WebSocketApp.cache.delete(containerId);
   }
 
   /**
-   * *IMPORTANT*; `broadcast` offers no protection against spoofing, etc..
-   * If you need these protections, implement them prior to calling `broadcast`.
-   * Sends a message to every socket that is in a cached room.
-   * @param toRoomId
-   * @param message
-   */
-  broadcast(toRoomId: string, message: WebSocketMessage): void {
-    if (toRoomId === WebSocketApp.ROOM_ID_UNASSIGNED) {
-      return;
-    }
-
-    const room = this.getCachedRoom(toRoomId);
-    if (!room) {
-      return;
-    }
-
-    for (const [userId, userSocket] of room) {
-      // Don't send message back to ourselves..
-      if (this.socket.user!.id === userId) {
-        continue;
-      }
-      this.sendToSocket(userSocket, message);
-    }
-  }
-
-  /**
-   * Get a room from our room cache.
-   * @param roomId ID of room to get.
-   * @returns {Map<string, WebSocket> | undefined}
-   */
-  getCachedRoom(roomId: string): Map<string, WebSocket> | undefined {
-    return WebSocketApp.rooms.get(roomId);
-  }
-
-  /**
-   * Deletes a room from our room cache.
-   * @param roomId ID of room to delete.
-   */
-  removeCachedRoom(roomId: string): void {
-    WebSocketApp.rooms.delete(roomId);
-  }
-
-  /**
-   * Removes user from room, if they exist in said room,
+   * Removes item from container, if they exist in said container,
    * oherwise we do nothing. No error is thrown.
-   * @param userId ID of user to remove
-   * @param roomId ID of room that user is currently in
+   * @param itemId ID of item to remove
+   * @param containerId ID of container that item is currently in
    */
-  removeCachedUserFromRoom(userId: string, roomId: string): void {
-    const room = this.getCachedRoom(roomId);
-    if (room && room.has(userId)) {
-      room.delete(userId);
-      if (room.size === 0) {
-        this.removeCachedRoom(roomId);
+  deleteCachedItem(itemId: string, containerId: string): void {
+    const container = this.getCachedContainer(containerId);
+
+    if (container && container.has(itemId)) {
+      container.delete(itemId);
+      if (container.size === 0) {
+        WebSocketApp.cache.delete(containerId);
       }
     }
   }
 
   /**
-   * Essentially checks if a user is active in any cached room.
-   * @param userId ID of user that we check for.
+   * Essentially checks if an item exists in any cached container.
+   * @param itemId ID of item that we check for.
    * @returns {boolean}
    */
-  cacheContainsUser(userId: string): boolean {
-    for (const [_, members] of WebSocketApp.rooms) {
-      if (members.has(userId)) {
+  isItemCached(itemId: string): boolean {
+    for (const [_, container] of WebSocketApp.cache) {
+      if (container.has(itemId)) {
         return true;
       }
     }
@@ -168,25 +143,32 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   /**
-   * Creates a room within our "rooms" cache if it doesn't exist.
-   * @param roomId ID of room to cache
+   * Checks if a container with given ID is cached.
+   * @param containerId ID of container
    */
-  cacheRoom(roomId: string): void {
-    if (!WebSocketApp.rooms.has(roomId)) {
-      WebSocketApp.rooms.set(roomId, new Map());
-    }
+  isContainerCached(containerId: string): boolean {
+    return WebSocketApp.cache.has(containerId);
   }
 
   /**
-   * Will create a room if it doesn't exist and add a user + socket (this.socket) to it.
-   * @param userId ID of user to cache
-   * @param roomId ID of room to cache user in
+   * Creates a container within our cache if it doesn't exist.
+   * @param containerId ID of room to cache
    */
-  cacheUserInRoom(userId: string, roomId: string): void {
-    if (!this.socket) {
+  addContainerToCache(containerId: string): void {
+    if (this.isContainerCached(containerId)) {
       return;
     }
-    this.cacheRoom(roomId);
-    this.getCachedRoom(roomId)!.set(userId, this.socket);
+    WebSocketApp.cache.set(containerId, new Map());
+  }
+
+  /**
+   * Will create a container if it doesn't exist and add an item to it.
+   * Also adds socket to item (this.socket)
+   * @param client Client to cache
+   * @param containerId ID of room to cache user in
+   */
+  addClientToCache(client: WebSocketClient, containerId: string): Container {
+    this.addContainerToCache(containerId);
+    return this.getCachedContainer(containerId)!.set(client.user.id, client);
   }
 }
