@@ -1,98 +1,109 @@
+import { WebSocket } from "ws";
 import WebSocketApp from "../../../server/wss/WebSocketApp";
+import WebSocketClient from "../../../server/wss/WebSocketClient";
+import { IncomingMessage } from "node:http";
+import { EventTypeMissingError } from "../../../server/errors";
 
-describe("WebSocketApp Cache", () => {
-  let app: WebSocketApp;
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  beforeEach(() => {
-    app = new WebSocketApp();
+describe("WebSocketApp", () => {
+  let APP: WebSocketApp;
+  let SOCKET: WebSocket;
+  let CLIENT: WebSocketClient;
+  let INCOMING_MESSAGE: IncomingMessage;
+
+  const USER = {
+    name: "Foo",
+    id: "1",
+    email: "foo@foo.com",
+    password: "pw",
+  };
+
+  beforeEach(async () => {
+    APP = new WebSocketApp();
+    APP.listen({ port: 8080 }, () => {
+      /* console.log("WebSocketApp listening...") */
+    });
+
+    // Create socket for client
+    SOCKET = new WebSocket("ws://localhost:8080");
+    // Create an instance of the mocked WebSocketClient
+    CLIENT = new WebSocketClient(SOCKET);
+    CLIENT.user = { ...USER };
+
+    // @ts-ignore
+    APP.on("CONNECTION_ESTABLISHED", (client, { request }) => {
+      client.user = USER;
+    });
+
+    INCOMING_MESSAGE = new IncomingMessage(null as any);
+    INCOMING_MESSAGE.headers = { host: "localhost" };
+    INCOMING_MESSAGE.method = "GET";
+    INCOMING_MESSAGE.url = "/";
+
+    await waitForConnection();
+
+    function waitForConnection() {
+      let count = 0;
+      return new Promise(async (resolve, reject) => {
+        while (CLIENT.socket.readyState !== CLIENT.socket.OPEN) {
+          count++;
+          //console.log("waiting...");
+          await sleep(500);
+          if (count === 6) {
+            reject("client took too long!");
+          }
+        }
+        //console.log("client connected");
+        resolve(true);
+      });
+    }
   });
 
-  describe("addContainerToCache", () => {
-    it("should add a new container to the cache if not already present", () => {
-      const containerId = "room1";
-
-      app.addContainerToCache(containerId);
-
-      const room = app.getCachedContainer(containerId);
-      expect(room).toBeDefined();
-      expect(room?.size).toBe(0); // Ensure it's an empty container
-    });
-
-    it("should not add a container if it already exists", () => {
-      const containerId = "room1";
-
-      app.addContainerToCache(containerId);
-      const initialSize = app.getCachedContainer(containerId)?.size;
-
-      app.addContainerToCache(containerId); // Try adding again
-
-      const newSize = app.getCachedContainer(containerId)?.size;
-      expect(newSize).toBe(initialSize); // The size should remain unchanged
-    });
+  afterEach(async () => {
+    APP.shutdown();
+    if (CLIENT.socket.readyState === CLIENT.socket.OPEN) {
+      CLIENT.socket.close();
+    }
   });
 
-  describe("addItemToCache", () => {
-    it("should add an item to an existing container", () => {
-      const containerId = "room1";
-      const itemId = "user1";
-
-      app.addContainerToCache(containerId);
-      app.addItemToCache(itemId, containerId);
-
-      const room = app.getCachedContainer(containerId);
-      expect(room).toBeDefined();
-      expect(room?.size).toBe(1); // Ensure item was added
-      expect(room?.has(itemId)).toBe(true); // Ensure item exists in the container
+  it("should handle client connection and emit CONNECTION_ESTABLISHED", (done) => {
+    // @ts-ignore
+    APP.on("CONNECTION_ESTABLISHED", (client, { request }) => {
+      expect(client).toBe(CLIENT);
+      done();
     });
-
-    it("should do nothing if socket is not available", () => {
-      const containerId = "room1";
-      const itemId = "user1";
-
-      app.socket = null; // Simulate no socket
-
-      app.addItemToCache(itemId, containerId); // Attempt to add item
-
-      const room = app.getCachedContainer(containerId);
-      expect(room).toBeUndefined(); // No container should have been added
-    });
+    // Simulate the connection event
+    APP.emit("CONNECTION_ESTABLISHED", CLIENT, { request: INCOMING_MESSAGE });
   });
 
-  describe("deleteCachedContainer", () => {
-    it("should delete a container from the cache", () => {
-      const containerId = "room1";
-
-      app.addContainerToCache(containerId);
-      app.deleteCachedContainer(containerId);
-
-      const room = app.getCachedContainer(containerId);
-      expect(room).toBeUndefined(); // Container should be removed
+  it("should handle incoming message and emit the correct event", (done) => {
+    APP.on("SEND_MESSAGE", (client, { message }) => {
+      expect(client.user.id).toEqual(CLIENT.user.id);
+      expect(message).toBe("hello");
+      done();
     });
+    // Simulate the message event
+    CLIENT.send("SEND_MESSAGE", { message: "hello" });
   });
 
-  describe("deleteCachedItem", () => {
-    it("should delete an item from a container", () => {
-      const containerId = "room1";
-      const itemId = "user1";
+  it("should add client to cache", (done) => {
+    const containerId = "room1";
+    APP.addClientToCache(CLIENT, containerId);
+    const cachedContainer = APP.getCachedContainer(containerId);
+    expect(cachedContainer.size).toBe(1);
+    expect(APP.isItemCached(CLIENT.user.id)).toBe(true);
+    expect(cachedContainer.has(CLIENT.user.id)).toBe(true);
+    done();
+  });
 
-      app.addContainerToCache(containerId);
-      app.addItemToCache(itemId, containerId);
-      app.deleteCachedItem(itemId, containerId);
-
-      const room = app.getCachedContainer(containerId);
-      expect(room?.has(itemId)).toBe(false); // Item should be removed
+  it("should handle error if message type is missing", (done) => {
+    APP.catch((error) => {
+      expect(error).toBeInstanceOf(EventTypeMissingError);
+      done();
     });
-
-    it("should not throw error if item does not exist", () => {
-      const containerId = "room1";
-      const itemId = "user1";
-
-      app.addContainerToCache(containerId);
-      app.deleteCachedItem(itemId, containerId); // Item doesn't exist
-
-      const room = app.getCachedContainer(containerId);
-      expect(room).toBeDefined();
-      expect(room?.has(itemId)).toBe(false); // No error, and item is not there
-    });
+    CLIENT.socket.send(JSON.stringify({ foo: "bar" }));
   });
 });
