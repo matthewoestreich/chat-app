@@ -38,13 +38,17 @@ export default class WebSocketApp extends EventEmitter {
    * @returns {WebSocketMessage}
    */
   private parseRawMessage(rawMessage: RawData): WebSocketMessage<EventTypes> {
-    const message = WebSocketMessage.from(rawMessage);
+    try {
+      const message = WebSocketMessage.from(rawMessage);
 
-    if (!message.type) {
-      throw new EventTypeMissingError({ message: "Message missing 'type' key" });
+      if (!message.type) {
+        throw new EventTypeMissingError({ message: "Message missing 'type' key" });
+      }
+
+      return message;
+    } catch (e) {
+      throw e;
     }
-
-    return message;
   }
 
   constructor() {
@@ -67,7 +71,6 @@ export default class WebSocketApp extends EventEmitter {
       socket.on("message", (rawMessage: RawData, _isBinary: boolean) => {
         try {
           const { type, ...data } = this.parseRawMessage(rawMessage);
-          console.log({ type, ...data });
           this.emit(type, client, data || {});
         } catch (e) {
           this.catchFn(e as Error, socket);
@@ -82,9 +85,7 @@ export default class WebSocketApp extends EventEmitter {
 
   // Close the WebSocketServer
   shutdown() {
-    if (this.server) {
-      this.server.close();
-    }
+    this.server.close();
   }
 
   // Error handling

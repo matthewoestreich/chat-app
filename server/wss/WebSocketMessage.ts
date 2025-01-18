@@ -4,7 +4,7 @@ export default class WebSocketMessage<K extends EventTypes> {
   type: K;
   [key: string]: any;
 
-  static from(rawData: RawData): WebSocketMessage<keyof WebSocketAppEventRegistry> {
+  static from(rawData: RawData): WebSocketMessage<EventTypes> {
     const { type, ...data } = JSON.parse(rawData.toString());
     return new WebSocketMessage(type, data);
   }
