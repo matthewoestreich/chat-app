@@ -4,7 +4,7 @@ wsapp.catch((error) => {
   console.error(`[wsapp][ERROR]`, error);
 });
 
-wsapp.on(EventType.SEND_MESSAGE, (_socket, { userId, userName, messageText }) => {
+wsapp.on(EventType.RECEIVE_MESSAGE, (_socket, { userId, userName, messageText }) => {
   handleMessage(userName, messageText, userId);
 });
 
@@ -13,7 +13,7 @@ wsapp.on(EventType.SEND_MESSAGE, (_socket, { userId, userName, messageText }) =>
  * @event {ENTER_ROOM}
  *
  */
-wsapp.on(EventType.ENTER_ROOM, (_, { error, members, messages }) => {
+wsapp.on(EventType.ENTERED_ROOM, (_, { error, members, messages }) => {
   if (error) {
     throw error;
   }
@@ -37,7 +37,7 @@ wsapp.on(EventType.LIST_ROOMS, (_socket, { error, rooms }) => {
  * @event {JOIN_ROOM}
  *
  */
-wsapp.on(EventType.JOIN_ROOM, (_socket, { error, rooms }) => {
+wsapp.on(EventType.JOINED_ROOM, (_socket, { error, rooms }) => {
   if (error) {
     throw error;
   }

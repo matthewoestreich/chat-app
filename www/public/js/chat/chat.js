@@ -69,8 +69,7 @@ sendChatBtn.addEventListener("click", (e) => {
   if (!chatTextInput.value) {
     return;
   }
-  const message = { roomId: activeRoom?.id, messageText: chatTextInput.value };
-  wsapp.send(new WebSocketMessage(EventType.SEND_MESSAGE, message));
+  wsapp.send(new WebSocketMessage(EventType.SEND_MESSAGE, { message: chatTextInput.value }));
   const opts = { message: chatTextInput.value, displayName: USER_NAME, isSending: true, isError: false };
   const msgHTML = generateChatHTML(opts);
   chatTextInput.value = "";
@@ -118,7 +117,7 @@ openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
 });
 
 openJoinRoomModalBtn.addEventListener("click", (event) => {
-  wsapp.send(new WebSocketMessage(EventType.LIST_JOINABLE_ROOMS, {}));
+  wsapp.send(new WebSocketMessage(EventType.GET_JOINABLE_ROOMS, {}));
   bsJoinRoomModal.show();
 });
 
@@ -184,7 +183,7 @@ function handleRoomClick(event, self) {
   chatTitle.innerText = self.innerText;
   self.classList.add("active-room");
   currentActiveRoom?.classList?.remove("active-room");
-  wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { roomId: self.id }));
+  wsapp.send(new WebSocketMessage(EventType.ENTER_ROOM, { id: self.id }));
 }
 
 function handleDirectConversationClick(event, theElement) {

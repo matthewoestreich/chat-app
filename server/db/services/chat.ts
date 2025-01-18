@@ -146,7 +146,7 @@ function selectAllRoomsAndRoomMembersByUserId(db: sqlite3.Database, userId: stri
   });
 }
 
-function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, returnAllUserRoomsAfterInsert = false): Promise<Room[] | Room> {
+function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: string, returnAllUserRoomsAfterInsert = false): Promise<Room[]> {
   return new Promise((resolve, reject) => {
     try {
       const query = `INSERT INTO chat (userId, roomId) VALUES (?, ?)`;
@@ -160,7 +160,7 @@ function insertUserByIdToRoomById(db: sqlite3.Database, userId: string, roomId: 
           return resolve(rooms);
         }
         const room = await roomService.selectById(db, roomId);
-        return resolve(room);
+        return resolve([room]);
       });
     } catch (e) {
       return reject(e);
