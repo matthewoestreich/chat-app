@@ -135,6 +135,10 @@ confirmedLeaveRoomBtn.addEventListener("click", (event) => {
   wsapp.send(new WebSocketMessage(EventType.UNJOIN_ROOM, { id: activeRoom.id }));
 });
 
+joinRoomModal.addEventListener("shown.bs.modal", (event) => {
+  joinRoomModal.querySelector("#cancel-join-room-btn").setAttribute("data-cy", "join-room-modal");
+});
+
 joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
   const revert = getSpinnerButtonInstance(joinRoomBtn);
   if (revert) {
@@ -142,6 +146,8 @@ joinRoomModal.addEventListener("hidden.bs.modal", (event) => {
   }
   joinRoomModalRoomsContainer.replaceChildren();
   joinRoomCallout.close();
+  // This is for Cypress tests only
+  joinRoomModal.querySelector("#cancel-join-room-btn").removeAttribute("data-cy");
 });
 
 // Clear form when modal is hidden.
