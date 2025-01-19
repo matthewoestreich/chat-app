@@ -10,6 +10,11 @@ describe("Homepage", () => {
   });
 });
 
+/**
+ * THERE IS NO NEED TO CALL cy.visit("/chat")` AT THE START OF A TEST
+ * WITHIN THIS "describe" BLOCK. THIS IS BC WE LOGIN `beforeEach(..)`
+ * WHICH REDIRECTS US TO `/chat` AUTOMATICALLY!!!
+ */
 describe("Functionality", () => {
   const USER = generateAccountInfo();
   const NEW_ROOM_NAME = getRandomString(7);
@@ -32,7 +37,6 @@ describe("Functionality", () => {
   });
 
   it("should toggle theme", () => {
-    cy.visit("/chat");
     cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
     cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "dark");
     cy.localStorageItemEquals("theme", "dark");
