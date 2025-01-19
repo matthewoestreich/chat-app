@@ -31,14 +31,12 @@ describe("Functionality", () => {
   });
 
   it("should list joinable rooms", () => {
-    cy.visit("/chat");
     cy.get("#open-join-room-modal").click();
     cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0);
     cy.get('#cancel-join-room-btn[data-cy="join-room-modal"]').should("be.visible").click();
   });
 
   it("should join the #general room", () => {
-    cy.visit("/chat");
     cy.get("#open-join-room-modal").click();
     cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0).get('li[name="#general"]').click();
     cy.get("#join-room-btn").click();

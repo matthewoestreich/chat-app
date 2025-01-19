@@ -4,7 +4,7 @@ import jsonwebtoken from "jsonwebtoken";
 import { v7 as uuidV7 } from "uuid";
 import { chatService, directConversationService, directMessagesService, messagesService, roomService } from "@/server/db/services/index";
 import SQLitePool from "@/server/db/SQLitePool";
-import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";

@@ -24,9 +24,13 @@ Cypress.Commands.add("logout", () => {
 });
 
 Cypress.Commands.add("enterRoom", (roomName: string) => {
-  cy.visit("/chat");
-  cy.get("#rooms-container").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName).should("exist").click();
-  cy.get("#members-list").children().should("have.length.greaterThan", 0);
+  cy.url().then(($url) => {
+    if (!$url.includes("/chat")) {
+      cy.visit("/chat");
+    }
+    cy.get("#rooms-container").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName).should("exist").click();
+    cy.get("#members-list").children().should("have.length.greaterThan", 0);
+  });
 });
 
 // ***********************************************
