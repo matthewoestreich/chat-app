@@ -16,13 +16,13 @@ jobs:
       name: .env
 
     env:
-      VARS_ABSOLUTE_DB_PATH: ${{ vars.ABSOLUTE_DB_PATH }}
+      ABSOLUTE_DB_PATH: ${{ vars.ABSOLUTE_DB_PATH }}
       SECRETS_ABSOLUTE_DB_PATH: ${{ secrets.ABSOLUTE_DB_PATH }}
 
     steps:
     - name: Print environment variables
       run: |
-        echo "Vars Absolute DB Path: $VARS_ABSOLUTE_DB_PATH , secrets db path : $SECRETS_ABSOLUTE_DB_PATH" 
+        echo "Vars Absolute DB Path: $ABSOLUTE_DB_PATH , secrets db path : $SECRETS_ABSOLUTE_DB_PATH" 
     - name: Checkout code
       uses: actions/checkout@v3
 
