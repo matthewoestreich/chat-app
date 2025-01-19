@@ -36,12 +36,12 @@ jobs:
     - name: Run Jest Tests
       run: npm run test:jest
 
-    #- name: Set up Cypress
-    #  uses: cypress-io/github-action@v4
-    #  with:
-    #    start: npm start
-    #    wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
-    #    wait-on-timeout: 60 # Wait time for the app to be fully available
+    - name: Set up Cypress
+      uses: cypress-io/github-action@v4
+      with:
+        start: npm start
+        wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
+        wait-on-timeout: 60 # Wait time for the app to be fully available
 
-    #- name: Run Cypress Tests
-    #  run: npm run test:cy:run
+    - name: Run Cypress Tests
+      run: npm run test:cy:run

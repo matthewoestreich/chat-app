@@ -11,6 +11,7 @@ import { v7 as uuidV7 } from "uuid";
 import bcrypt from "bcrypt";
 import sqlite3 from "sqlite3";
 import path from "path";
+import initDatabase from "./initDatabase";
 sqlite3.verbose();
 
 /**
@@ -19,8 +20,9 @@ sqlite3.verbose();
  * AND NOT JUST TEST GENERATION..
  */
 const IT_IS_OK_TO_INSERT_DATA_I_AM_NOT_TESTING_GENERATION = true;
-const NUM_ITEMS_EACH = 100;
-const DATABASE_PATH = path.resolve(__dirname, "../server/db/rtchat.db");
+const DATABASE_FILE_PATH = "../server/db/test.db";
+const NUM_ITEMS_EACH = 5;
+const DATABASE_PATH = path.resolve(__dirname, DATABASE_FILE_PATH);
 
 function logGeneratedData() {
   console.log(JSON.stringify(users, null, 2));
@@ -307,6 +309,7 @@ async function insertDirectMessages(db, messages: DirectMessage[]) {
 }
 
 async function main() {
+  await initDatabase(DATABASE_PATH);
   const db = new sqlite3.Database(DATABASE_PATH, (err) => {
     if (err) {
       console.error(`Error connecting to the database:`, err);

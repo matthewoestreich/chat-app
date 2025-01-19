@@ -36,7 +36,7 @@ async function Main() {
       } else {
         // Add port to wss url if we are running local.
         process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
-        await initDatabase();
+        await initDatabase(process.env.ABSOLUTE_DB_PATH || "");
       }
 
       /**
