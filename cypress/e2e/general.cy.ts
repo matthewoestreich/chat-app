@@ -12,6 +12,7 @@ describe("Homepage", () => {
 
 describe("Functionality", () => {
   const USER = generateAccountInfo();
+  const NEW_ROOM_NAME = getRandomString(7);
 
   before(() => {
     cy.createAccount(USER.name, USER.email, USER.password);
@@ -30,6 +31,22 @@ describe("Functionality", () => {
     cy.url().should("include", "/chat");
   });
 
+  it("should toggle theme", () => {
+    cy.visit("/chat");
+    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
+    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "dark");
+    cy.localStorageItemEquals("theme", "dark");
+    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
+    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "light");
+    cy.localStorageItemEquals("theme", "light");
+    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
+    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "dark");
+    cy.localStorageItemEquals("theme", "dark");
+    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
+    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "light");
+    cy.localStorageItemEquals("theme", "light");
+  });
+
   it("should list joinable rooms", () => {
     cy.get("#open-join-room-modal").click();
     cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0);
@@ -42,7 +59,7 @@ describe("Functionality", () => {
     cy.get("#join-room-btn").click();
     cy.get("#join-room-alert-message").should("contain.text", "Successfully joined room!");
     cy.get('#cancel-join-room-btn[data-cy="join-room-modal"]').should("be.visible").click();
-    cy.get("#rooms-container").children().first().contains("li > div.card > div.card-body > h5.card-title", "#general");
+    cy.isRoomMember("#general");
   });
 
   it("should enter the #general room", () => {
@@ -51,12 +68,30 @@ describe("Functionality", () => {
 
   it("should send a message in the #general room", () => {
     const message = "Hello from Cypress!";
-    cy.enterRoom("#general");
+    cy.roomHasMembers("#general");
     cy.get("#chat-text-input").should("exist").type(message);
     cy.get("#send-chat-btn").should("not.be.disabled").click();
     cy.get("#chat-display").then(($chatDisplayEl) => {
       cy.wrap($chatDisplayEl).should("have.length.greaterThan", 0).last().children().last().should("contain.text", message);
     });
+  });
+
+  it("should create a new room", () => {
+    cy.get("#open-create-room-modal-btn").should("be.visible").click();
+    cy.get("#create-room-name-input").should("be.visible").type(NEW_ROOM_NAME);
+    cy.get("#create-room-btn").should("be.visible").click();
+    cy.get("#create-room-alert-message").should("be.visible").should("include.text", "Success");
+    cy.get("#cancel-create-room-btn").should("be.visible").click();
+    cy.isRoomMember(NEW_ROOM_NAME);
+  });
+
+  it("should leave a room", () => {
+    cy.get("#leave-room-btn").should("be.visible").should("be.disabled");
+    cy.enterRoom(NEW_ROOM_NAME);
+    cy.get("#leave-room-btn").should("be.enabled").click();
+    cy.get("#leave-room-confirmation-modal-confirmed-leave-btn[data-cy='unjoin']").should("be.visible").click();
+    cy.get("#leave-room-confirmation-modal").should("not.be.visible");
+    cy.isRoomMember(NEW_ROOM_NAME).should("not.exist");
   });
 });
 
@@ -66,13 +101,19 @@ describe("Functionality", () => {
  *
  */
 
-function generateAccountInfo() {
+function getRandomString(length: number): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   let randString = "";
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < length; i++) {
     randString += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
+
+  return randString;
+}
+
+function generateAccountInfo() {
+  const randString = getRandomString(5);
 
   return {
     name: randString,

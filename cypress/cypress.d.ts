@@ -15,5 +15,17 @@ declare namespace Cypress {
     createAccount(name: string, email: string, password: string): Chainable<void>;
 
     enterRoom(roomName: string): Chainable<void>;
+
+    isRoomMember(roomName: string): Chainable<void>;
+
+    /**
+     * Calls `cy.enterRoom(roomName)` first
+     * @param roomName name of room to verify at least 1 member exists
+     */
+    roomHasMembers(roomName: string): Chainable<void>;
+
+    getLocalStorageItem(key: string): Chainable<void>;
+
+    localStorageItemEquals(key: string, expectedValue: string): Chainable<void>;
   }
 }

@@ -29,7 +29,28 @@ Cypress.Commands.add("enterRoom", (roomName: string) => {
       cy.visit("/chat");
     }
     cy.get("#rooms-container").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName).should("exist").click();
-    cy.get("#members-list").children().should("have.length.greaterThan", 0);
+  });
+});
+
+/**
+ * calls `cy.enterRoom(roomName)` before verifying members.
+ */
+Cypress.Commands.add("roomHasMembers", (roomName: string) => {
+  cy.enterRoom(roomName);
+  cy.get("#members-list").should("be.visible").children().should("have.length.greaterThan", 0);
+});
+
+Cypress.Commands.add("isRoomMember", (roomName: string) => {
+  cy.get("#rooms-container").should("be.visible").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName);
+});
+
+Cypress.Commands.add("getLocalStorageItem", (key: string) => {
+  cy.window().then((window) => window.localStorage.getItem(key));
+});
+
+Cypress.Commands.add("localStorageItemEquals", (key: string, expectedValue: string) => {
+  cy.getLocalStorageItem(key).then(($value) => {
+    cy.wrap($value).should("eq", expectedValue);
   });
 });
 

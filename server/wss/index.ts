@@ -174,7 +174,7 @@ wsapp.on("UNJOIN_ROOM", async (client, { id }) => {
     const rooms = await chatService.selectRoomsByUserId(db, client.user.id);
     release();
 
-    client.send("LIST_ROOMS", { rooms });
+    client.send("UNJOINED_ROOM", { rooms });
 
     // Covers the case for when a user unjoins a room they are currently chatting in.
     if (client.activeIn.container && client.activeIn.id === id) {

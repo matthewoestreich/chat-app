@@ -116,6 +116,15 @@ openLeaveRoomConfirmModalBtn.addEventListener("click", (event) => {
   bsLeaveConfirmationModal.show();
 });
 
+// For testing only...
+leaveRoomConfirmationModal.addEventListener("shown.bs.modal", (event) => {
+  confirmedLeaveRoomBtn.setAttribute("data-cy", "unjoin");
+});
+// For testing only...
+leaveRoomConfirmationModal.addEventListener("hidden.bs.modal", (event) => {
+  confirmedLeaveRoomBtn.removeAttribute("data-cy");
+});
+
 openJoinRoomModalBtn.addEventListener("click", (event) => {
   wsapp.send(new WebSocketMessage(EventType.GET_JOINABLE_ROOMS, {}));
   bsJoinRoomModal.show();

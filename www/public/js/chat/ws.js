@@ -46,10 +46,10 @@ wsapp.on(EventType.JOINED_ROOM, (_socket, { error, rooms }) => {
 
 /**
  *
- * @event {UNJOIN_ROOM}
+ * @event {UNJOINED_ROOM}
  *
  */
-wsapp.on(EventType.UNJOIN_ROOM, (_socket, { error, rooms }) => {
+wsapp.on(EventType.UNJOINED_ROOM, (_socket, { error, rooms }) => {
   if (error) {
     throw error;
   }
@@ -70,10 +70,10 @@ wsapp.on(EventType.LIST_JOINABLE_ROOMS, (_socket, { error, rooms }) => {
 
 /**
  *
- * @event {CREATE_ROOM}
+ * @event {CREATED_ROOM}
  *
  */
-wsapp.on(EventType.CREATE_ROOM, (_socket, { error, id, rooms }) => {
+wsapp.on(EventType.CREATED_ROOM, (_socket, { error, id, rooms }) => {
   if (error) {
     throw error;
   }
