@@ -1,0 +1,38 @@
+name: CI Workflow
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your desired branch
+  pull_request:
+    branches:
+      - main  # Adjust this to your desired branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '23.3.0'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Jest Tests
+      run: npm run test:jest
+
+    - name: Set up Cypress
+      uses: cypress-io/github-action@v4
+      with:
+        start: npm run start
+        wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
+        wait-for: 60 # Wait time for the app to be fully available
+
+    - name: Run Cypress Tests
+      run: npm run test:cy:run
