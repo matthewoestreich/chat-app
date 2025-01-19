@@ -15,8 +15,10 @@ jobs:
     env:
       ABSOLUTE_DB_PATH: ${{ vars.ABSOLUTE_DB_PATH }}
 
-
     steps:
+    - name: Print environment variables
+      run: |
+        echo "Absolute DB Path: $ABSOLUTE_DB_PATH"
     - name: Checkout code
       uses: actions/checkout@v3
 
