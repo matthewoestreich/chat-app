@@ -43,7 +43,7 @@
       "db/**",
       "index.ts"
     ],
-    "exec": "npm run tsx"
+    "exec": "npm run start"
   },
   "license": "CC",
   "dependencies": {
