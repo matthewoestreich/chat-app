@@ -13,16 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: .env
+      name: tests
 
     env:
-      ABSOLUTE_DB_PATH: ${{ vars.ABSOLUTE_DB_PATH }}
-      SECRETS_ABSOLUTE_DB_PATH: ${{ secrets.ABSOLUTE_DB_PATH }}
+      ABSOLUTE_DB_PATH: ${{ secrets.ABSOLUTE_DB_PATH }}
+      JWT_SIGNATURE: ${{ secrets.JWT_SIGNATURE }}
+      EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
+      WSS_URL: ${{ secrets.WSS_URL }}
 
     steps:
-    - name: Print environment variables
-      run: |
-        echo "Vars Absolute DB Path: $ABSOLUTE_DB_PATH , secrets db path : $SECRETS_ABSOLUTE_DB_PATH" 
     - name: Checkout code
       uses: actions/checkout@v3
 
