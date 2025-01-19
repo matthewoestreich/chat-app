@@ -12,6 +12,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      ABSOLUTE_DB_PATH: ${{ vars.ABSOLUTE_DB_PATH }}
+
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -32,7 +36,7 @@ jobs:
       with:
         start: npm start
         wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
-        wait-for: 60 # Wait time for the app to be fully available
+        wait-on-timeout: 60 # Wait time for the app to be fully available
 
     - name: Run Cypress Tests
       run: npm run test:cy:run
