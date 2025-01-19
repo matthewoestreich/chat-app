@@ -7,7 +7,6 @@ A responsive, multi-user, multi-room, real time chat application that supports d
 Features:
  - Session Based Authentication & Authorization [*](#user-content-jwt)
  - WebSocket Authentication
- - Initially Rendered Server Side for Fast Time-To-First-Paint
  - Dark Mode
  - Responsive
 
@@ -30,31 +29,31 @@ Frontend Technologies:
 
 ## Default Look
 
-![General Display](/screenshots/1_general.png "General")
+![General Display](.github/screenshots/1_general.png "General")
 
 ## Dark mode!
 
-![Dark Mode General Display](/screenshots/2_dark_mode.png "Dark Mode!")
+![Dark Mode General Display](.github/screenshots/2_dark_mode.png "Dark Mode!")
 
 ## Live Member Status
 
 See whos online _right now_
 
-![Live Status Updates](/screenshots/3_live_status.png "Live Member Status Updates")
+![Live Status Updates](.github/screenshots/3_live_status.png "Live Member Status Updates")
 
 ## Responsive
 
 Optimized for all devices!
 
-![Responsive General](/screenshots/4_responsive_main.png "Responsive")
+![Responsive General](.github/screenshots/4_responsive_main.png "Responsive")
 
 ---
 
-![Responsive Rooms](/screenshots/5_responsive_rooms.png "Responsive Members")
+![Responsive Rooms](.github/screenshots/5_responsive_rooms.png "Responsive Members")
 
 ---
 
-![Responsive Members](/screenshots/6_responsive_members.png "Responsive Rooms")
+![Responsive Members](.github/screenshots/6_responsive_members.png "Responsive Rooms")
 
 ##### Older Versions
 
