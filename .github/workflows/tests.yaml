@@ -30,7 +30,7 @@ jobs:
     - name: Set up Cypress
       uses: cypress-io/github-action@v4
       with:
-        start: npm run start
+        start: npm start
         wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
         wait-for: 60 # Wait time for the app to be fully available
 
