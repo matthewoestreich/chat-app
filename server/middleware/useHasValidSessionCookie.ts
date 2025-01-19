@@ -19,8 +19,6 @@ export default async function (req: Request, res: Response, next: NextFunction) 
     const storedSession = await sessionService.selectByUserId(db, decodedToken?.id);
     release();
 
-    console.log({ storedSession });
-
     if (!storedSession || (storedSession.token && storedSession.token !== session)) {
       res.clearCookie("session");
       req.cookies.session = "";

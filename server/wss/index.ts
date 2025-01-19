@@ -60,14 +60,14 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  * log the reason for socket closure.
  *
  */
-wsapp.on("CONNECTION_CLOSED", (client, { code, reason }) => {
+wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
   if (client.activeIn.container) {
     client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
-  const reasonString = reason.toString();
-  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  console.log(`socket closed.`, { user: client.user, code, why });
+  //const reasonString = reason.toString();
+  //const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  //console.log(`socket closed.`, { user: client.user, code, why });
 });
 
 /**

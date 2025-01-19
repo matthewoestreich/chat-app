@@ -65,7 +65,6 @@ function upsertSessionToken(db: sqlite3.Database, userId: string, sessionToken: 
           console.error("Error upserting session:", err.message);
           return reject(err);
         }
-        console.log("Session upserted:", { userId, sessionToken });
         return resolve(true);
       });
     } catch (e) {

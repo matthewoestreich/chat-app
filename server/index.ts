@@ -82,22 +82,17 @@ app.get("/chat", [useJwt], (req: Request, res: Response) => {
 app.get("/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies.session;
-    console.log({ "req.cookies": req.cookies, sessionBeforeRemove: req.cookies.session });
 
     const connection = await req.databasePool.getConnection();
 
     if (await sessionService.delete(connection.db, session)) {
-      console.log("successfully removed session token from db.");
       connection.release();
       req.cookies.session = "";
       res.clearCookie("session");
-      console.log({ sessionAfterRemove: req.cookies.session });
     }
     return res.render("logout");
   } catch (e) {
-    console.log({ logoutError: e });
     res.clearCookie("session");
-    //return res.render("error", { error: "Error logging you out." });
     return res.render("logout");
   }
 });

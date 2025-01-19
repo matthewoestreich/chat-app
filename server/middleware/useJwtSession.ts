@@ -49,23 +49,23 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
   try {
     const decodedToken = jsonwebtoken.decode(receivedSessionToken) as SessionToken;
     if (!decodedToken.id) {
-      console.log(`[useJwt][ERROR] no id found in decoded session token`);
+      //console.log(`[useJwt][ERROR] no id found in decoded session token`);
       release();
       return false;
     }
 
-    console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
+    //console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
     // Get existing session token from db.
     const existingSession = await sessionService.selectByUserId(db, decodedToken.id);
-    console.log({ from: "useJwtSession", "String(existingSession.token)": String(existingSession.token) });
+    //console.log({ from: "useJwtSession", "String(existingSession.token)": String(existingSession.token) });
     // If no existing token, or existing token missing "token" column, or mismatch force user to reauth.
     if (!existingSession || !existingSession.token || String(existingSession.token) !== receivedSessionToken) {
-      console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
+      //console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
       release();
       return false;
     }
 
-    console.log(`[useJwt][INFO][id:${decodedToken?.id}] it is the same, generating new token`);
+    //console.log(`[useJwt][INFO][id:${decodedToken?.id}] it is the same, generating new token`);
     // Now we have the "OK" to generate a new token..
     const sessionToken = generateSessionToken(decodedToken.name, decodedToken.id, decodedToken.email);
 
@@ -78,7 +78,7 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
 
     return true;
   } catch (e) {
-    console.log(`[jwtSession][error] `, e);
+    //console.log(`[jwtSession][error] `, e);
     return false;
   }
 }
