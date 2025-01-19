@@ -10,7 +10,7 @@
     "start:nodemon": "nodemon --verbose",
     "start": "npm run tsx",
     "tsx": "tsx index.ts",
-    "cy:run": "cypress run --spec 'cypress/e2e/0-chat-app/*.cy.js'",
+    "cy:run": "cypress run --spec 'cypress/e2e/*.cy.ts'",
     "cy:open": "cypress open --browser firefox",
     "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test:cy:run": "tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
