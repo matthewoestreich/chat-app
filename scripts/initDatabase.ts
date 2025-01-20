@@ -83,6 +83,7 @@ export default async function (databaseFilePath: string) {
             fromUserId TEXT NOT NULL,
             toUserId TEXT NOT NULL,
             message TEXT NOT NULL,
+            isRead BOOLEAN NOT NULL CHECK (isRead IN (0, 1)),
             "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT direct_messages_direct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
           );`);

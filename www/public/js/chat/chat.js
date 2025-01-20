@@ -78,9 +78,8 @@ sendChatBtn.addEventListener("click", (e) => {
 });
 
 createDirectConvoBtn.addEventListener("click", (event) => {
-  // open join new direct convo modal
   bsJoinDirectConvoModal.show();
-  wsapp.send(new WebSocketMessage(EventType.LIST_INVITABLE_USERS, {}));
+  wsapp.send(new WebSocketMessage(EventType.GET_INVITABLE_USERS, {}));
 });
 
 createRoomBtn.addEventListener("click", (event) => {
@@ -90,8 +89,7 @@ createRoomBtn.addEventListener("click", (event) => {
   createRoomForm.isValid = createRoomForm.checkValidity();
   createRoomForm.classList.add("was-validated");
   if (!createRoomForm.isValid) {
-    revert();
-    return;
+    return revert();
   }
   const name = createRoomRoomNameInput.value;
   const isPrivate = createRoomIsPrivateCheckbox.checked === true ? 1 : 0;

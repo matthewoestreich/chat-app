@@ -105,14 +105,14 @@ interface WebSocketAppEventRegistry {
   };
   LIST_ROOM_MEMBERS: {};
   LIST_DIRECT_CONVERSATIONS: {
-    directConversations: DirectConversation[];
+    directConversations: FakeDirectConversation[];
   };
   GET_DIRECT_CONVERSATIONS: {};
   GET_DIRECT_MESSAGES: {
     id: string;
   };
   LIST_DIRECT_MESSAGES: {
-    directMessages: DirectMessage[];
+    directMessages: FakeDirectMessage[];
   };
   GET_INVITABLE_USERS: {};
   LIST_INVITABLE_USERS: {

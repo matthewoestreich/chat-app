@@ -23,7 +23,7 @@ function insert(db: sqlite3.Database, conversationId: string, userA_Id: string, 
   });
 }
 
-function selectAllByUserId(db: sqlite3.Database, userId: string): Promise<DirectConversation[]> {
+function selectAllByUserId(db: sqlite3.Database, userId: string): Promise<FakeDirectConversation[]> {
   return new Promise((resolve, reject) => {
     const query = `
     SELECT dc.id AS id, u.id AS userId, u.name AS userName
@@ -33,7 +33,7 @@ function selectAllByUserId(db: sqlite3.Database, userId: string): Promise<Direct
     WHERE ? IN (dc.userA_Id, dc.userB_Id)
     ORDER BY userName ASC;
     `;
-    db.all(query, [userId, userId], (err, rows: DirectConversation[]) => {
+    db.all(query, [userId, userId], (err, rows: FakeDirectConversation[]) => {
       if (err) {
         return reject(err);
       }

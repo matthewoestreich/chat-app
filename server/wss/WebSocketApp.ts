@@ -89,7 +89,8 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   // For when someone first logs in or what not and they aren't in a room, but they're online.
-  static ID_UNASSIGNED: string = "__UNASSIGNED__";
+  // Should be 36 chars long to satisfy database requirements.
+  static ID_UNASSIGNED: string = "_____________UNASSIGNED_____________";
 
   /**
    * Get a 'container' from our room cache.
