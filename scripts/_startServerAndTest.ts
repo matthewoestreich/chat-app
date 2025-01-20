@@ -14,7 +14,7 @@
  */
 import { ChildProcess, spawn } from "node:child_process";
 
-const EXPECTED_SWITCHES = ["startServer", "url", "startTest"];
+const EXPECTED_SWITCHES: Array<keyof Options> = ["startServer", "url", "startTest"];
 const URL_ALIVE_CHECK_INTERVAL = 500; // in ms
 const URL_MAX_ALIVE_CHECKS = 20;
 
@@ -130,14 +130,15 @@ async function waitForServer(url: string, serverProcess: ChildProcess, checkInte
   return Promise.resolve(true);
 }
 
-function validateArgs(options: Options, expectedSwitches: string[]): boolean {
+function validateArgs<K extends keyof Options>(options: Options, expectedSwitches: K[]): boolean {
   const keys = Object.keys(options);
   if (keys.length !== expectedSwitches.length) {
     console.error(`Expected ${expectedSwitches.length} arguments, got ${keys.length} | ${keys}`);
     return false;
   }
   for (let i = 0; i < expectedSwitches.length; i++) {
-    if (!options[expectedSwitches[i]]) {
+    const key = expectedSwitches[i];
+    if (!options[key]) {
       console.error(`Expected switch '${expectedSwitches[i]}' but it was not found!`);
       return false;
     }
@@ -146,11 +147,11 @@ function validateArgs(options: Options, expectedSwitches: string[]): boolean {
 }
 
 function processArgs(args: string[]): Options {
-  const options = {};
+  const options: Partial<Options> = {};
 
   for (let i = 0; i < args.length; i++) {
     if (args[i].startsWith("--")) {
-      const key = args[i].slice(2); // remove "--" from switch
+      const key = args[i].slice(2) as keyof Options; // remove "--" from switch
       let cmd: Command = {
         command: "",
         switches: [],
