@@ -30,7 +30,7 @@ export default class WebSocketApp extends EventEmitter {
    * Look at cache as containers that hold items.
    * For example, chat rooms that hold members/users.
    */
-  private static cache: Map<string, Map<string, WebSocketClient>> = new Map();
+  private static cache: WebSocketAppCache = new Map();
 
   /**
    * Parses a raw incoming websocket message.

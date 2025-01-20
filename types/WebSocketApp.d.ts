@@ -15,12 +15,17 @@ type IWebSocketMessage = {
 
 type WebSocketAppCatchHandler = (error: Error, socket: WebSocket.WebSocket) => void;
 
+type WebSocketAppCache = Map<string, Container>;
+
 type Container = Map<string, WebSocketClient>;
 
-interface CachedContainer {
+/**
+ * CachedContainer is different from Container bc a CachedContainer has an ID.
+ */
+type CachedContainer = {
   id: string;
   container?: Container;
-}
+};
 
 type EventTypes = keyof WebSocketAppEventRegistry;
 type EventPayload<K extends EventTypes> = WebSocketAppEventRegistry[K];
