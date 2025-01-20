@@ -13,7 +13,7 @@ type IWebSocketMessage = {
   [key: string]: any;
 };
 
-type IWebSocketErrorHandler = (error: Error, socket: WebSocket.WebSocket) => void;
+type WebSocketAppCatchHandler = (error: Error, socket: WebSocket.WebSocket) => void;
 
 type Container = Map<string, WebSocketClient>;
 

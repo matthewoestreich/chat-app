@@ -23,7 +23,7 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   private server: WebSocketServer;
-  private catchFn: IWebSocketErrorHandler = (_error: Error, _socket: WebSocket) => {};
+  private catchFn: WebSocketAppCatchHandler = (_error: Error, _socket: WebSocket) => {};
 
   /**
    * cache
@@ -89,7 +89,7 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   // Error handling
-  catch(handler: IWebSocketErrorHandler) {
+  catch(handler: WebSocketAppCatchHandler) {
     this.catchFn = handler;
   }
 

@@ -86,7 +86,7 @@ describe("Functionality", () => {
     cy.get("#create-room-btn").should("be.visible").click();
     cy.get("#create-room-alert-message").should("be.visible").should("include.text", "Success");
     cy.get("#cancel-create-room-btn").should("be.visible").click();
-    cy.isRoomMember(NEW_ROOM_NAME);
+    cy.isRoomMember(NEW_ROOM_NAME).should("exist");
   });
 
   it("should leave a room", () => {
