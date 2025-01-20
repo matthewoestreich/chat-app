@@ -14,22 +14,9 @@ import WebSocketClient from "./WebSocketClient";
  *  mywsapp.listen(options, () => { console.log(`mywsapp listening`) });
  */
 export default class WebSocketApp extends EventEmitter {
-  on<K extends EventTypes>(event: K, handler: (client: WebSocketClient, payload: EventPayload<K>) => void): this {
-    return super.on(event, handler);
-  }
-
-  emit<K extends EventTypes>(event: K, client: WebSocketClient, payload: EventPayload<K>): boolean {
-    return super.emit(event, client, payload);
-  }
-
   private server: WebSocketServer;
   private catchFn: WebSocketAppCatchHandler = (_error: Error, _socket: WebSocket) => {};
-
-  /**
-   * cache
-   * Look at cache as containers that hold items.
-   * For example, chat rooms that hold members/users.
-   */
+  //Look at cache as containers that hold items. For example, chat rooms that hold members/users.
   private static cache: WebSocketAppCache = new Map();
 
   /**
@@ -81,6 +68,14 @@ export default class WebSocketApp extends EventEmitter {
     if (callback) {
       callback();
     }
+  }
+
+  on<K extends EventTypes>(event: K, handler: (client: WebSocketClient, payload: EventPayload<K>) => void): this {
+    return super.on(event, handler);
+  }
+
+  emit<K extends EventTypes>(event: K, client: WebSocketClient, payload: EventPayload<K>): boolean {
+    return super.emit(event, client, payload);
   }
 
   // Close the WebSocketServer
