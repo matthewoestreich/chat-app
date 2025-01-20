@@ -400,7 +400,7 @@ export function getUniqueItems<T>(items: T[], numOfItems: number, excludeItem?: 
   }
   // If they want a number of users that is greater than or equal to the amount of users we were given.
   if (numOfItems > items.length) {
-    throw new Error(`[getUniqueItems] numOfItems:${numOfItems} is greater than items.length:${items.length}. If you provided 'excludeItem', that is factored into items.length.`);
+    throw new Error(`[getUniqueItems] numOfItems:${numOfItems} is greater than items.length:${items.length}.\nNOTE: length may be different than what you expect because: \n\t1) If you provided 'excludeItem', that is factored into items.length. \n\t2)If any duplicates existed withhin the 'items' array you provided, they are removed from original length.`);
   }
 
   const uniqueItems = new Array<T>();
