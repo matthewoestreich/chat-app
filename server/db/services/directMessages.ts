@@ -5,7 +5,7 @@ export default {
   selectByConversationId,
 };
 
-function selectByConversationId(db: sqlite3.Database, convoId: string): Promise<FakeDirectMessage[]> {
+function selectByConversationId(db: sqlite3.Database, convoId: string): Promise<DirectMessage[]> {
   return new Promise((resolve, reject) => {
     try {
       const query = `
@@ -15,7 +15,7 @@ function selectByConversationId(db: sqlite3.Database, convoId: string): Promise<
         ON u.id = dm.fromUserId 
         WHERE dm.directConversationId = ?
         ORDER BY timestamp ASC;`;
-      db.all(query, [convoId], (err, rows: FakeDirectMessage[]) => {
+      db.all(query, [convoId], (err, rows: DirectMessage[]) => {
         if (err) {
           return reject(err);
         }
