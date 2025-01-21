@@ -16,11 +16,10 @@ jobs:
       name: tests
 
     env:
-      ABSOLUTE_DB_PATH: ${{ secrets.ABSOLUTE_DB_PATH }}
       JWT_SIGNATURE: ${{ secrets.JWT_SIGNATURE }}
       EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
       WSS_URL: ${{ secrets.WSS_URL }}
-      IS_GITHUB_ACTION: ${{ secrets.IS_GITHUB_ACTION }}
+      NODE_ENV: ${{ secrets.NODE_ENV }}
 
     steps:
     - name: Checkout code
