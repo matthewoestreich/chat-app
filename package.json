@@ -10,7 +10,7 @@
     "start:nodemon": "nodemon --verbose",
     "start": "tsx index.ts",
     "cy:run": "NODE_ENV=test cypress run --spec 'cypress/e2e/*.cy.ts'",
-    "cy:open": "NODE_ENV=test cypress open --browser firefox",
+    "cy:open": "NODE_ENV=test cypress open",
     "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
     "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",

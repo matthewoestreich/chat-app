@@ -97,6 +97,11 @@ describe("Functionality", () => {
     cy.get("#leave-room-confirmation-modal").should("not.be.visible");
     cy.isRoomMember(NEW_ROOM_NAME).should("not.exist");
   });
+
+  it("should open direct conversations", () => {
+    cy.get("#open-direct-messages").should("be.visible").click();
+    cy.get("#direct-messages-drawer").should("exist").should("be.visible");
+  });
 });
 
 /**

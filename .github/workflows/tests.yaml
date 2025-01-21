@@ -20,6 +20,7 @@ jobs:
       EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
       WSS_URL: ${{ secrets.WSS_URL }}
       NODE_ENV: ${{ secrets.NODE_ENV }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
     steps:
     - name: Checkout code
