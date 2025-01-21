@@ -29,11 +29,6 @@ app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
 const dbFilePath = process.env.ABSOLUTE_DB_PATH!;
 const sqlitePool = new SQLitePool(dbFilePath, 5);
 
-// Custom token to log body of requests
-morgan.token("body", (req: Request) => {
-  return JSON.stringify(req.body || {}, null, 2);
-});
-
 const useJwt = useJwtSession({
   onError: (_, res: Response) => res.redirect("/"),
 });
@@ -52,11 +47,18 @@ app.use(
   }),
 );
 
-app.use(
-  morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
-    skip: (req) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
-  }),
-);
+if (process.env.NODE_ENV !== "test") {
+  // Custom token to log body of requests
+  morgan.token("body", (req: Request) => {
+    return JSON.stringify(req.body || {}, null, 2);
+  });
+
+  app.use(
+    morgan(":date[clf] :method :url :status :response-time ms - :res[content-length] :body", {
+      skip: (req) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public"),
+    }),
+  );
+}
 
 /** ATTACH ROUTERS */
 app.use("/api", apiRouter);

@@ -2,7 +2,6 @@
 *.DS_Store
 .DS_Store
 *.db
-!test.db
 .vscode
 # Logs
 logs

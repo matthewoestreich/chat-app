@@ -260,17 +260,11 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
 
 /**
  * Insert fake data.
+ * @param db
  * @param fakeData
- * @param databasePath
  */
-export async function insertFakeData(fakeData: FakeData, databasePath: string): Promise<boolean> {
+export async function insertFakeData(db: sqlite3.Database, fakeData: FakeData): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(databasePath, (err) => {
-      if (err) {
-        return reject(`Error connecting to database : ${err.message}`);
-      }
-    });
-
     try {
       db.serialize(async () => {
         await insertFakeUsers(db, fakeData.users);

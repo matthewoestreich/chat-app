@@ -1,6 +1,5 @@
 import "dotenv/config";
-import startExpressApp from "@/server/index";
-import startWebSocketApp from "@/server/wss/index";
+import nodePath from "node:path";
 import initDatabase from "@/scripts/initDatabase";
 import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
 import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
@@ -10,6 +9,9 @@ process.env.WSS_URL = process.env.WSS_URL || "";
 process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || "";
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
 
+if (process.env.NODE_ENV === "test") {
+  process.env.ABSOLUTE_DB_PATH = nodePath.resolve(__dirname, "./cypress/db/test.db");
+}
 if (!process.env.ABSOLUTE_DB_PATH || process.env.ABSOLUTE_DB_PATH === "") {
   console.log("[MAIN][ERROR] missing db path via 'process.env.ABSOLUTE_DB_PATH', unable to resolve it.");
   process.exit(1);
@@ -24,6 +26,8 @@ if (!process.env.WSS_URL || process.env.WSS_URL === "") {
 }
 
 const IS_PRODUCTION = process.env.WSS_URL.endsWith("onrender.com");
+
+(async () => await Main())();
 
 async function Main() {
   return new Promise(async (resolve) => {
@@ -43,6 +47,9 @@ async function Main() {
        * Start Express App + WebSocketApp
        */
 
+      const startExpressApp = (await import("@/server/index")).default;
+      const startWebSocketApp = (await import("@/server/wss/index")).default;
+
       // Start Express
       const server = await startExpressApp();
       console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
@@ -59,5 +66,3 @@ async function Main() {
     }
   });
 }
-
-(async () => await Main())();

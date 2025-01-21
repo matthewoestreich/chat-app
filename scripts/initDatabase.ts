@@ -3,17 +3,21 @@ import path from "path";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-export default async function (databaseFilePath: string) {
+export default async function (databaseFilePath: string): Promise<boolean> {
   if (databaseFilePath === "") {
-    console.error(`initDatabase : databaseFilePath is empty!`);
-    return;
+    return console.error(`initDatabase : databaseFilePath is empty!`);
   }
 
-  console.log("Initializing database...");
+  console.log(`Initializing database at '${databaseFilePath}'`);
 
   return new Promise((resolve, reject) => {
     try {
-      const db = new sqlite3.Database(path.resolve(__dirname, databaseFilePath));
+      const db = new sqlite3.Database(path.resolve(__dirname, databaseFilePath), (err) => {
+        if (err) {
+          return reject(err);
+        }
+      });
+
       db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`
@@ -102,8 +106,17 @@ export default async function (databaseFilePath: string) {
               LIMIT 1
             );
           END;`);
-        db.run("COMMIT");
-        db.close(() => resolve());
+        db.run("COMMIT", (_result: sqlite3.RunResult, err: Error | null) => {
+          if (err) {
+            return reject(err);
+          }
+          db.close((e) => {
+            if (e) {
+              return reject(e);
+            }
+            resolve(true);
+          });
+        });
       });
     } catch (e) {
       reject(e);

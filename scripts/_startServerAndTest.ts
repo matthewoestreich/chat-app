@@ -65,8 +65,9 @@ if (!validateArgs(options, EXPECTED_SWITCHES)) {
   });
 
   test.on("close", (code) => {
-    console.log(`startTest closed with code ${code}`);
     server.kill("SIGTERM");
+    test.kill("SIGTERM");
+    console.log(`startTest closed with code ${code}`);
     process.exit(code);
   });
 

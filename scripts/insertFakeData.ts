@@ -32,7 +32,7 @@ import WebSocketApp from "@/server/wss/WebSocketApp";
  */
 
 const NUM_ITEMS = 100;
-const DATABASE_PATH = nodePath.resolve(__dirname, "./test.db");
+const DATABASE_PATH = nodePath.resolve(__dirname, "../server/db/rtchat.db");
 
 /**
  *
@@ -53,7 +53,7 @@ const chatRoomMessages = generateFakeChatRoomMessages(roomsWithMembers, 50, 3, 2
 console.log(`- Generating Direct Conversations`);
 const directConversations = generateFakeDirectConversations(users, 2, 3);
 console.log(`- Generating Direct Messages for each Direct Conversation`);
-const directMessages = generateFakeDirectMessages(directConversations, 2, 5, 3, 20);
+const directMessages = generateFakeDirectMessages(directConversations, 5, 20, 3, 20);
 
 /**
  *
