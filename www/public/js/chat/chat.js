@@ -165,7 +165,7 @@ createRoomModal.addEventListener("hidden.bs.modal", (event) => {
 
 openDirectMessagesDrawer.addEventListener("click", (e) => {
   directMessagesDrawer.classList.toggle("open");
-  wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_CONVERSATIONS, {}));
+  wsapp.send(new WebSocketMessage(EventType.GET_DIRECT_CONVERSATIONS, {}));
 });
 
 // Button at top right of DM's drawer (shown as an X).
@@ -207,7 +207,7 @@ function handleDirectConversationClick(event, theElement) {
   if (currBp === "sm" || currBp === "xs") {
     directMessagesDrawer.classList.toggle("open");
   }
-  wsapp.send(new WebSocketMessage(EventType.LIST_DIRECT_MESSAGES, { id: theElement.id }));
+  wsapp.send(new WebSocketMessage(EventType.GET_DIRECT_MESSAGES, { id: theElement.id }));
 }
 
 /**

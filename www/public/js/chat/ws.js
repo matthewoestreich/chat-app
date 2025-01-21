@@ -127,11 +127,11 @@ wsapp.on(EventType.LIST_DIRECT_CONVERSATIONS, (_socket, { error, directConversat
  * @event {LIST_DIRECT_MESSAGES}
  *
  */
-wsapp.on(EventType.LIST_DIRECT_MESSAGES, (_socket, { messages, error }) => {
+wsapp.on(EventType.LIST_DIRECT_MESSAGES, (_socket, { directMessages, error }) => {
   if (error) {
     throw error;
   }
-  handleDirectMessages(messages);
+  handleDirectMessages(directMessages);
 });
 
 /**
