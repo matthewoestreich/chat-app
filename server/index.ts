@@ -22,6 +22,8 @@ export default function startExpressApp(): Promise<Server<typeof IncomingMessage
   });
 }
 
+console.log({ from: "./server/index.ts", task: "startExpressApp", databasePath: process.env.ABSOLUTE_DB_PATH });
+
 app.set("view engine", "pug");
 app.set("views", path.resolve(__dirname, "../www"));
 
