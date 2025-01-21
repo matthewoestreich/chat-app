@@ -20,6 +20,7 @@ jobs:
       JWT_SIGNATURE: ${{ secrets.JWT_SIGNATURE }}
       EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
       WSS_URL: ${{ secrets.WSS_URL }}
+      IS_GITHUB_ACTION: ${{ secrets.IS_GITHUB_ACTION }}
 
     steps:
     - name: Checkout code

@@ -1,7 +1,52 @@
+interface GenerateFakeUsersParams {
+  numberOfUsers: number;
+  makeIdentical: boolean;
+}
+
+interface GenerateFakeChatRoomsParams {
+  numberOfRooms: number;
+  longNameFrequency: FakeDataFrequency;
+}
+
+interface AddFakeUsersToFakeChatRoomsParams {
+  minUsersPerRoom: number;
+  maxUsersPerRoom: number;
+}
+
+interface GenerateFakeChatRoomMessagesParams {
+  maxMessagesPerRoom: number;
+  minMessageLength: number;
+  maxMessageLength: number;
+}
+
+interface GenerateFakeDirectConversationsParams {
+  minConversationsPerUser: number;
+  maxConversationsPerUser: number;
+}
+
+interface GenerateFakeDirectMessagesParams {
+  minMessagesPerConversation: number;
+  maxMessagesPerConversation: number;
+  minMessageLength: number;
+  maxMessageLength: number;
+}
+
+interface GenerateFakeDataParams {
+  userParams: GenerateFakeUsersParams;
+  chatRoomsParams: GenerateFakeChatRoomsParams;
+  chatRoomsWithMembersParams: AddFakeUsersToFakeChatRoomsParams;
+  chatRoomMessagesParams: GenerateFakeChatRoomMessagesParams;
+  directConversationParams: GenerateFakeDirectConversationsParams;
+  directMessagesParams: GenerateFakeDirectMessagesParams;
+}
+
 interface FakeData {
   users: FakeUser[];
   rooms: FakeChatRoom[];
   roomsWithMembers: FakeChatRoomWithMembers[];
+  chatRoomMessages: FakeChatRoomMessage[];
+  directConversations: FakeDirectConversation[];
+  directMessages: FakeDirectMessage[];
 }
 
 interface FakeUser {

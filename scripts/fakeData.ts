@@ -10,6 +10,39 @@ import sqlite3 from "sqlite3";
  */
 
 /**
+ * Generate all needed fake data.
+ * @param {GenerateFakeDataParams} params
+ */
+export function generateFakeData(params: GenerateFakeDataParams): FakeData {
+  const { numberOfUsers, makeIdentical } = params.userParams;
+  const users = generateFakeUsers(numberOfUsers, makeIdentical);
+
+  const { numberOfRooms, longNameFrequency } = params.chatRoomsParams;
+  const rooms = generateFakeChatRooms(numberOfRooms, longNameFrequency);
+
+  const { minUsersPerRoom, maxUsersPerRoom } = params.chatRoomsWithMembersParams;
+  const roomsWithMembers = addFakeUsersToFakeChatRooms(users, rooms, minUsersPerRoom, maxUsersPerRoom);
+
+  const { maxMessagesPerRoom, maxMessageLength: maxChatRoomMessageLength, minMessageLength: minChatRoomMessageLength } = params.chatRoomMessagesParams;
+  const chatRoomMessages = generateFakeChatRoomMessages(roomsWithMembers, maxMessagesPerRoom, minChatRoomMessageLength, maxChatRoomMessageLength);
+
+  const { minConversationsPerUser, maxConversationsPerUser } = params.directConversationParams;
+  const directConversations = generateFakeDirectConversations(users, minConversationsPerUser, maxConversationsPerUser);
+
+  const { minMessagesPerConversation, maxMessagesPerConversation, minMessageLength, maxMessageLength } = params.directMessagesParams;
+  const directMessages = generateFakeDirectMessages(directConversations, minMessagesPerConversation, maxMessagesPerConversation, minMessageLength, maxMessageLength);
+
+  return {
+    users,
+    rooms,
+    roomsWithMembers,
+    chatRoomMessages,
+    directMessages,
+    directConversations,
+  };
+}
+
+/**
  * Generate fake users.
  * @param numberOfUsers Number of users to generate.
  * @param makeIdentical If true, we set the username, email, and password all to the same thing.
@@ -224,6 +257,45 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
  * INSERT FAKE DATA FUNCTIONS
  * ==================================================================================================================================================================================================================
  */
+
+/**
+ * Insert fake data.
+ * @param fakeData
+ * @param databasePath
+ */
+export async function insertFakeData(fakeData: FakeData, databasePath: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(databasePath, (err) => {
+      if (err) {
+        return reject(`Error connecting to database : ${err.message}`);
+      }
+    });
+
+    try {
+      db.serialize(async () => {
+        await insertFakeUsers(db, fakeData.users);
+        await insertFakeChatRooms(db, fakeData.rooms);
+        await insertFakeUsersIntoFakeChatRooms(db, fakeData.roomsWithMembers);
+        await insertFakeChatRoomMessages(db, fakeData.chatRoomMessages);
+        await insertFakeDirectConversations(db, fakeData.directConversations);
+        await insertFakeDirectMessages(db, fakeData.directMessages);
+        db.run("COMMIT", (_results: sqlite3.RunResult, err: Error | null) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+      });
+    } catch (e) {
+      db.run("ROLLBACK", (_results: sqlite3.RunResult, err: Error | null) => {
+        if (err) {
+          return reject(`Transaction rolled back due to error. Got error during ROLLBACK: ${err.message}`);
+        }
+        return reject(`Transaction rolled back due to error: ${(e as Error).message}`);
+      });
+    }
+  });
+}
 
 /**
  * Insert users into database
