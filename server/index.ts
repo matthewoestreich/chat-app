@@ -12,6 +12,7 @@ import apiRouter from "@/server/routers/api";
 const app = express();
 
 export default function startExpressApp(): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> {
+  console.log({ from: "./server/index.ts", task: "startExpressApp", databasePath: process.env.ABSOLUTE_DB_PATH });
   return new Promise((resolve, reject) => {
     try {
       resolve(app.listen(process.env.EXPRESS_PORT));

@@ -2,6 +2,7 @@ import "dotenv/config";
 import nodeFs from "node:fs";
 import nodePath from "node:path";
 import WebSocketApp from "./server/wss/WebSocketApp";
+import initDatabase from "./scripts/initDatabase";
 import { generateFakeData, insertFakeData } from "./scripts/fakeData";
 import { defineConfig } from "cypress";
 import sqlite3 from "sqlite3";
@@ -17,12 +18,12 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       on("before:run", async () => {
         console.log(`on('before:run') fired!`);
-        await setupTestDatabase();
+        await setupTestDatabase(process.env.ABSOLUTE_DB_PATH!);
       });
 
       on("after:run", () => {
         console.log("on('after:run') fired!");
-        cleanupTestDatabase();
+        cleanupTestDatabase(process.env.ABSOLUTE_DB_PATH!);
       });
 
       return config;
@@ -30,9 +31,12 @@ export default defineConfig({
   },
 });
 
-async function setupTestDatabase(): Promise<boolean> {
+async function setupTestDatabase(dbPath: string): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
+      // If db exists (bc `on("after:run")` is buggy and doesn't work right with `cypress open`), remove it.
+      cleanupTestDatabase(dbPath);
+      await initDatabase(dbPath);
       const fakeData = generateFakeData({
         userParams: {
           numberOfUsers: 5,
@@ -75,7 +79,7 @@ async function setupTestDatabase(): Promise<boolean> {
         members: fakeData.users,
       });
 
-      const db = new sqlite3.Database(process.env.ABSOLUTE_DB_PATH!, (err) => {
+      const db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
           console.error(`Error getting database handle : ${err.message}`);
           return reject(err);
@@ -90,8 +94,8 @@ async function setupTestDatabase(): Promise<boolean> {
   });
 }
 
-function cleanupTestDatabase() {
-  if (nodeFs.existsSync(process.env.ABSOLUTE_DB_PATH!)) {
-    nodeFs.unlinkSync(process.env.ABSOLUTE_DB_PATH!);
+function cleanupTestDatabase(dbPath: string) {
+  if (nodeFs.existsSync(dbPath)) {
+    nodeFs.unlinkSync(dbPath);
   }
 }

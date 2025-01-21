@@ -12,7 +12,7 @@
  * node thisScript.ts --startServer npm run start:server --url http://localhost:3000 --startTest npm run start:test
  *
  */
-import { ChildProcess, spawn } from "node:child_process";
+import SpawnedProcess from "./SpawnedProcess";
 
 const EXPECTED_SWITCHES: Array<keyof Options> = ["startServer", "url", "startTest"];
 const URL_ALIVE_CHECK_INTERVAL = 500; // in ms
@@ -24,60 +24,37 @@ if (!validateArgs(options, EXPECTED_SWITCHES)) {
   process.exit(1);
 }
 
-// "Main"
-(async () => {
-  const server = spawn(options.startServer.command, options.startServer.switches, { stdio: "inherit" });
+const serverProcess = new SpawnedProcess(options.startServer.command, options.startServer.args, { stdio: "inherit" });
+const testProcess = new SpawnedProcess(options.startTest.command, options.startTest.args, { stdio: "inherit" });
 
-  server.stdout?.on("data", (data) => {
-    console.log(data.toString());
-  });
+serverProcess.stdout?.on("data", (data) => {
+  console.log(data.toString());
+});
+serverProcess.stderr?.on("data", (data) => {
+  console.error(data.toString());
+});
 
-  server.stderr?.on("data", (data) => {
-    console.error(data);
-  });
+testProcess.stdout?.on("data", (data) => {
+  console.log(data.toString());
+});
+testProcess.stderr?.on("data", (data) => {
+  console.error(data.toString());
+});
+testProcess.on("close", (_code) => {
+  serverProcess.kill();
+});
 
-  server.on("close", (code) => {
-    console.log(`startServer closed with code ${code}`);
-    process.exit(code);
-  });
+serverProcess.start();
 
-  server.on("error", (err) => {
-    console.error(`startServer encountered an error`, err);
-    process.exit(1);
-  });
-
-  try {
-    await waitForServer(options.url.command, server, URL_ALIVE_CHECK_INTERVAL, URL_MAX_ALIVE_CHECKS);
-  } catch (e) {
+waitForServer(options.url.command, URL_ALIVE_CHECK_INTERVAL, URL_MAX_ALIVE_CHECKS)
+  .then((_res) => {
+    testProcess.start();
+  })
+  .catch((e) => {
     console.error(e);
-    server.kill("SIGTERM");
-    process.exit(1);
-  }
-
-  const test = spawn(options.startTest.command, options.startTest.switches, { stdio: "inherit" });
-
-  test.stdout?.on("data", (data) => {
-    console.log(data.toString());
+    serverProcess.kill();
+    testProcess.kill();
   });
-
-  test.stderr?.on("data", (data) => {
-    console.error(data);
-  });
-
-  test.on("close", (code) => {
-    server.kill("SIGTERM");
-    test.kill("SIGTERM");
-    console.log(`startTest closed with code ${code}`);
-    process.exit(code);
-  });
-
-  test.on("error", (err) => {
-    console.error(`startTest encountered an error`, err);
-    server.kill("SIGTERM");
-    test.kill("SIGTERM");
-    process.exit(1);
-  });
-})();
 
 /**
  *
@@ -87,7 +64,7 @@ if (!validateArgs(options, EXPECTED_SWITCHES)) {
 
 interface Command {
   command: string;
-  switches: string[];
+  args: string[];
 }
 
 interface Options {
@@ -115,11 +92,11 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForServer(url: string, serverProcess: ChildProcess, checkIntervalMs: number, maxChecks: number): Promise<boolean> {
+async function waitForServer(url: string, checkIntervalMs: number, maxChecks: number): Promise<boolean> {
   let aliveChecks = 0;
   let isAlive = await isUrlAlive(url);
 
-  while (!isAlive && aliveChecks <= maxChecks && serverProcess.connected) {
+  while (!isAlive && aliveChecks <= maxChecks) {
     await sleep(checkIntervalMs);
     isAlive = await isUrlAlive(url);
     aliveChecks++;
@@ -155,7 +132,7 @@ function processArgs(args: string[]): Options {
       const key = args[i].slice(2) as keyof Options; // remove "--" from switch
       let cmd: Command = {
         command: "",
-        switches: [],
+        args: [],
       };
 
       // Get actual command
@@ -169,7 +146,7 @@ function processArgs(args: string[]): Options {
       // eg; run start:server
       // Which makes the entire command: npm run start:server
       while (args[i + 1] && !args[i + 1].startsWith("--")) {
-        cmd.switches.push(args[i + 1]);
+        cmd.args.push(args[i + 1]);
         i++;
       }
 
