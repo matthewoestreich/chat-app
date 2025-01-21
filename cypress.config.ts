@@ -1,5 +1,6 @@
 // @ts-nocheck
 import nodePath from "node:path";
+import WebSocketApp from "./server/wss/WebSocketApp";
 import { generateFakeData, insertFakeData } from "./scripts/fakeData";
 import { defineConfig } from "cypress";
 import "dotenv/config";
@@ -42,6 +43,17 @@ export default defineConfig({
                   minMessageLength: 3,
                   maxMessageLength: 20,
                 },
+              });
+              // Add #general Room and add everyone to it
+              const generalRoom: FakeChatRoom = {
+                name: "#general",
+                id: WebSocketApp.ID_UNASSIGNED,
+                isPrivate: 0,
+              };
+              fakeData.rooms.push(generalRoom);
+              fakeData.roomsWithMembers.push({
+                room: generalRoom,
+                members: fakeData.users,
               });
               await insertFakeData(fakeData, process.env.ABSOLUTE_DB_PATH);
               resolve(true);

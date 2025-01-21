@@ -311,8 +311,10 @@ export async function insertFakeUsers(db: sqlite3.Database, users: FakeUser[]): 
         const pw = await bcrypt.hash(user.password, salt);
         stmt.run(user.id, user.username, user.email, pw);
       }
-      stmt.finalize(() => {
-        console.log(" - users stmt finalized");
+      stmt.finalize((err) => {
+        if (err) {
+          return reject(err);
+        }
         resolve(true);
       });
     } catch (e) {
@@ -333,8 +335,10 @@ export async function insertFakeChatRooms(db: sqlite3.Database, rooms: FakeChatR
       for (const room of rooms) {
         stmt.run(room.id, room.name, room.isPrivate);
       }
-      stmt.finalize(() => {
-        console.log(" - rooms stmt finalized");
+      stmt.finalize((err) => {
+        if (err) {
+          return reject(err);
+        }
         resolve(true);
       });
     } catch (e) {
@@ -357,8 +361,10 @@ export async function insertFakeUsersIntoFakeChatRooms(db: sqlite3.Database, roo
           stmt.run(member.id, room.id);
         }
       }
-      stmt.finalize(() => {
-        console.log(" - join users to chat rooms stmt finalized");
+      stmt.finalize((err) => {
+        if (err) {
+          return reject(err);
+        }
         resolve(true);
       });
     } catch (e) {
@@ -381,10 +387,8 @@ export async function insertFakeChatRoomMessages(db: sqlite3.Database, messages:
       }
       stmt.finalize((err) => {
         if (err) {
-          console.log(`error finalizing messages statement`, err);
           return reject(err);
         }
-        console.log(` - messages stmt finalized`);
         resolve(true);
       });
     } catch (e) {
@@ -407,10 +411,8 @@ export async function insertFakeDirectConversations(db: sqlite3.Database, convos
       }
       stmt.finalize((err) => {
         if (err) {
-          console.log(`error finalizing direct_conversation statement`, err);
           return reject(err);
         }
-        console.log(` - direct_conversation stmt finalized`);
         resolve(true);
       });
     } catch (e) {
@@ -433,10 +435,8 @@ export async function insertFakeDirectMessages(db: sqlite3.Database, messages: F
       }
       stmt.finalize((err) => {
         if (err) {
-          console.log(`error finalizing direct_messages statement`, err);
           return reject(err);
         }
-        console.log(` - direct_messages stmt finalized`);
         resolve(true);
       });
     } catch (e) {
