@@ -14,7 +14,7 @@
     "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
     "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
     "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",
-    ":jest": "jest",
+    "test:jest": "jest",
     "jest:clearCache": "jest --clearCache",
     "insert:fake:data": "tsx scripts/insertFakeData.ts",
     "db:backup": "tsx scripts/backupDatabaseToGist.ts",
