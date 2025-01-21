@@ -1,7 +1,5 @@
 import "dotenv/config";
 import nodePath from "node:path";
-import startExpressApp from "@/server/index";
-import startWebSocketApp from "@/server/wss/index";
 import initDatabase from "@/scripts/initDatabase";
 import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
 import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
@@ -48,6 +46,12 @@ async function Main() {
       /**
        * Start Express App + WebSocketApp
        */
+
+      // These have to be here bc GitHub actoins fail due to server being imported before
+      // env can run.
+      // TODO : fix this
+      const startExpressApp = (await import("@/server/index")).default;
+      const startWebSocketApp = (await import("@/server/wss/index")).default;
 
       // Start Express
       const server = await startExpressApp();
