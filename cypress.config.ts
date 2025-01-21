@@ -44,6 +44,7 @@ export default defineConfig({
                 },
               });
               await insertFakeData(fakeData, process.env.ABSOLUTE_DB_PATH);
+              resolve(true);
             } catch (e) {
               reject(e);
             }
