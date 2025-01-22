@@ -1,8 +1,11 @@
 import "dotenv/config";
 import nodePath from "node:path";
 import initDatabase from "@/scripts/initDatabase";
+import createExpressApp from "./server";
+import createWebSocketApp from "./server/wss";
 import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
 import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
+import SQLitePool from "./server/db/SQLitePool";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
 process.env.WSS_URL = process.env.WSS_URL || "";
@@ -25,42 +28,34 @@ if (!process.env.WSS_URL || process.env.WSS_URL === "") {
   process.exit(1);
 }
 
-const IS_PRODUCTION = process.env.WSS_URL.endsWith("onrender.com");
-
 (async () => await Main())();
 
 async function Main() {
   return new Promise(async (resolve) => {
     try {
-      if (IS_PRODUCTION) {
+      if (process.env.NODE_ENV === "prod") {
         await restoreDatabaeFromGist();
-        // If we are running on Render, start CronJob so our free-tier container isn't spun down due to inactivity.
         keepAliveJob.start();
         backupDatabaseJob.start();
       } else {
-        // Add port to wss url if we are running local.
         process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
-        await initDatabase(process.env.ABSOLUTE_DB_PATH || "");
+        if (process.env.NODE_ENV === "dev") {
+          await initDatabase(process.env.ABSOLUTE_DB_PATH!);
+        }
       }
+
+      const databasePool = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
 
       /**
        * Start Express App + WebSocketApp
        */
 
-      // These have to be here bc GitHub actoins fail due to server being imported before
-      // env can run.
-      // TODO : fix this
-      const startExpressApp = (await import("@/server/index")).default;
-      const startWebSocketApp = (await import("@/server/wss/index")).default;
-
       // Start Express
-      const server = await startExpressApp();
+      const server = await createExpressApp(databasePool).listenAsync(process.env.EXPRESS_PORT);
       console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
-
       // Start WebSocketApp
-      startWebSocketApp(server, () => {
-        console.log(`WebSocketApp listening via Express server`);
-      });
+      await createWebSocketApp(databasePool).listenAsync({ server });
+      console.log(`WebSocketApp listening via Express server`);
 
       resolve(null);
     } catch (e) {

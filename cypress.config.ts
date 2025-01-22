@@ -8,7 +8,7 @@ import { defineConfig } from "cypress";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-process.env.ABSOLUTE_DB_PATH = nodePath.resolve(__dirname, "./cypress/db/test.db");
+const DATABASE_PATH = nodePath.resolve(__dirname, "./cypress/db/test.db");
 
 export default defineConfig({
   projectId: "t5349w",
@@ -17,15 +17,11 @@ export default defineConfig({
     experimentalInteractiveRunEvents: true,
     setupNodeEvents(on, config) {
       on("before:run", async () => {
-        console.log(`on('before:run') fired!`);
-        await setupTestDatabase(process.env.ABSOLUTE_DB_PATH!);
+        await setupTestDatabase(DATABASE_PATH);
       });
-
       on("after:run", () => {
-        console.log("on('after:run') fired!");
-        cleanupTestDatabase(process.env.ABSOLUTE_DB_PATH!);
+        //cleanupTestDatabase(DATABASE_PATH);
       });
-
       return config;
     },
   },
@@ -37,6 +33,7 @@ async function setupTestDatabase(dbPath: string): Promise<boolean> {
       // If db exists (bc `on("after:run")` is buggy and doesn't work right with `cypress open`), remove it.
       cleanupTestDatabase(dbPath);
       await initDatabase(dbPath);
+
       const fakeData = generateFakeData({
         userParams: {
           numberOfUsers: 5,

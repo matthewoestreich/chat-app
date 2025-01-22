@@ -12,7 +12,7 @@ const closeDirectMessagesDrawerFooterBtn = document.getElementById("close-dms-fo
 /* Leave room confirmation modal */
 const leaveRoomConfirmationModal = document.getElementById("leave-room-confirmation-modal");
 const leaveRoomConfirmationModalBody = document.getElementById("leave-room-confirmation-modal-body");
-const openLeaveRoomConfirmModalBtn = document.getElementById("leave-room-btn");
+const openLeaveRoomConfirmModalBtn = document.getElementById("open-leave-room-modal");
 const confirmedLeaveRoomBtn = document.getElementById("leave-room-confirmation-modal-confirmed-leave-btn");
 /* Create room modal */
 const createRoomModal = document.getElementById("create-room-modal");

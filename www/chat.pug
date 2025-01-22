@@ -93,7 +93,7 @@ block content
               button#open-join-room-modal.btn.btn-primary.shadow.flex-grow-1(type="button", title="Join room")
                 i.bi.bi-box-arrow-in-up-right
             .col-4.d-flex.p-1
-              button#leave-room-btn.btn.btn-warning.shadow.flex-grow-1(type="button", title="Leave current room", disabled)
+              button#open-leave-room-modal.btn.btn-warning.shadow.flex-grow-1(type="button", title="Leave current room", disabled)
                 i.bi.bi-box-arrow-down-left
             .col-4.d-flex.p-1
               button#open-create-room-modal-btn.btn.btn-primary.shadow.flex-grow-1(type="button", title="Create room")
@@ -107,7 +107,6 @@ block scripts
     const WEBSOCKET_URL = "#{websocketUrl}";
   script(src="/public/js/EventTypes.js", type="text/javascript")
   script(src="/public/js/WebSocketApp.js", type="text/javascript")
-  script(src="/public/js/Store.js", type="text/javascript")
   script(src="/public/js/theme.js", type="text/javascript")
   script(src="/public/js/chat/ws.js", type="text/javascript")
   script(src="/public/js/chat/chat.js", type="text/javascript")

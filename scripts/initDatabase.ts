@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-export default async function (databaseFilePath: string): Promise<boolean> {
+export default async function initDatabase(databaseFilePath: string): Promise<boolean> {
   if (databaseFilePath === "") {
     return console.error(`initDatabase : databaseFilePath is empty!`);
   }
@@ -12,7 +12,7 @@ export default async function (databaseFilePath: string): Promise<boolean> {
 
   return new Promise((resolve, reject) => {
     try {
-      const db = new sqlite3.Database(path.resolve(__dirname, databaseFilePath), (err) => {
+      const db = new sqlite3.Database(databaseFilePath, (err) => {
         if (err) {
           return reject(err);
         }

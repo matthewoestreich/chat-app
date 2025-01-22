@@ -90,9 +90,9 @@ describe("Functionality", () => {
   });
 
   it("should leave a room", () => {
-    cy.get("#leave-room-btn").should("be.visible").should("be.disabled");
+    cy.get("#open-leave-room-modal").should("be.visible").should("be.disabled");
     cy.enterRoom(NEW_ROOM_NAME);
-    cy.get("#leave-room-btn").should("be.enabled").click();
+    cy.get("#open-leave-room-modal").should("be.enabled").click();
     cy.get("#leave-room-confirmation-modal-confirmed-leave-btn[data-cy='unjoin']").should("be.visible").click();
     cy.get("#leave-room-confirmation-modal").should("not.be.visible");
     cy.isRoomMember(NEW_ROOM_NAME).should("not.exist");
