@@ -85,7 +85,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       return;
     }
     console.log(req.databaseProvider);
-    const result = await req.databaseProvider.accounts.insert({ name: username, id: uuidv7(), email, password });
+    const result = await req.databaseProvider.accounts.create({ name: username, id: uuidv7(), email, password });
     res.status(200).send({ ok: true, ...result });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
@@ -128,7 +128,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const { name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(name, id, foundEmail);
-    await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed); //sessionService.upsert(db, foundUser.id, jwt.signed);
+    await req.databaseProvider.sessions.upsert({ userId: foundUser.id, token: jwt.signed }); //sessionService.upsert(db, foundUser.id, jwt.signed);
 
     res.status(200).send({ ok: true, session: jwt.signed });
   } catch (e) {

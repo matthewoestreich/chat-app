@@ -73,6 +73,7 @@ interface DirectMessage {
   fromUserId: string;
   toUserId: string;
   message: string;
+  isRead: boolean;
   timestamp: Date;
 }
 
