@@ -38,6 +38,9 @@ export default class WebSocketApp extends EventEmitter {
     }
   }
 
+  // TODO : come up with a better way to pass DatabaseProvider...
+  public databaseProvider: DatabaseProvider;
+
   constructor() {
     super();
     WebSocketApp.cache.set(WebSocketApp.ID_UNASSIGNED, new Map());

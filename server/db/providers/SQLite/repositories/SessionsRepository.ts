@@ -1,0 +1,116 @@
+import sqlite3 from "sqlite3";
+
+export default class SessionsRepositorySQLite implements SessionsRepository<sqlite3.Database> {
+  databasePool: DatabasePool<sqlite3.Database>;
+
+  constructor(dbpool: DatabasePool<sqlite3.Database>) {
+    this.databasePool = dbpool;
+  }
+
+  async selectByUserId(userId: string): Promise<Session> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      db.get(`SELECT * FROM session WHERE userId = ?`, [userId], (err, row) => {
+        if (err) {
+          release();
+          return reject(err);
+        }
+        release();
+        return resolve(row as Session);
+      });
+    });
+  }
+
+  async upsert(entity: Session): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise(async (resolve, reject) => {
+      try {
+        const query = `INSERT INTO session (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
+        db.run(query, [entity.userId, entity.token], function (err) {
+          if (err) {
+            release();
+            return reject(err);
+          }
+          release();
+          return resolve(true);
+        });
+      } catch (e) {
+        release();
+        return reject(e);
+      }
+    });
+  }
+
+  async deleteByUserId(userId: string): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      db.serialize(() => {
+        db.run(`DELETE FROM session WHERE userId = ?`, userId, function (err) {
+          if (err) {
+            release();
+            return reject(err);
+          }
+          if (this.changes !== 1) {
+            release();
+            return reject(new Error("unable to remove refresh token!"));
+          }
+          release();
+          return resolve(true);
+        });
+      });
+    });
+  }
+
+  getAll(): Promise<Session[]> {
+    throw new Error("Method not implemented.");
+  }
+
+  getById(_id: string): Promise<Session> {
+    throw new Error("Method not implemented.");
+  }
+
+  async create(entity: Session): Promise<Session> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise(async (resolve, reject) => {
+      try {
+        const query = `INSERT INTO session (userId, token) VALUES (?, ?)`;
+        db.run(query, [entity.userId, entity.token], (err) => {
+          if (err) {
+            release();
+            return reject(err);
+          }
+          release();
+          return resolve(entity);
+        });
+      } catch (e) {
+        release();
+        return reject(e);
+      }
+    });
+  }
+
+  update(_id: string, _entity: Session): Promise<Session | null> {
+    throw new Error("Method not implemented.");
+  }
+
+  async delete(token: string): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        db.serialize(() => {
+          db.run(`DELETE FROM session WHERE token = ?`, token, function (err) {
+            if (err) {
+              release();
+              return reject(err);
+            }
+            release();
+            return resolve(true);
+          });
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
+  }
+}

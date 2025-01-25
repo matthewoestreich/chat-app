@@ -32,7 +32,7 @@ import WebSocketApp from "@/server/wss/WebSocketApp";
  */
 
 const NUM_ITEMS = 100;
-const DATABASE_PATH = nodePath.resolve(__dirname, "../server/db/rtchat.db");
+const DATABASE_PATH = nodePath.resolve(__dirname, "../rtchat.db");
 
 /**
  *

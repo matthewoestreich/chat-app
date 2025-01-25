@@ -1,8 +1,7 @@
 import { CronJob } from "cron";
-import backupDatabaseToGist from "./backupDatabaseToGist";
 
-export const keepAliveJob = keepAlive();
-export const backupDatabaseJob = backupDatabase();
+export const keepAliveCronJob = keepAlive();
+export const backupDatabaseCronJob = backupDatabase;
 
 function keepAlive(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   return new CronJob(
@@ -16,9 +15,9 @@ function keepAlive(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   );
 }
 
-function backupDatabase() {
+function backupDatabase(func: () => Promise<void>) {
   return new CronJob(
     "0 * * * *", // Every hour
-    backupDatabaseToGist,
+    func,
   );
 }

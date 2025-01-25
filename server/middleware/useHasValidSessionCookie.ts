@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { sessionService } from "@/server/db/services/index.js";
 
 /**
  * If request has a session cookie, we check if that matches what we have in our database.
@@ -14,10 +13,8 @@ export default async function (req: Request, res: Response, next: NextFunction) 
       return next();
     }
 
-    const decodedToken = jsonwebtoken.decode(session) as SessionToken;
-    const { db, release } = await req.databasePool.getConnection();
-    const storedSession = await sessionService.selectByUserId(db, decodedToken?.id);
-    release();
+    const decodedToken = jsonwebtoken.decode(session) as JSONWebToken;
+    const storedSession = await req.databaseProvider.sessions.selectByUserId(decodedToken?.id); //sessionService.selectByUserId(db, decodedToken?.id);
 
     if (!storedSession || (storedSession.token && storedSession.token !== session)) {
       res.clearCookie("session");

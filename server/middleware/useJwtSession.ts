@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { sessionService } from "@/server/db/services/index.js";
 import { generateSessionToken } from "@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -45,23 +44,20 @@ async function verifyJwtAsync(token: string, secret: string) {
 }
 
 async function handleSessionRefresh(receivedSessionToken: string, req: Request, res: Response) {
-  const { db, release } = await req.databasePool.getConnection();
   try {
-    const decodedToken = jsonwebtoken.decode(receivedSessionToken) as SessionToken;
+    const decodedToken = jsonwebtoken.decode(receivedSessionToken) as JSONWebToken;
     if (!decodedToken.id) {
       //console.log(`[useJwt][ERROR] no id found in decoded session token`);
-      release();
       return false;
     }
 
     //console.log(`[useJwt][INFO][id:${decodedToken?.id}] session token is expired. session token has id. Checking if received session token is the same as sessionToken we have in database.`);
     // Get existing session token from db.
-    const existingSession = await sessionService.selectByUserId(db, decodedToken.id);
+    const existingSession = await req.databaseProvider.sessions.selectByUserId(decodedToken.id); //sessionService.selectByUserId(db, decodedToken.id);
     //console.log({ from: "useJwtSession", "String(existingSession.token)": String(existingSession.token) });
     // If no existing token, or existing token missing "token" column, or mismatch force user to reauth.
     if (!existingSession || !existingSession.token || String(existingSession.token) !== receivedSessionToken) {
       //console.log(`[useJwt][ERROR] either no existing session token is stored in our DB or there is a token mismatch!`, { existing: existingSession?.token, received: receivedSessionToken });
-      release();
       return false;
     }
 
@@ -70,8 +66,7 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     const sessionToken = generateSessionToken(decodedToken.name, decodedToken.id, decodedToken.email);
 
     // Update refresh token in db to newly generated refresh token.
-    await sessionService.update(db, decodedToken.id, sessionToken);
-    req.databasePool.releaseConnection(db);
+    await req.databaseProvider.sessions.upsert(decodedToken.id, sessionToken.signed); //sessionService.update(db, decodedToken.id, sessionToken);
 
     // Update client side cookie
     res.cookie("session", sessionToken, { maxAge: ONE_DAY, httpOnly: true });

@@ -1,15 +1,3 @@
-interface DatabasePoolConnection<T> {
-  db: T;
-  release(): void;
-}
-
-interface DatabasePool<T> {
-  getConnection(): Promise<DatabasePoolConnection<T>>;
-  releaseConnection(connection: DatabasePoolConnection<T>): void;
-  //query(sql: string, params: any): Promise<unknown>;
-  //closeAllIdleConnections(): Promise<boolean>;
-}
-
 interface RoomMember {
   userName: string;
   userId: string;
@@ -26,20 +14,21 @@ interface Room {
 interface Message {
   id: string;
   userId: string;
-  userName: string;
+  userName?: string;
   roomId: string;
   message: string;
   timestamp: Date;
 }
 
-interface SessionToken {
+interface JSONWebToken {
   id: string;
   name: string;
   email: string;
+  signed: string;
 }
 
 interface Session {
-  token: SessionToken;
+  token: string;
   userId: string;
 }
 
@@ -66,11 +55,17 @@ interface Cookies {
 }
 
 interface DirectConversation {
-  id: string; // convo id
-  userId: string; // other participant id in DM
-  userName: string; // other participant name in DM
-  isActive: boolean; // is other participant currently online
+  id: string;
+  userA_id: string;
+  userB_id: string;
 }
+
+//interface DirectConversation {
+//  id: string; // convo id
+//  userId: string; // other participant id in DM
+//  userName: string; // other participant name in DM
+//  isActive: boolean; // is other participant currently online
+//}
 
 interface DirectMessage {
   id: string;
@@ -91,7 +86,7 @@ declare namespace Express {
     listenAsync(handle: any, listeningListener?: () => void): Promise<import("node:http").Server<typeof import("node:http").IncomingMessage, typeof import("node:http").ServerResponse>>;
   }
   export interface Request {
-    databasePool: DatabasePool<T>;
+    databaseProvider: DatabaseProvider;
     cookies: {};
     sessionToken: string;
   }

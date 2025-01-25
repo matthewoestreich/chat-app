@@ -4,11 +4,13 @@ import nodePath from "node:path";
 import WebSocketApp from "./server/wss/WebSocketApp";
 import initDatabase from "./scripts/initDatabase";
 import { generateFakeData, insertFakeData } from "./scripts/fakeData";
+import { SQLiteProvider } from "./server/db/providers";
 import { defineConfig } from "cypress";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-const DATABASE_PATH = nodePath.resolve(__dirname, "./cypress/db/test.db");
+const databasePath = nodePath.resolve(__dirname, "./test.db");
+const sqliteProvider = new SQLiteProvider(databasePath, 5);
 
 export default defineConfig({
   projectId: "t5349w",
@@ -17,7 +19,8 @@ export default defineConfig({
     experimentalInteractiveRunEvents: true,
     setupNodeEvents(on, config) {
       on("before:run", async () => {
-        await setupTestDatabase(DATABASE_PATH);
+        await sqliteProvider.initialize();
+        await sqliteProvider.seed();
       });
       on("after:run", () => {
         //cleanupTestDatabase(DATABASE_PATH);
@@ -27,6 +30,7 @@ export default defineConfig({
   },
 });
 
+// @ts-ignore
 async function setupTestDatabase(dbPath: string): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {

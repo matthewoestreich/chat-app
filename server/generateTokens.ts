@@ -4,7 +4,12 @@ const EXPIRATION_TIMES = {
   session: "30m",
 };
 
-export function generateSessionToken(name: string, id: string, email: string, options?: jsonwebtoken.SignOptions) {
+export function generateSessionToken(name: string, id: string, email: string, options?: jsonwebtoken.SignOptions): JSONWebToken {
   const sessionTokenOptions = { expiresIn: EXPIRATION_TIMES.session, ...options };
-  return jsonwebtoken.sign({ name, id, email }, process.env.JWT_SIGNATURE || "", sessionTokenOptions);
+  return {
+    name,
+    id,
+    email,
+    signed: jsonwebtoken.sign({ name, id, email }, process.env.JWT_SIGNATURE || "", sessionTokenOptions),
+  };
 }
