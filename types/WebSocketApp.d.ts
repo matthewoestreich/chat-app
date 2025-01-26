@@ -105,7 +105,7 @@ interface WebSocketAppEventRegistry {
   };
   LIST_ROOM_MEMBERS: {};
   LIST_DIRECT_CONVERSATIONS: {
-    directConversations: DirectConversation[];
+    directConversations: DirectConversationByUserId[];
   };
   GET_DIRECT_CONVERSATIONS: {};
   GET_DIRECT_MESSAGES: {

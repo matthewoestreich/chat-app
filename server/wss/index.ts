@@ -58,7 +58,7 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  *
  */
 wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
-  if (client.activeIn.container) {
+  if (client.activeIn?.container) {
     client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
@@ -83,7 +83,7 @@ wsapp.on("SEND_MESSAGE", async (client, { message }) => {
 
   try {
     // No need to await this, we don't need a response, and nothing depends on the result.
-    wsapp.databaseProvider.roomMessages.insert(client.activeIn.id, client.user.id, message);
+    wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, message);
   } catch (e) {
     console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
   }
@@ -109,10 +109,10 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
   client.broadcast("MEMBER_ENTERED_ROOM", { id: client.user.id });
 
   try {
-    let members = await wsapp.databaseProvider.rooms.selectRoomMembersExcludingUserById(id, client.user.id);
+    let members = await wsapp.databaseProvider.rooms.selectRoomMembersExcludingUser(id, client.user.id);
     const messages = await wsapp.databaseProvider.roomMessages.selectByRoomId(id);
     // Add `isActive` property for each user in this room based upon if they're cached in this room.
-    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedContainer(id)!.has(m.userId) }));
+    members = members.map((m) => ({ ...m, isActive: wsapp.getCachedContainer(id)!.has(m.id) }));
     client.send("ENTERED_ROOM", { members, messages });
   } catch (e) {
     console.error(`[ERROR] TODO : handle this error better! From ENTER_ROOM :`, e);
@@ -178,7 +178,7 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
   }
 
   try {
-    const room = await wsapp.databaseProvider.rooms.insert(name, isPrivate === true ? 1 : 0);
+    const room = await wsapp.databaseProvider.rooms.create(name, isPrivate === true ? 1 : 0);
     await wsapp.databaseProvider.rooms.addUserToRoom(client.user.id, room.id);
     const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
     client.send("CREATED_ROOM", { id: room.id, rooms });
@@ -215,6 +215,7 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
     const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
     client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) })) });
   } catch (e) {
+    console.log(e);
     client.send("ERROR", { event: "GET_DIRECT_CONVERSATIONS", error: e as Error });
   }
 });

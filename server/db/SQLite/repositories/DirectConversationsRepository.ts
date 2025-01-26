@@ -1,3 +1,4 @@
+import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 
 export default class DirectConversationsRepositorySQLite implements DirectConversationsRepository<sqlite3.Database> {
@@ -7,7 +8,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<DirectConversation[]> {
+  async selectByUserId(userId: string): Promise<DirectConversationByUserId[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
@@ -18,7 +19,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
       WHERE ? IN (dc.userA_Id, dc.userB_Id)
       ORDER BY userName ASC;
       `;
-      db.all(query, [userId, userId], (err, rows: DirectConversation[]) => {
+      db.all(query, [userId, userId], (err, rows: DirectConversationByUserId[]) => {
         if (err) {
           release();
           return reject(err);
@@ -59,8 +60,10 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     throw new Error("Method not implemented.");
   }
 
-  async create(entity: DirectConversation): Promise<DirectConversation> {
+  async create(userA_id: string, userB_id: string): Promise<DirectConversation> {
     const { db, release } = await this.databasePool.getConnection();
+    const entity: DirectConversation = { id: uuidV7(), userA_id, userB_id };
+
     return new Promise((resolve, reject) => {
       try {
         const query = `INSERT INTO direct_conversation (id, userA_id, userB_id) VALUES (?, ?, ?)`;

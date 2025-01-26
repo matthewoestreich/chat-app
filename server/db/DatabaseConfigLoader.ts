@@ -1,4 +1,5 @@
 import nodePath from "node:path";
+import appRootPath from "@/appRootPath";
 
 export default class DatabaseConfigLoader {
   static loadConfig(): ProviderConfig<keyof ProviderConfigMap> {
@@ -6,9 +7,9 @@ export default class DatabaseConfigLoader {
 
     switch (databaseProvider) {
       case "sqlite": {
-        let databaseFilePath = nodePath.resolve(__dirname, "@/rtchat.db");
+        let databaseFilePath = nodePath.join(appRootPath, "/", "rtchat.db");
         if (process.env.NODE_ENV === "test") {
-          databaseFilePath = nodePath.resolve(__dirname, "@/test.db");
+          databaseFilePath = nodePath.join(appRootPath, "/", "test.db");
         }
         return {
           type: "sqlite",

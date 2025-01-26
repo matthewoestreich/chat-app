@@ -78,7 +78,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
         chatRoom.forEach((cr) => {
           const user = data.users.find((u) => cr.userId === u.id);
           if (user) {
-            room_and_members.members.push(user);
+            room_and_members.members.push({ id: user!.id, name: user!.name, roomId: room!.id, isActive: false });
           }
         });
         roomsWithMembers.push(room_and_members);
@@ -95,7 +95,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
       const roomMembers: RoomMember[] = [];
       existingMembers.forEach((member) => {
         const found = data.users.find((u) => u.id === member.userId);
-        roomMembers.push({ userName: found!.name, id: roomId, userId: found!.id, isActive: false });
+        roomMembers.push({ name: found!.name, roomId: roomId, id: found!.id, isActive: false });
       });
       return roomMembers;
     });
@@ -108,7 +108,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
       const roomMembers: RoomMember[] = [];
       existingMembers.forEach((member) => {
         const found = data.users.find((u) => u.id === member.userId);
-        roomMembers.push({ userName: found!.name, id: roomId, userId: found!.id, isActive: false });
+        roomMembers.push({ name: found!.name, roomId, id: found!.id, isActive: false });
       });
       return roomMembers;
     });
@@ -122,7 +122,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     throw new Error("Method not implemented.");
   }
 
-  create(_entity: Room): Promise<Room> {
+  create(_name: string, _isPrivate?: 0 | 1): Promise<Room> {
     throw new Error("Method not implemented.");
   }
 

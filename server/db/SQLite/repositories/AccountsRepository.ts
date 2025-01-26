@@ -1,3 +1,4 @@
+import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
 
@@ -40,18 +41,15 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
     });
   }
 
-  async create(entity: Account): Promise<Account> {
+  async create(name: string, passwd: string, email: string): Promise<Account> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise(async (resolve, reject) => {
       try {
-        if (!entity.password) {
-          throw new Error("missing password");
-        }
-
         const salt = await bcrypt.genSalt(10);
-        const hashedPw = await bcrypt.hash(entity.password, salt);
-        const query = `INSERT INTO "user" (id, name, password, email) VALUES (?, ?, ?, ?)`;
+        const hashedPw = await bcrypt.hash(passwd, salt);
+        const entity: Account = { id: uuidV7(), name, password: hashedPw, email };
 
+        const query = `INSERT INTO "user" (id, name, password, email) VALUES (?, ?, ?, ?)`;
         db.run(query, [entity.id, entity.name, hashedPw, entity.email], (err) => {
           if (err) {
             release();

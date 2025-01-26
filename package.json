@@ -35,7 +35,8 @@
     "ext": "*",
     "ignore": [
       "**/*.db",
-      "./dist/**"
+      "./dist/**",
+      "./data.json"
     ],
     "watch": [
       "server/**",

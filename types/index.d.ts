@@ -1,7 +1,7 @@
 interface RoomMember {
-  userName: string;
-  userId: string;
-  id: string; // Room ID
+  name: string;
+  id: string;
+  roomId: string; // Room ID
   isActive: boolean;
 }
 
@@ -36,13 +36,13 @@ interface Account {
   name: string;
   id: string;
   email: string;
-  password?: string;
+  password: string;
 }
 
 interface RoomWithMembers {
   id: string;
   name: string;
-  members: Account[];
+  members: RoomMember[];
 }
 
 interface Room {
@@ -54,23 +54,25 @@ interface Cookies {
   [key: string]: string;
 }
 
+// This is the schema of the database
 interface DirectConversation {
   id: string;
   userA_id: string;
   userB_id: string;
 }
 
-//interface DirectConversation {
-//  id: string; // convo id
-//  userId: string; // other participant id in DM
-//  userName: string; // other participant name in DM
-//  isActive: boolean; // is other participant currently online
-//}
+interface DirectConversationByUserId {
+  id: string; // convo id
+  userId: string; // other participant id in DM
+  userName: string; // other participant name in DM
+  isActive?: boolean; // is other participant currently online
+}
 
 interface DirectMessage {
   id: string;
   directConversationId: string;
   fromUserId: string;
+  fromUserName: string;
   toUserId: string;
   message: string;
   isRead: boolean;

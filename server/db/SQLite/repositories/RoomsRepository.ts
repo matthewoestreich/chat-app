@@ -1,3 +1,4 @@
+import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 
 export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Database> {
@@ -121,7 +122,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
               room = { id: row.roomId, name: row.roomName, members: [] };
               acc.push(room);
             }
-            room.members.push({ id: "", name: row.userName, email: row.userEmail });
+            room.members.push({ id: row.userId, roomId: row.roomId, name: row.userName, isActive: false });
             return acc;
           }, [] as RoomWithMembers[]);
 
@@ -222,11 +223,13 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     });
   }
 
-  async create(entity: Room): Promise<Room> {
+  async create(name: string, isPrivate?: 0 | 1): Promise<Room> {
     const { db, release } = await this.databasePool.getConnection();
+    const privateStatus: 0 | 1 = isPrivate === undefined ? 0 : isPrivate; // default to public
+    const entity: Room = { id: uuidV7(), name, isPrivate: privateStatus };
+
     return new Promise(async (resolve, reject) => {
       try {
-        const privateStatus: 0 | 1 = entity.isPrivate === undefined ? 0 : entity.isPrivate; // default to public
         const query = `INSERT INTO room (id, name, isPrivate) VALUES (?, ?, ?)`;
         db.run(query, [entity.id, entity.name, privateStatus], (err) => {
           if (err) {

@@ -7,9 +7,9 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<Session> {
+  async selectByUserId(userId: string): Promise<Session | undefined> {
     const { db } = await this.databasePool.getConnection();
-    return db.getOne<Session>((data) => data.session.find((s) => s.userId === userId) || ({} as Session));
+    return db.getOne<Session | undefined>((data) => data.session.find((s) => s.userId === userId));
   }
 
   async deleteByUserId(userId: string): Promise<boolean> {
@@ -27,12 +27,13 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
     return returnValue;
   }
 
-  async upsert(entity: Session): Promise<boolean> {
+  async upsert(userId: string, token: string): Promise<boolean> {
     const { db } = await this.databasePool.getConnection();
+    const entity: Session = { userId, token };
     let returnValue = true;
     db.set((data) => {
       const index = data.session.findIndex((s) => s.userId === entity.userId && s.token === entity.token);
-      if (index === -1) {
+      if (index && index === -1) {
         returnValue = false;
         return data;
       }
@@ -49,8 +50,9 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
     throw new Error("Method not implemented.");
   }
 
-  async create(entity: Session): Promise<Session> {
+  async create(userId: string, sessionToken: string): Promise<Session> {
     const { db } = await this.databasePool.getConnection();
+    const entity: Session = { userId, token: sessionToken };
     db.set((data) => {
       data.session.push(entity);
       return data;

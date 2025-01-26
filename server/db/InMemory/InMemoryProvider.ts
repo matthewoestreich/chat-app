@@ -1,3 +1,6 @@
+import nodeFs from "node:fs";
+import appRootPath from "@/appRootPath";
+import bcrypt from "bcrypt";
 import { generateFakeData } from "@/scripts/fakeData";
 import InMemoryDatabase, { InMemoryDatabaseData } from "./InMemoryDatabase";
 import InMemoryPool from "./pool/InMemoryPool";
@@ -36,7 +39,16 @@ export default class InMemoryProvider implements DatabaseProvider {
   }
 
   async seed(): Promise<void> {
-    return new Promise((resolve) => {
+    const inMemoryJSONFile = appRootPath + "/inMemoryData.json";
+    return new Promise(async (resolve) => {
+      if (nodeFs.existsSync(inMemoryJSONFile)) {
+        const existingData = JSON.parse(nodeFs.readFileSync(inMemoryJSONFile, "utf-8"));
+        this.seededDatabase = new InMemoryDatabase(existingData as InMemoryDatabaseData);
+        console.log(this.seededDatabase);
+        resolve();
+        return;
+      }
+
       const fakeData = generateFakeData({
         userParams: {
           numberOfUsers: 5,
@@ -83,12 +95,17 @@ export default class InMemoryProvider implements DatabaseProvider {
       const inMemoryData: InMemoryDatabaseData = {} as InMemoryDatabaseData;
 
       // Add users
-      inMemoryData.users = fakeData.users.map((user) => ({
-        id: user.id,
-        name: user.username,
-        email: user.email,
-        password: user.password,
-      }));
+      inMemoryData.users = [];
+      for (const user of fakeData.users) {
+        const salt = await bcrypt.genSalt(10);
+        const pw = await bcrypt.hash(user.password, salt);
+        inMemoryData.users.push({
+          id: user.id,
+          name: user.username,
+          email: user.email,
+          password: pw,
+        });
+      }
 
       // Add rooms
       inMemoryData.room = fakeData.rooms.map((room) => ({
@@ -126,13 +143,18 @@ export default class InMemoryProvider implements DatabaseProvider {
         id: dm.id,
         directConversationId: dm.directConversation.id,
         fromUserId: dm.from.id,
+        fromUserName: dm.from.username,
         toUserId: dm.to.id,
         timestamp: new Date(),
         isRead: dm.isRead,
         message: dm.message,
       }));
 
+      // Add sessions (empty)
+      inMemoryData.session = [];
+
       this.seededDatabase = new InMemoryDatabase(inMemoryData);
+      nodeFs.writeFileSync(inMemoryJSONFile, JSON.stringify(inMemoryData, null, 2));
       resolve();
     });
   }

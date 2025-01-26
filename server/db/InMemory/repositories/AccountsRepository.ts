@@ -1,3 +1,5 @@
+import { v7 as uuidV7 } from "uuid";
+import bcrypt from "bcrypt";
 import InMemoryDatabase from "../InMemoryDatabase";
 
 export default class AccountsRepositoryInMemory implements AccountsRepository<InMemoryDatabase> {
@@ -22,10 +24,20 @@ export default class AccountsRepositoryInMemory implements AccountsRepository<In
     throw new Error("Method not implemented.");
   }
 
-  async create(entity: Account): Promise<Account> {
+  async create(name: string, passwd: string, email: string): Promise<Account> {
     const { db } = await this.databasePool.getConnection();
+    const salt = await bcrypt.genSalt(10);
+    const hashedPw = await bcrypt.hash(passwd, salt);
+    const entity: Account = { id: uuidV7(), name, password: hashedPw, email };
+    console.log({ from: "InMemory->repositories->AccountsRepository.ts", entity });
+
     db.set((data) => {
-      data.users.push(entity);
+      data.users.push({
+        id: entity.id,
+        name: entity.name,
+        email: entity.email,
+        password: hashedPw,
+      });
       return data;
     });
     return entity;

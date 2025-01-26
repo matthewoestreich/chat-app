@@ -1,4 +1,5 @@
 import sqlite3 from "sqlite3";
+import { v7 as uuidV7 } from "uuid";
 
 export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -52,10 +53,11 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
     throw new Error("Method not implemented.");
   }
 
-  async create(entity: Message): Promise<Message> {
+  async create(roomId: string, userId: string, message: string): Promise<Message> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
+        const entity: Message = { id: uuidV7(), userId, roomId, message, timestamp: new Date() };
         const query = `INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
         const params = [entity.id, entity.roomId, entity.userId, entity.message];
         db.run(query, params, function (err) {

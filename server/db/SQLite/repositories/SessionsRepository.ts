@@ -7,22 +7,23 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<Session> {
+  async selectByUserId(userId: string): Promise<Session | undefined> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM session WHERE userId = ?`, [userId], (err, row) => {
+      db.get(`SELECT * FROM session WHERE userId = ?`, [userId], (err, row: Session) => {
         if (err) {
           release();
           return reject(err);
         }
         release();
-        return resolve(row as Session);
+        return resolve(row);
       });
     });
   }
 
-  async upsert(entity: Session): Promise<boolean> {
+  async upsert(userId: string, token: string): Promise<boolean> {
     const { db, release } = await this.databasePool.getConnection();
+    const entity: Session = { userId, token };
     return new Promise(async (resolve, reject) => {
       try {
         const query = `INSERT INTO session (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
@@ -69,8 +70,10 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     throw new Error("Method not implemented.");
   }
 
-  async create(entity: Session): Promise<Session> {
+  async create(userId: string, sessionToken: string): Promise<Session> {
     const { db, release } = await this.databasePool.getConnection();
+    const entity: Session = { userId, token: sessionToken };
+
     return new Promise(async (resolve, reject) => {
       try {
         const query = `INSERT INTO session (userId, token) VALUES (?, ?)`;

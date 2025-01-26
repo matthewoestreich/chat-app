@@ -8,18 +8,20 @@ import jsonwebtoken from "jsonwebtoken";
 export default async function (req: Request, res: Response, next: NextFunction) {
   try {
     const { session } = req.cookies;
-
     if (!session) {
-      return next();
+      next();
+      return;
     }
 
     const decodedToken = jsonwebtoken.decode(session) as JSONWebToken;
-    const storedSession = await req.databaseProvider.sessions.selectByUserId(decodedToken?.id); //sessionService.selectByUserId(db, decodedToken?.id);
-
+    const storedSession = await req.databaseProvider.sessions.selectByUserId(decodedToken.id);
+    console.log({ storedSession, decodedToken });
     if (!storedSession || (storedSession.token && storedSession.token !== session)) {
+      console.log(" - no valid session");
       res.clearCookie("session");
       req.cookies.session = "";
-      return next();
+      next();
+      return;
     }
 
     return res.redirect("/chat");

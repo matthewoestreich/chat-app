@@ -1,3 +1,4 @@
+import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
 
 export default class DirectConversationsRepositoryInMemory implements DirectConversationsRepository<InMemoryDatabase> {
@@ -7,9 +8,31 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<DirectConversation[]> {
+  async selectByUserId(userId: string): Promise<DirectConversationByUserId[]> {
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<DirectConversation>((data) => data.directConversations.filter((dc) => dc.userA_id === userId || dc.userB_id === userId));
+    const directConversations: DirectConversationByUserId[] = [];
+    return db.getMany<DirectConversationByUserId>((data) => {
+      const otherUsers: { convoId: string; otherUserId: string }[] = [];
+      data.directConversations.forEach((dc) => {
+        if (dc.userA_id === userId) {
+          otherUsers.push({ convoId: dc.id, otherUserId: dc.userB_id });
+        } else if (dc.userB_id === userId) {
+          otherUsers.push({ convoId: dc.id, otherUserId: dc.userA_id });
+        }
+      });
+      console.log({ otherUsers, userIdParam: userId });
+      data.users.forEach((u) => {
+        const foundOtherUser = otherUsers.find((otherUser) => u.id === otherUser.otherUserId);
+        if (foundOtherUser) {
+          directConversations.push({
+            id: foundOtherUser.convoId,
+            userId: foundOtherUser.otherUserId,
+            userName: u.name,
+          });
+        }
+      });
+      return directConversations;
+    });
   }
 
   async selectInvitableUsersByUserId(userId: string): Promise<Account[]> {
@@ -34,9 +57,17 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
   getById(_id: string): Promise<DirectConversation> {
     throw new Error("Method not implemented.");
   }
-  create(_entity: DirectConversation): Promise<DirectConversation> {
-    throw new Error("Method not implemented.");
+
+  async create(userA_id: string, userB_id: string): Promise<DirectConversation> {
+    const { db } = await this.databasePool.getConnection();
+    const entity: DirectConversation = { id: uuidV7(), userA_id, userB_id };
+    db.set((data) => {
+      data.directConversations.push(entity);
+      return data;
+    });
+    return entity;
   }
+
   update(_id: string, _entity: DirectConversation): Promise<DirectConversation | null> {
     throw new Error("Method not implemented.");
   }

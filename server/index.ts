@@ -1,7 +1,6 @@
 import path from "path";
 import express, { Request, Response } from "express";
 import helmet, { HelmetOptions } from "helmet";
-import { v7 as uuidv7 } from "uuid";
 import bcrypt from "bcrypt";
 import { generateSessionToken } from "@/server/generateTokens.js";
 import morgan from "morgan";
@@ -54,12 +53,9 @@ app.get("/chat", [useJwt], (req: Request, res: Response) => {
 app.get("/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies.session;
-
-    //if (await sessionService.delete(connection.db, session)) {
-    if (await req.databaseProvider.sessions.delete(session)) {
-      req.cookies.session = "";
-      res.clearCookie("session");
-    }
+    await req.databaseProvider.sessions.delete(session);
+    req.cookies.session = "";
+    res.clearCookie("session");
     return res.render("logout");
   } catch (e) {
     res.clearCookie("session");
@@ -85,8 +81,9 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       return;
     }
     console.log(req.databaseProvider);
-    const result = await req.databaseProvider.accounts.create({ name: username, id: uuidv7(), email, password });
-    res.status(200).send({ ok: true, ...result });
+    const result = await req.databaseProvider.accounts.create(username, password, email);
+    console.log({ result });
+    res.status(200).send({ ok: true, id: result.id, name: result.name, email: result.email });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
     res.status(500).send({ ok: false });
@@ -114,7 +111,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const foundUser = await req.databaseProvider.accounts.selectByEmail(email);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
-      console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { password, email });
+      console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { foundUser, password, email });
       res.status(403).send({ ok: false });
       return;
     }
@@ -128,7 +125,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const { name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(name, id, foundEmail);
-    await req.databaseProvider.sessions.upsert({ userId: foundUser.id, token: jwt.signed }); //sessionService.upsert(db, foundUser.id, jwt.signed);
+    await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
     res.status(200).send({ ok: true, session: jwt.signed });
   } catch (e) {
