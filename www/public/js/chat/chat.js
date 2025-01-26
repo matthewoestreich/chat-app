@@ -364,7 +364,7 @@ function renderMembers(members, containerElement = membersContainer) {
     return;
   }
   for (const m of members) {
-    const memberHTML = generateMemberHTML(m.userName, m.userId, m.isActive);
+    const memberHTML = generateMemberHTML(m.name, m.userId, m.isActive);
     membersListElement.appendChild(memberHTML);
   }
   if (containerElement) {

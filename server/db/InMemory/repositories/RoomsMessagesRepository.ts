@@ -10,7 +10,10 @@ export default class RoomsMessagesRepositoryInMemory implements RoomsMessagesRep
 
   async selectByRoomId(roomId: string): Promise<Message[]> {
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<Message>((data) => data.messages.filter((msg) => msg.roomId === roomId));
+    return db.getMany<Message>((data) => {
+      const messages = data.messages.filter((msg) => msg.roomId === roomId);
+      return messages.map((msg) => ({ ...msg, userName: data.users.find((u) => u.id === msg.userId)?.name || "NAME_NOT_FOUND" }));
+    });
   }
 
   getAll(): Promise<Message[]> {
