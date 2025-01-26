@@ -10,7 +10,7 @@ export default async function isAuthenticated(token: string): Promise<boolean> {
       return false;
     }
     return true;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }

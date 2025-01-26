@@ -1,5 +1,3 @@
-import { Express, Request, Response, NextFunction } from "express";
-
 /**
  * TLDR; This is a hacky way to dynamically set our DatabaseProvider middleware due to runtime
  * decisions and being unable to add middleware after routes are processed
@@ -25,7 +23,12 @@ import { Express, Request, Response, NextFunction } from "express";
  * @param app
  * @returns {(provider: DatabaseProvider) => void}
  */
-export default function attachDatabaseProvider(app: Express): (provider: DatabaseProvider) => void {
+
+import { Express, Request, Response, NextFunction } from "express";
+
+export type SetDatabaseProviderSignature = (provider: DatabaseProvider) => void;
+
+export default function attachDatabaseProvider(app: Express): SetDatabaseProviderSignature {
   let databaseProvider: DatabaseProvider | null = null;
 
   function setDatabaseProvider(provider: DatabaseProvider): void {

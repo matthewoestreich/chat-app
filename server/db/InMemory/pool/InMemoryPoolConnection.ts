@@ -9,7 +9,7 @@ export default class InMemoryPoolConnection implements DatabasePoolConnection<In
   }
   constructor(db: InMemoryDatabase, parent: InMemoryPool) {
     this.db = db;
-    this.release = () => {
+    this.release = (): void => {
       parent.releaseConnection(this);
     };
   }

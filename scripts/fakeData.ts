@@ -322,7 +322,7 @@ export async function insertFakeUsers(db: sqlite3.Database, users: FakeUser[]): 
  * @param db
  * @param rooms
  */
-export async function insertFakeChatRooms(db: sqlite3.Database, rooms: FakeChatRoom[]) {
+export async function insertFakeChatRooms(db: sqlite3.Database, rooms: FakeChatRoom[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
       const stmt = db.prepare(`INSERT INTO room (id, name, isPrivate) VALUES (?, ?, ?)`);
@@ -420,7 +420,7 @@ export async function insertFakeDirectConversations(db: sqlite3.Database, convos
  * @param db
  * @param messages
  */
-export async function insertFakeDirectMessages(db: sqlite3.Database, messages: FakeDirectMessage[]) {
+export async function insertFakeDirectMessages(db: sqlite3.Database, messages: FakeDirectMessage[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
       const stmt = db.prepare(`INSERT INTO direct_messages (id, directConversationId, fromUserId, toUserId, message, isRead) VALUES (?, ?, ?, ?, ?, ?)`);
@@ -501,6 +501,6 @@ function getRandomIntInclusive(min: number, max: number): number {
  * Generic function that gets random item from array.
  * @param {Array<T>} arr
  */
-function getRandomArrayElement<T>(arr: Array<T>) {
+function getRandomArrayElement<T>(arr: Array<T>): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }

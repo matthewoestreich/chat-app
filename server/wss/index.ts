@@ -110,6 +110,7 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
 
   try {
     let members = await wsapp.databaseProvider.rooms.selectRoomMembersExcludingUser(id, client.user.id);
+    console.log({ in: "wsapp.on(ENTER_ROOM)", members });
     const messages = await wsapp.databaseProvider.roomMessages.selectByRoomId(id);
     // Add `isActive` property for each user in this room based upon if they're cached in this room.
     members = members.map((m) => ({ ...m, isActive: wsapp.getCachedContainer(id)!.has(m.id) }));

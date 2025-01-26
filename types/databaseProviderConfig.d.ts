@@ -4,7 +4,7 @@ type ProviderConfigMap = {
     databaseFilePath: string;
     maxConnections: number;
   };
-  memory: {};
+  memory: unknown;
 };
 
 type ProviderConfig<T extends keyof ProviderConfigMap> = {
@@ -13,5 +13,5 @@ type ProviderConfig<T extends keyof ProviderConfigMap> = {
 };
 
 type ProviderInitializers = {
-  [K in keyof ProviderConfigMap]: (config: ProviderConfigMap[K]) => any;
+  [K in keyof ProviderConfigMap]: (config: ProviderConfigMap[K]) => DatabaseProvider;
 };

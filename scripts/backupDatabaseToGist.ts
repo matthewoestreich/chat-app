@@ -7,12 +7,12 @@ dotenv.config();
 const { log, error } = console;
 
 if (require.main === module) {
-  (async () => {
+  (async (): Promise<void> => {
     await backupDatabaseToGist();
   })();
 }
 
-export default async function backupDatabaseToGist() {
+export default async function backupDatabaseToGist(): Promise<void> {
   if (!process.env.GH_GISTS_API_KEY) {
     return error("[backupDbAndUploadGist] gists api key not found.");
   }

@@ -4,8 +4,8 @@ import { generateSessionToken } from "@/server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-export default function useJwtSession({ onError = (_req: Request, _res: Response, _next: NextFunction) => {} } = {}) {
-  return async function (req: Request, res: Response, next: NextFunction) {
+export default function useJwtSession({ onError = (_req: Request, _res: Response, _next: NextFunction): void => {} } = {}) {
+  return async function (req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { session } = req.cookies;
       if (!session) {
@@ -22,18 +22,18 @@ export default function useJwtSession({ onError = (_req: Request, _res: Response
         return next();
       }
       return onError(req, res, next);
-    } catch (e) {
+    } catch (_e) {
       return onError(req, res, next);
     }
   };
 }
 
-async function verifyJwtAsync(token: string, secret: string) {
+async function verifyJwtAsync(token: string, secret: string): Promise<string | jsonwebtoken.JwtPayload | undefined> {
   return new Promise((resolve, reject) => {
     jsonwebtoken.verify(token, secret, (err, decoded) => {
       if (err) {
         if (err.name === "TokenExpiredError") {
-          return resolve(null);
+          return resolve(undefined);
         }
         return reject(err);
       } else {
@@ -43,7 +43,7 @@ async function verifyJwtAsync(token: string, secret: string) {
   });
 }
 
-async function handleSessionRefresh(receivedSessionToken: string, req: Request, res: Response) {
+async function handleSessionRefresh(receivedSessionToken: string, req: Request, res: Response): Promise<boolean> {
   try {
     const decodedToken = jsonwebtoken.decode(receivedSessionToken) as JSONWebToken;
     if (!decodedToken.id) {
@@ -72,7 +72,7 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     res.cookie("session", sessionToken, { maxAge: ONE_DAY, httpOnly: true });
 
     return true;
-  } catch (e) {
+  } catch (_e) {
     //console.log(`[jwtSession][error] `, e);
     return false;
   }

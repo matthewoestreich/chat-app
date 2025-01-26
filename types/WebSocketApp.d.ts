@@ -10,7 +10,7 @@ declare class WebSocketClient {
 
 type IWebSocketMessage = {
   type: EventTypes;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 type WebSocketAppCatchHandler = (error: Error, socket: WebSocket.WebSocket) => void;
@@ -95,26 +95,26 @@ interface WebSocketAppEventRegistry {
     containerId: string;
     message: string;
   };
-  LEAVE_ROOM: {};
+  LEAVE_ROOM: unknown; //{};
   LIST_JOINABLE_ROOMS: {
     rooms: Room[];
   };
-  GET_JOINABLE_ROOMS: {};
+  GET_JOINABLE_ROOMS: unknown; //{};
   LIST_ROOMS: {
     rooms: Room | Room[];
   };
-  LIST_ROOM_MEMBERS: {};
+  LIST_ROOM_MEMBERS: unknown; //{};
   LIST_DIRECT_CONVERSATIONS: {
     directConversations: DirectConversationByUserId[];
   };
-  GET_DIRECT_CONVERSATIONS: {};
+  GET_DIRECT_CONVERSATIONS: unknown; //{};
   GET_DIRECT_MESSAGES: {
     id: string;
   };
   LIST_DIRECT_MESSAGES: {
     directMessages: DirectMessage[];
   };
-  GET_INVITABLE_USERS: {};
+  GET_INVITABLE_USERS: unknown; //{};
   LIST_INVITABLE_USERS: {
     users: Account[];
   };

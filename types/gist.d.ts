@@ -17,6 +17,7 @@ interface Gist {
   user: string | null;
   comments_url: string;
   owner: GistOwner;
+  // eslint-disable-next-line
   forks: any[]; // IDK WHAT THIS RETURNS
   history: GistHistory[];
 }

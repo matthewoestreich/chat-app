@@ -15,7 +15,7 @@ function keepAlive(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   );
 }
 
-function backupDatabase(func: () => Promise<void>) {
+function backupDatabase(func: () => Promise<void>): CronJob {
   return new CronJob(
     "0 * * * *", // Every hour
     func,

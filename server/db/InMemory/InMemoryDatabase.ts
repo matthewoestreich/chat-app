@@ -28,7 +28,7 @@ export default class InMemoryDatabase {
     return query(this.data);
   }
 
-  set(query: (data: InMemoryDatabaseData) => InMemoryDatabaseData) {
+  set(query: (data: InMemoryDatabaseData) => InMemoryDatabaseData): void {
     this.data = query(this.data);
   }
 }

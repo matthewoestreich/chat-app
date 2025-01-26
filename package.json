@@ -4,21 +4,22 @@
   "description": "Real time chat app built with websockets",
   "main": "index.ts",
   "scripts": {
-    "prebuild": "rm -rf dist",
     "build": "tsc -p tsconfig.json && tsx scripts/_build.ts",
-    "postbuild": "tsc-alias -p tsconfig.json",
-    "start:nodemon": "nodemon --verbose",
-    "start": "tsx index.ts",
-    "cy:run": "NODE_ENV=test cypress run --spec 'cypress/e2e/*.cy.ts'",
     "cy:open": "NODE_ENV=test cypress open",
-    "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
-    "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
-    "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",
-    "test:jest": "jest",
-    "jest:clearCache": "jest --clearCache",
-    "insert:fake:data": "tsx scripts/insertFakeData.ts",
+    "cy:run": "NODE_ENV=test cypress run --spec 'cypress/e2e/*.cy.ts'",
     "db:backup": "tsx scripts/backupDatabaseToGist.ts",
-    "db:restore": "tsx scripts/restoreDatabaseFromGist.ts"
+    "db:restore": "tsx scripts/restoreDatabaseFromGist.ts",
+    "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
+    "insert:fake:data": "tsx scripts/insertFakeData.ts",
+    "jest:clearCache": "jest --clearCache",
+    "lint": "eslint .",
+    "postbuild": "tsc-alias -p tsconfig.json",
+    "prebuild": "rm -rf dist",
+    "start": "tsx index.ts",
+    "start:nodemon": "nodemon --verbose",
+    "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",
+    "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
+    "test:jest": "jest"
   },
   "keywords": [],
   "author": "Matt Oestreich",
@@ -61,10 +62,10 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
-    "@eslint/js": "^9.19.0",
     "@faker-js/faker": "^9.2.0",
     "@prettier/plugin-pug": "^3.2.0",
     "@types/bcrypt": "^5.0.2",
+    "@types/eslint": "^9.6.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.7",
@@ -79,7 +80,6 @@
     "cron": "^3.2.1",
     "cypress": "^14.0.0",
     "eslint": "^9.19.0",
-    "globals": "^15.14.0",
     "jest": "^29.7.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.7",
@@ -87,7 +87,6 @@
     "pug": "^3.0.3",
     "ts-jest": "^29.2.5",
     "tsc-alias": "^1.8.10",
-    "tsx": "^4.19.2",
-    "typescript-eslint": "^8.21.0"
+    "tsx": "^4.19.2"
   }
 }

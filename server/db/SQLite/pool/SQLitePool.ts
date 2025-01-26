@@ -36,7 +36,7 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     return this._maxConnections;
   }
 
-  private _pendingConnections: Array<{ resolve: (connection: SQLitePoolConnection) => void; reject: (reason?: any) => void }> = [];
+  private _pendingConnections: Array<{ resolve: (connection: SQLitePoolConnection) => void; reject: (reason?: Error | string) => void }> = [];
   get pendingConnectionsSize(): Promise<number> {
     return new Promise(async (resolve) => {
       await this._mutex.lock();
@@ -160,7 +160,7 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     this._mutex.unlock();
   }
 
-  async query(sql: string, params: any): Promise<unknown> {
+  async query(sql: string, ...params: string[]): Promise<unknown> {
     const connection = await this.getConnection();
 
     return new Promise(async (resolve, reject) => {

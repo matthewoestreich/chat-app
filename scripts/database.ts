@@ -10,7 +10,7 @@ export const BACKUP_FILE_PATH = nodePath.resolve(__dirname, `../server/db/${BACK
 
 const DELIMITER = "~~__~~";
 
-export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP_FILE_PATH, delimiter = DELIMITER) {
+export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP_FILE_PATH, delimiter = DELIMITER): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       if (!nodeFs.existsSync(dbPath)) {
@@ -80,7 +80,7 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
             db.close(() => {
               backupStream.write("COMMIT;\n");
               backupStream.end(() => {
-                resolve(null);
+                resolve();
               });
             });
           });
@@ -99,7 +99,7 @@ export async function backupDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP
  * @param backupPath
  * @returns
  */
-export async function restoreDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP_FILE_PATH, delimiter = DELIMITER) {
+export async function restoreDatabase(dbPath = DATABASE_PATH, backupPath = BACKUP_FILE_PATH, delimiter = DELIMITER): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const db = new sqlite3.Database(dbPath, (err) => {
@@ -129,7 +129,7 @@ export async function restoreDatabase(dbPath = DATABASE_PATH, backupPath = BACKU
         if (err) {
           console.error("[restoreDb] Database restored successfully, but we encountered an error closing database:", err);
         }
-        resolve(null);
+        resolve();
       });
     } catch (e) {
       console.error(`[restoreDb] something went wrong`, e);

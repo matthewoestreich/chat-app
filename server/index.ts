@@ -1,4 +1,5 @@
 import path from "path";
+import { Server, IncomingMessage, ServerResponse } from "http";
 import express, { Request, Response } from "express";
 import helmet, { HelmetOptions } from "helmet";
 import bcrypt from "bcrypt";
@@ -14,7 +15,7 @@ export default app;
 const useJwt = useJwtSession({ onError: (_, res: Response) => res.redirect("/") });
 const helmetConfig: HelmetOptions = {
   // @ts-ignore
-  contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response) => `'nonce-${res.locals.cspNonce}'`] } },
+  contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`] } },
 };
 
 app.set("view engine", "pug");
@@ -28,7 +29,7 @@ app.use(helmet(helmetConfig));
 if (process.env.NODE_ENV !== "test") {
   morgan.token("body", (req: Request) => JSON.stringify(req.body || {}, null, 2));
   const morganSchema = ":date[clf] :method :url :status :response-time ms - :res[content-length] :body";
-  const morganSkip = (req: Request) => req.url === "./favicon.ico" || (req.url || "").startsWith("/public");
+  const morganSkip = (req: Request): boolean => req.url === "./favicon.ico" || (req.url || "").startsWith("/public");
   app.use(morgan(morganSchema, { skip: morganSkip }));
 }
 
@@ -57,7 +58,7 @@ app.get("/logout", async (req: Request, res: Response) => {
     req.cookies.session = "";
     res.clearCookie("session");
     return res.render("logout");
-  } catch (e) {
+  } catch (_e: unknown) {
     res.clearCookie("session");
     return res.render("logout");
   }
@@ -147,7 +148,7 @@ app.get("*", (_, res: Response) => {
  */
 app.use(useErrorCatchall);
 
-app.listenAsync = function (...args: any[]) {
+app.listenAsync = function (...args: any[]): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> {
   return new Promise((resolve, reject) => {
     try {
       const server = app.listen(...args, () => {

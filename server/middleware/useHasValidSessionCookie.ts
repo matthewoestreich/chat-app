@@ -5,7 +5,7 @@ import jsonwebtoken from "jsonwebtoken";
  * If request has a session cookie, we check if that matches what we have in our database.
  * If it does, they have a valid session.
  */
-export default async function (req: Request, res: Response, next: NextFunction) {
+export default async function (req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { session } = req.cookies;
     if (!session) {

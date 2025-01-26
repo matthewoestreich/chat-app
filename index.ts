@@ -1,8 +1,7 @@
 import "dotenv/config";
-import nodePath from "node:path";
 import expressApp, { setDatabaseProvider } from "./server";
 import startWebSocketApp from "./server/wss";
-import { keepAliveCronJob, backupDatabaseCronJob } from "@/scripts/cronJobs";
+import { keepAliveCronJob } from "@/scripts/cronJobs";
 import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
@@ -20,9 +19,9 @@ if (process.env.WSS_URL === undefined) {
   throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
-(async () => await Main())();
+(async (): Promise<void> => await Main())();
 
-async function Main() {
+async function Main(): Promise<void> {
   return new Promise(async (resolve) => {
     try {
       //if (process.env.NODE_ENV === "prod") {
@@ -54,7 +53,7 @@ async function Main() {
       await startWebSocketApp({ server }, provider);
       console.log(`WebSocketApp listening via Express server`);
 
-      resolve(null);
+      resolve();
     } catch (e) {
       console.log(`[MAIN][ERROR] Error during startup!`, { error: e });
       process.exit(1);

@@ -172,7 +172,7 @@ if (HAS_ERRORS) {
   console.log(`\n${"~".repeat(60)}\nNo errors found with generated data.\n${"~".repeat(60)}\n`);
 }
 
-(async () => {
+(async (): Promise<void> => {
   await initDatabase(DATABASE_PATH);
 
   const db = new sqlite3.Database(DATABASE_PATH, (err) => {

@@ -8,12 +8,12 @@ const { log, error } = console;
 
 // @ts-ignore
 if (require.main === module) {
-  (async () => {
+  (async (): Promise<void> => {
     await restoreDatabaseFromGist();
   })();
 }
 
-export default async function restoreDatabaseFromGist() {
+export default async function restoreDatabaseFromGist(): Promise<void> {
   if (!process.env.GH_GISTS_API_KEY) {
     return error("[restoreDatabaseFromGist] gists api key not found.");
   }
