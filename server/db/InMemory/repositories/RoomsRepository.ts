@@ -67,21 +67,23 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
   async selectRoomsWithMembersByUserId(userId: string): Promise<RoomWithMembers[]> {
     const { db } = await this.databasePool.getConnection();
     return db.getMany<RoomWithMembers>((data) => {
-      const roomMembership = data.chat.filter((c) => c.userId === userId);
-
       const roomsWithMembers: RoomWithMembers[] = [];
+      const roomMembership = data.chat.filter((c) => c.userId === userId);
 
       roomMembership.forEach((membership) => {
         const room = data.room.find((room) => room.id === membership.roomId);
         const chatRoom = data.chat.filter((r) => r.roomId === membership.roomId);
-        const room_and_members: RoomWithMembers = { id: room!.id, name: room!.name, members: [] };
+
+        const roomWithMembers: RoomWithMembers = { id: room!.id, name: room!.name, members: [] };
+
         chatRoom.forEach((cr) => {
           const user = data.users.find((u) => cr.userId === u.id);
           if (user) {
-            room_and_members.members.push({ id: user!.id, name: user!.name, roomId: room!.id, isActive: false });
+            roomWithMembers.members.push({ id: user!.id, name: user!.name, roomId: room!.id, isActive: false });
           }
         });
-        roomsWithMembers.push(room_and_members);
+
+        roomsWithMembers.push(roomWithMembers);
       });
 
       return roomsWithMembers;

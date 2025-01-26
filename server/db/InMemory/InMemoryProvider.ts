@@ -21,7 +21,7 @@ export default class InMemoryProvider implements DatabaseProvider {
   directMessages: DirectMessagesRepository<InMemoryDatabase>;
   sessions: SessionsRepository<InMemoryDatabase>;
 
-  private seededDatabase: InMemoryDatabase;
+  private database: InMemoryDatabase;
 
   constructor() {
     this.initialize();
@@ -29,7 +29,7 @@ export default class InMemoryProvider implements DatabaseProvider {
 
   async initialize(): Promise<void> {
     await this.seed();
-    this.databasePool = new InMemoryPool(this.seededDatabase);
+    this.databasePool = new InMemoryPool(this.database);
     this.rooms = new RoomsRepositoryInMemory(this.databasePool);
     this.roomMessages = new RoomsMessagesRepositoryInMemory(this.databasePool);
     this.accounts = new AccountsRepositoryInMemory(this.databasePool);
@@ -39,12 +39,13 @@ export default class InMemoryProvider implements DatabaseProvider {
   }
 
   async seed(): Promise<void> {
+    // TODO remove this, it is just for testing
     const inMemoryJSONFile = appRootPath + "/inMemoryData.json";
+
     return new Promise(async (resolve) => {
+      // TODO remove this, it is just for testing
       if (nodeFs.existsSync(inMemoryJSONFile)) {
-        const existingData = JSON.parse(nodeFs.readFileSync(inMemoryJSONFile, "utf-8"));
-        this.seededDatabase = new InMemoryDatabase(existingData as InMemoryDatabaseData);
-        console.log(this.seededDatabase);
+        this.database = new InMemoryDatabase(JSON.parse(nodeFs.readFileSync(inMemoryJSONFile, "utf-8")) as InMemoryDatabaseData);
         resolve();
         return;
       }
@@ -153,7 +154,8 @@ export default class InMemoryProvider implements DatabaseProvider {
       // Add sessions (empty)
       inMemoryData.session = [];
 
-      this.seededDatabase = new InMemoryDatabase(inMemoryData);
+      this.database = new InMemoryDatabase(inMemoryData);
+      // TODO remove this, it is just for testing
       nodeFs.writeFileSync(inMemoryJSONFile, JSON.stringify(inMemoryData, null, 2));
       resolve();
     });
