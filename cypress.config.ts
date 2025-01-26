@@ -4,7 +4,7 @@ import nodePath from "node:path";
 import WebSocketApp from "./server/wss/WebSocketApp";
 import initDatabase from "./scripts/initDatabase";
 import { generateFakeData, insertFakeData } from "./scripts/fakeData";
-import { SQLiteProvider } from "./server/db/providers";
+import SQLiteProvider from "./server//db/SQLite/SQLiteProvider";
 import { defineConfig } from "cypress";
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
@@ -30,7 +30,7 @@ export default defineConfig({
   },
 });
 
-// @ts-ignore
+// eslint-disable-next-line
 async function setupTestDatabase(dbPath: string): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
