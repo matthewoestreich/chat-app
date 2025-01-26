@@ -31,11 +31,8 @@ const config: Linter.Config[] = [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      // "One-liner" rules
       "no-async-promise-executor": "off",
       "@typescript-eslint/explicit-function-return-type": "error",
-
-      // "Array" rules
       "@typescript-eslint/ban-ts-comment": [
         "error",
         {
