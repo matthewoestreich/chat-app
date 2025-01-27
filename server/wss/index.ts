@@ -1,6 +1,6 @@
 import { WebSocket, ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
-import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
@@ -57,14 +57,14 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  * log the reason for socket closure.
  *
  */
-wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
+wsapp.on("CONNECTION_CLOSED", (client, { code, reason }) => {
   if (client.activeIn?.container) {
     client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
-  //const reasonString = reason.toString();
-  //const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  //console.log(`socket closed.`, { user: client.user, code, why });
+  const reasonString = reason.toString();
+  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  console.log(`socket closed.`, { user: client.user, code, why });
 });
 
 /**
