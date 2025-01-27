@@ -81,9 +81,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       res.status(403).send({ ok: false });
       return;
     }
-    console.log(req.databaseProvider);
     const result = await req.databaseProvider.accounts.create(username, password, email);
-    console.log({ result });
     res.status(200).send({ ok: true, id: result.id, name: result.name, email: result.email });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });

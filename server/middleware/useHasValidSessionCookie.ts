@@ -15,9 +15,8 @@ export default async function (req: Request, res: Response, next: NextFunction):
 
     const decodedToken = jsonwebtoken.decode(session) as JSONWebToken;
     const storedSession = await req.databaseProvider.sessions.selectByUserId(decodedToken.id);
-    console.log({ storedSession, decodedToken });
+
     if (!storedSession || (storedSession.token && storedSession.token !== session)) {
-      console.log(" - no valid session");
       res.clearCookie("session");
       req.cookies.session = "";
       next();

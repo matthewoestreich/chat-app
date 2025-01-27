@@ -36,7 +36,6 @@ export default class SQLiteProvider implements DatabaseProvider {
       name: "sqlite",
       ext: ".sql",
     });
-    console.log({ dbpath: this.databaseFilePath, backupPath: this.backupSQLFilePath });
     this.databasePool = new SQLitePool(databaseFilePath, maxConnections);
     this.rooms = new RoomsRepositorySQLite(this.databasePool);
     this.roomMessages = new RoomsMessagesRepositorySQLite(this.databasePool);
