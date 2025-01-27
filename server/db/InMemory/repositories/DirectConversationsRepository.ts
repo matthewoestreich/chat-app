@@ -20,7 +20,6 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
           otherUsers.push({ convoId: dc.id, otherUserId: dc.userA_id });
         }
       });
-      console.log({ otherUsers, userIdParam: userId });
       data.users.forEach((u) => {
         const foundOtherUser = otherUsers.find((otherUser) => u.id === otherUser.otherUserId);
         if (foundOtherUser) {
@@ -35,10 +34,10 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<Account[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]> {
     // Find people 'userId' isn't already in a direct convo with
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<Account>((data) => {
+    return db.getMany<PublicAccount>((data) => {
       const union: string[] = [];
       data.directConversations.forEach((dc) => {
         if (dc.userB_id === userId) {
@@ -48,7 +47,12 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
           union.push(dc.userB_id);
         }
       });
-      return data.users.filter((user) => user.id !== userId && !union.includes(userId));
+      return data.users
+        .filter((user) => user.id !== userId && !union.includes(userId))
+        .map((u) => {
+          const { password, email, ...rest } = u;
+          return rest;
+        });
     });
   }
   getAll(): Promise<DirectConversation[]> {

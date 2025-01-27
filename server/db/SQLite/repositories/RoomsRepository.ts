@@ -43,7 +43,6 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
           });
         });
       } catch (e) {
-        console.log(`[chatService][deleteRoomMember][ERROR]`, e);
         reject(e);
       }
     });
@@ -142,7 +141,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       const query = `
       SELECT 
           r.id AS id,
-          u.name AS userName,
+          u.name AS name,
           u.id AS userId
       FROM 
           chat c1

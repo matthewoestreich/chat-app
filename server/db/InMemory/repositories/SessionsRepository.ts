@@ -9,7 +9,10 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
 
   async selectByUserId(userId: string): Promise<Session | undefined> {
     const { db } = await this.databasePool.getConnection();
-    return db.getOne<Session | undefined>((data) => data.session.find((s) => s.userId === userId));
+    return db.getOne<Session | undefined>((data) => {
+      const found = data.session.find((s) => s.userId === userId);
+      return found;
+    });
   }
 
   async deleteByUserId(userId: string): Promise<boolean> {
@@ -33,8 +36,9 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
     let returnValue = true;
     db.set((data) => {
       const index = data.session.findIndex((s) => s.userId === entity.userId && s.token === entity.token);
-      if (index && index === -1) {
+      if (index === -1) {
         returnValue = false;
+        data.session.push(entity);
         return data;
       }
       data.session[index] = entity;
@@ -54,6 +58,11 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
     const { db } = await this.databasePool.getConnection();
     const entity: Session = { userId, token: sessionToken };
     db.set((data) => {
+      const existingIndex = data.session.findIndex((s) => s.userId === userId);
+      if (existingIndex) {
+        data.session[existingIndex].token = sessionToken;
+        return data;
+      }
       data.session.push(entity);
       return data;
     });

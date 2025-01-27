@@ -1,3 +1,4 @@
+import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
 
 export default class RoomsRepositoryInMemory implements RoomsRepository<InMemoryDatabase> {
@@ -10,13 +11,12 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
   async selectUnjoinedRooms(userId: string): Promise<Room[]> {
     const { db } = await this.databasePool.getConnection();
     return db.getMany<Room>((data) => {
-      return data.room.filter((r) => {
-        const found = data.chat.find((c) => r.id === c.roomId && c.userId === userId);
-        if (found) {
-          return true;
+      const usersExistingRooms = data.chat.map((c) => {
+        if (c.userId === userId) {
+          return c.roomId;
         }
-        return false;
       });
+      return data.room.filter((r) => !usersExistingRooms.includes(r.id)).sort((a, b) => a.name.localeCompare(b.name));
     });
   }
 
@@ -124,8 +124,15 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     throw new Error("Method not implemented.");
   }
 
-  create(_name: string, _isPrivate?: 0 | 1): Promise<Room> {
-    throw new Error("Method not implemented.");
+  async create(name: string, isPrivate?: 0 | 1): Promise<Room> {
+    const { db } = await this.databasePool.getConnection();
+    const privateStatus = isPrivate === undefined ? 0 : isPrivate;
+    const entity: Room = { id: uuidV7(), name, isPrivate: privateStatus };
+    db.set((data) => {
+      data.room.push(entity);
+      return data;
+    });
+    return entity;
   }
 
   update(_id: string, _entity: Room): Promise<Room | null> {

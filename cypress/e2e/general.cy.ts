@@ -113,17 +113,14 @@ describe("Functionality", () => {
 function getRandomString(length: number): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   let randString = "";
-
   for (let i = 0; i < length; i++) {
     randString += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
-
   return randString;
 }
 
 function generateAccountInfo() {
   const randString = getRandomString(5);
-
   return {
     name: randString,
     email: `${randString}@${randString}.com`,

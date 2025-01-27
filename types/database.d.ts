@@ -43,7 +43,7 @@ interface DirectConversationsRepository<DB> {
   update(id: string, entity: DirectConversation): Promise<DirectConversation | null>;
   delete(id: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<DirectConversationByUserId[]>;
-  selectInvitableUsersByUserId(userId: string): Promise<Account[]>;
+  selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]>;
 }
 
 interface DirectMessagesRepository<DB> {

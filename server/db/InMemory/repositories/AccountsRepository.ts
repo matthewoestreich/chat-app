@@ -29,8 +29,6 @@ export default class AccountsRepositoryInMemory implements AccountsRepository<In
     const salt = await bcrypt.genSalt(10);
     const hashedPw = await bcrypt.hash(passwd, salt);
     const entity: Account = { id: uuidV7(), name, password: hashedPw, email };
-    console.log({ from: "InMemory->repositories->AccountsRepository.ts", entity });
-
     db.set((data) => {
       data.users.push({
         id: entity.id,

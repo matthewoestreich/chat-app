@@ -39,6 +39,8 @@ interface Account {
   password: string;
 }
 
+type PublicAccount = Omit<Account, "password" | "email">;
+
 interface RoomWithMembers {
   id: string;
   name: string;

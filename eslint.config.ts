@@ -47,6 +47,7 @@ const config: Linter.Config[] = [
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
         },
       ],
       "@typescript-eslint/no-explicit-any": [

@@ -116,7 +116,7 @@ interface WebSocketAppEventRegistry {
   };
   GET_INVITABLE_USERS: unknown; //{};
   LIST_INVITABLE_USERS: {
-    users: Account[];
+    users: PublicAccount[];
   };
   ROOM_CREATED: {
     id: string;
