@@ -162,10 +162,10 @@ export default class InMemoryProvider implements DatabaseProvider {
   }
 
   backup(): Promise<void> {
-    throw new Error("Method not implemented.");
+    return Promise.resolve();
   }
 
   restore(): Promise<void> {
-    throw new Error("Method not implemented.");
+    return Promise.resolve();
   }
 }
