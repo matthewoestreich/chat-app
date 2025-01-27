@@ -16,7 +16,7 @@ import SpawnedProcess from "./SpawnedProcess";
 
 const EXPECTED_SWITCHES: Array<keyof Options> = ["startServer", "url", "startTest"];
 const URL_ALIVE_CHECK_INTERVAL = 500; // in ms
-const URL_MAX_ALIVE_CHECKS = 20;
+const URL_MAX_ALIVE_CHECKS = 2000;
 
 const args = process.argv.slice(2);
 const options = processArgs(args);
