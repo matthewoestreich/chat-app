@@ -42,6 +42,7 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
   client.user = jsonwebtoken.decode(cookies.session) as Account;
 
   const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
+  console.log("socket connected", { rooms });
   client.send("LIST_ROOMS", { rooms });
   rooms.forEach((room) => wsapp.addContainerToCache(room.id));
 
@@ -64,7 +65,7 @@ wsapp.on("CONNECTION_CLOSED", (client, { code, reason }) => {
   }
   const reasonString = reason.toString();
   const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  console.log(`socket closed.`, { user: client.user, code, why });
+  console.log(`socket closed.`, { why });
 });
 
 /**
