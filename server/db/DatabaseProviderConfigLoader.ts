@@ -1,11 +1,20 @@
-import nodePath from "node:path";
 import appRootPath from "@/appRootPath";
 
 /**
- *
- *
  * **** IMPORTANT****
  * ADD A NEW ENTRY FOR EACH DATABASE PROVIDER!!!
+ *
+ * =======================================================================================================================
+ * Summary of the setup:
+ * -----------------------------------------------------------------------------------------------------------------------
+ * PROVIDER PARAMS: The `DatabaseProviderConfigRegistry` is used to hold any params your provider may have
+ * -----------------------------------------------------------------------------------------------------------------------
+ * CONFIG LOADER: Add your providers params as switch case.
+ * -----------------------------------------------------------------------------------------------------------------------
+ * FACTORY: Where you actually add creating a new instance of your provider, as a switch case.
+ * -----------------------------------------------------------------------------------------------------------------------
+ * =======================================================================================================================
+ *
  *
  * =======================================================================================================================
  * -----------------------------------------------------------------------------------------------------------------------
@@ -22,9 +31,14 @@ import appRootPath from "@/appRootPath";
  * -----------------------------------------------------------------------------------------------------------------------
  * - Example of a New Provider -
  * -----------------------------------------------------------------------------------------------------------------------
+ *
  * Lets say I want to add a new database called `BestDB` that requires
  * a connection string. We would also like to have a limit on max pool connections.
+ *
  * !!!!!! NOTE: If your provider requires no params, use `unknown` !!!!
+ *
+ * Also, the key that you use is how the config loader selects your provider, based upon `process.env.DATABASE_PROVIDER`. So,
+ * if you use `bestdb` as the key, when `process.env.DATABASE_PROVIDER === "bestdb"` we will use your database provider.
  *
  * ```
  * export type DatabaseProviderConfigRegistry = {
@@ -37,9 +51,20 @@ import appRootPath from "@/appRootPath";
  *    otherProvider: unknown;
  * }
  * ```
- * =======================================================================================================================
  *
+ * Next, add to factory (in DatabaseProviderFactory.ts):
+ *
+ * ```
+ * // In `DatabaseProviderFactory.ts`
+ *  private static providerInitializers: DatabaseProviderInitializers = {
+ *    sqlite: (config) => new SQLiteProvider(config.databaseFilePath, config.maxConnections),
+ *    memory: (_config) => new InMemoryProvider(),
+ *    // ADD NEW PROVIDER HERE
+ *  };
+ * ```
+ * =======================================================================================================================
  */
+
 export type DatabaseProviderConfigRegistry = {
   sqlite: {
     databaseFilePath: string;
@@ -74,7 +99,6 @@ export default class DatabaseProviderConfigLoader {
         };
       }
       case "memory": {
-        console.log({ in: "DatabaseConfigLoader.ts", provider: "memory" });
         return {
           type: "memory",
           config: {},
