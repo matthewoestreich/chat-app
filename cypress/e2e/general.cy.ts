@@ -53,6 +53,7 @@ describe("Functionality", () => {
 
   it("should list joinable rooms", () => {
     cy.get("#open-join-room-modal").click();
+    cy.wait(4000);
     cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0);
     cy.get('#cancel-join-room-btn[data-cy="join-room-modal"]').should("be.visible").click();
   });
