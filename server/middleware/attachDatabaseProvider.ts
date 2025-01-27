@@ -26,9 +26,9 @@
 
 import { Express, Request, Response, NextFunction } from "express";
 
-export type SetDatabaseProviderSignature = (provider: DatabaseProvider) => void;
+export type SetDatabaseProviderFunction = (provider: DatabaseProvider) => void;
 
-export default function attachDatabaseProvider(app: Express): SetDatabaseProviderSignature {
+export default function attachDatabaseProvider(app: Express): SetDatabaseProviderFunction {
   let databaseProvider: DatabaseProvider | null = null;
 
   function setDatabaseProvider(provider: DatabaseProvider): void {
@@ -37,7 +37,6 @@ export default function attachDatabaseProvider(app: Express): SetDatabaseProvide
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!databaseProvider) {
-      console.log("no databaseProvider!");
       res.status(500).send("Database provider is not configured");
       return;
     }

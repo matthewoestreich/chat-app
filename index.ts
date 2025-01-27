@@ -44,8 +44,13 @@ if (process.env.NODE_ENV === "prod") {
   const provider = new InMemoryProvider();
   setDatabaseProvider(provider);
   provider
-    .seed()
-    .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
+    .initialize()
+    .then(() => {
+      provider
+        .seed()
+        .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
+        .catch((e) => console.error(e));
+    })
     .catch((e) => console.error(e));
 } else {
   console.error(`Environment variable "NODE_ENV" must be one of : ("prod" | "dev" | "test") : Got "${process.env.NODE_ENV}"`);

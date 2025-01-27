@@ -24,10 +24,11 @@ export default class InMemoryProvider implements DatabaseProvider {
   private database: InMemoryDatabase;
 
   constructor() {
-    this.initialize();
+    this.instantiate();
   }
 
-  async initialize(): Promise<void> {
+  // Since we can'thave async in constructor
+  private async instantiate(): Promise<void> {
     await this.seed();
     this.databasePool = new InMemoryPool(this.database);
     this.rooms = new RoomsRepositoryInMemory(this.databasePool);
@@ -36,6 +37,10 @@ export default class InMemoryProvider implements DatabaseProvider {
     this.directConversations = new DirectConversationsRepositoryInMemory(this.databasePool);
     this.directMessages = new DirectMessagesRepositoryInMemory(this.databasePool);
     this.sessions = new SessionsRepositoryInMemory(this.databasePool);
+  }
+
+  async initialize(): Promise<void> {
+    return Promise.resolve(); // "noop"
   }
 
   async seed(): Promise<void> {
