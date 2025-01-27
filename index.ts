@@ -22,6 +22,7 @@ if (process.env.WSS_URL === undefined) {
 }
 
 const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+console.log(`Using DatabaseProvider : ${databaseConfig.type}`);
 const provider = DatabaseProviderFactory.createProvider(databaseConfig);
 
 setDatabaseProvider(provider);
