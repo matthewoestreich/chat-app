@@ -1,6 +1,4 @@
-import nodeFs from "node:fs";
 import bcrypt from "bcrypt";
-import appRootPath from "@/appRootPath";
 import WebSocketApp from "@/server/wss/WebSocketApp";
 import { generateFakeData } from "@/server/fakerService";
 import InMemoryDatabase, { InMemoryDatabaseData } from "./InMemoryDatabase";
@@ -24,22 +22,24 @@ export default class InMemoryProvider implements DatabaseProvider {
   directMessages: DirectMessagesRepository<InMemoryDatabase>;
   sessions: SessionsRepository<InMemoryDatabase>;
 
-  private database: InMemoryDatabase;
+  private database: InMemoryDatabase | undefined = undefined;
 
-  constructor() {
-    this.instantiate();
+  constructor(seedOnCreation: boolean) {
+    if (seedOnCreation) {
+      this.seed();
+    }
   }
 
-  // Since we can't have async in constructor
-  private async instantiate(): Promise<void> {
-    await this.seed();
-    this.databasePool = new InMemoryPool(this.database);
-    this.rooms = new RoomsRepositoryInMemory(this.databasePool);
-    this.roomMessages = new RoomsMessagesRepositoryInMemory(this.databasePool);
-    this.accounts = new AccountsRepositoryInMemory(this.databasePool);
-    this.directConversations = new DirectConversationsRepositoryInMemory(this.databasePool);
-    this.directMessages = new DirectMessagesRepositoryInMemory(this.databasePool);
-    this.sessions = new SessionsRepositoryInMemory(this.databasePool);
+  private instantiate(): void {
+    if (this.database) {
+      this.databasePool = new InMemoryPool(this.database);
+      this.rooms = new RoomsRepositoryInMemory(this.databasePool);
+      this.roomMessages = new RoomsMessagesRepositoryInMemory(this.databasePool);
+      this.accounts = new AccountsRepositoryInMemory(this.databasePool);
+      this.directConversations = new DirectConversationsRepositoryInMemory(this.databasePool);
+      this.directMessages = new DirectMessagesRepositoryInMemory(this.databasePool);
+      this.sessions = new SessionsRepositoryInMemory(this.databasePool);
+    }
   }
 
   async initialize(): Promise<void> {
@@ -47,17 +47,7 @@ export default class InMemoryProvider implements DatabaseProvider {
   }
 
   async seed(): Promise<void> {
-    // TODO remove this, it is just for testing
-    const inMemoryJSONFile = appRootPath + "/inMemoryData.json";
-
     return new Promise(async (resolve) => {
-      // TODO remove this, it is just for testing
-      if (nodeFs.existsSync(inMemoryJSONFile)) {
-        this.database = new InMemoryDatabase(JSON.parse(nodeFs.readFileSync(inMemoryJSONFile, "utf-8")) as InMemoryDatabaseData);
-        resolve();
-        return;
-      }
-
       const fakeData = generateFakeData({
         userParams: {
           numberOfUsers: 5,
@@ -162,13 +152,12 @@ export default class InMemoryProvider implements DatabaseProvider {
       // Add sessions (empty)
       inMemoryData.session = [];
 
-      console.log("\n\n");
-      console.log({ in: "InMemoryProvider.seed", data: JSON.stringify(inMemoryData, null, 2) });
-      console.log("\n\n");
-
+      const databaseDoesntExist = this.database === undefined;
       this.database = new InMemoryDatabase(inMemoryData);
-      // TODO remove this, it is just for testing
-      nodeFs.writeFileSync(inMemoryJSONFile, JSON.stringify(inMemoryData, null, 2));
+      if (databaseDoesntExist) {
+        this.instantiate();
+      }
+
       resolve();
     });
   }

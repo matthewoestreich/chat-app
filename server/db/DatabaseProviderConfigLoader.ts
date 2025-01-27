@@ -73,7 +73,9 @@ export type DatabaseProviderConfigRegistry = {
   file: {
     jsonFilePath: string;
   };
-  memory: unknown;
+  memory: {
+    seedOnCreation: boolean;
+  };
 };
 
 export type DatabaseProviderConfig<T extends keyof DatabaseProviderConfigRegistry> = {
@@ -110,14 +112,14 @@ export default class DatabaseProviderConfigLoader {
       case "memory": {
         return {
           type: "memory",
-          config: {},
+          config: { seedOnCreation: false },
         };
       }
       default: {
         console.warn(`DATABASE_PROVIDER was not found. Using "in-memory" store. DATA WILL NOT BE SAVED AFTER SERVER IS STOPPED!`);
         return {
           type: "memory",
-          config: {},
+          config: { seedOnCreation: false },
         };
       }
     }

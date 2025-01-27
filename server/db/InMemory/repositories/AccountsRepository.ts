@@ -11,7 +11,7 @@ export default class AccountsRepositoryInMemory implements AccountsRepository<In
 
   async selectByEmail(email: string): Promise<Account> {
     const { db } = await this.databasePool.getConnection();
-    return db.getOne<Account>((data) => {
+    return await db.getOne<Account>((data) => {
       return data.users.find((user) => user.email === email) || ({} as Account);
     });
   }
@@ -29,7 +29,7 @@ export default class AccountsRepositoryInMemory implements AccountsRepository<In
     const salt = await bcrypt.genSalt(10);
     const hashedPw = await bcrypt.hash(passwd, salt);
     const entity: Account = { id: uuidV7(), name, password: hashedPw, email };
-    db.set((data) => {
+    await db.set((data) => {
       data.users.push({
         id: entity.id,
         name: entity.name,

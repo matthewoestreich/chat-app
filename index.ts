@@ -5,7 +5,7 @@ import expressApp, { setDatabaseProvider } from "@/server";
 import startWebSocketApp from "@/server/wss";
 import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
 import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
-import InMemoryProvider from "./server/db/InMemory/InMemoryProvider";
+//import InMemoryProvider from "./server/db/InMemory/InMemoryProvider";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
 process.env.WSS_URL = process.env.WSS_URL || undefined;
@@ -21,12 +21,11 @@ if (process.env.WSS_URL === undefined) {
   throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
-const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
-const provider = DatabaseProviderFactory.createProvider(databaseConfig);
-
-setDatabaseProvider(provider);
-
 if (process.env.NODE_ENV === "prod") {
+  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
+  setDatabaseProvider(provider);
+
   provider
     .restore()
     .then(() => {
@@ -36,13 +35,20 @@ if (process.env.NODE_ENV === "prod") {
     })
     .catch((e) => console.error(e));
 } else if (process.env.NODE_ENV === "dev") {
+  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
+  setDatabaseProvider(provider);
   provider
     .initialize()
     .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
     .catch((e) => console.error(e));
 } else if (process.env.NODE_ENV === "test") {
-  const provider = new InMemoryProvider();
+  //const provider = new InMemoryProvider();
+  //setDatabaseProvider(provider);
+  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
   setDatabaseProvider(provider);
+
   provider
     .initialize()
     .then(() => {

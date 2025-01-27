@@ -81,7 +81,7 @@ export default class DatabaseProviderFactory {
   private static providerInitializers: DatabaseProviderInitializers = {
     sqlite: (config) => new SQLiteProvider(config.databaseFilePath, config.maxConnections),
     file: (config) => new FileSystemProvider(config.jsonFilePath),
-    memory: (_config) => new InMemoryProvider(),
+    memory: (config) => new InMemoryProvider(config.seedOnCreation),
   };
 
   /**
