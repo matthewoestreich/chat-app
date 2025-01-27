@@ -9,7 +9,6 @@ export default class SessionsRepositoryInMemory implements SessionsRepository<In
 
   async selectByUserId(userId: string): Promise<Session | undefined> {
     const { db } = await this.databasePool.getConnection();
-    console.log(db);
     return db.getOne<Session | undefined>((data) => {
       const found = data.session.find((s) => s.userId === userId);
       return found;

@@ -217,7 +217,6 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
     const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
     client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) })) });
   } catch (e) {
-    console.log(e);
     client.send("ERROR", { event: "GET_DIRECT_CONVERSATIONS", error: e as Error });
   }
 });

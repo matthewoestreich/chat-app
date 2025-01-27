@@ -21,46 +21,40 @@ if (process.env.WSS_URL === undefined) {
   throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
-if (process.env.NODE_ENV === "prod") {
-  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
-  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
-  setDatabaseProvider(provider);
+const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+const provider = DatabaseProviderFactory.createProvider(databaseConfig);
 
-  provider
-    .restore()
-    .then(() => {
-      keepAliveCronJob.start();
-      backupDatabaseCronJob(provider.backup).start();
-      startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
-    })
-    .catch((e) => console.error(e));
-} else if (process.env.NODE_ENV === "dev") {
-  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
-  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
-  setDatabaseProvider(provider);
-  provider
-    .initialize()
-    .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
-    .catch((e) => console.error(e));
-} else if (process.env.NODE_ENV === "test") {
-  //const provider = new InMemoryProvider();
-  //setDatabaseProvider(provider);
-  const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
-  const provider = DatabaseProviderFactory.createProvider(databaseConfig);
-  setDatabaseProvider(provider);
+setDatabaseProvider(provider);
 
-  provider
-    .initialize()
-    .then(() => {
-      provider
-        .seed()
-        .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
-        .catch((e) => console.error(e));
-    })
-    .catch((e) => console.error(e));
-} else {
-  console.error(`Environment variable "NODE_ENV" must be one of : ("prod" | "dev" | "test") : Got "${process.env.NODE_ENV}"`);
-}
+(async (): Promise<void> => {
+  try {
+    switch (process.env.NODE_ENV) {
+      case "prod": {
+        await provider.restore();
+        keepAliveCronJob.start();
+        backupDatabaseCronJob(provider.backup).start();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        break;
+      }
+      case "dev": {
+        await provider.initialize();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        break;
+      }
+      case "test": {
+        await provider.initialize();
+        await provider.seed();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        break;
+      }
+      default: {
+        console.error(`Environment variable "NODE_ENV" must be one of : ("prod" | "dev" | "test") : Got "${process.env.NODE_ENV}"`);
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+})();
 
 /**
  * Start Express app and WebSocketApp Helpers
@@ -68,14 +62,13 @@ if (process.env.NODE_ENV === "prod") {
 
 export type WebSocketAppStartupFunction = (options: ServerOptions, databaseProvider: DatabaseProvider) => Promise<void>;
 
-function startExpressAndWebSocketApps(expressApp: Express, startWebSocketAppFn: WebSocketAppStartupFunction, provider: DatabaseProvider): void {
-  expressApp
-    .listenAsync(process.env.EXPRESS_PORT)
-    .then((server) => {
-      console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
-      startWebSocketAppFn({ server }, provider)
-        .then(() => console.log(`WebSocketApp listening via Express server`))
-        .catch((e) => console.error(e));
-    })
-    .catch((e) => console.error(e));
+async function startExpressAndWebSocketApps(expressApp: Express, startWebSocketAppFn: WebSocketAppStartupFunction, provider: DatabaseProvider): Promise<void> {
+  try {
+    const server = await expressApp.listenAsync(process.env.EXPRESS_PORT);
+    console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
+    startWebSocketAppFn({ server }, provider);
+    console.log(`WebSocketApp listening via Express server`);
+  } catch (e) {
+    console.error(e);
+  }
 }
