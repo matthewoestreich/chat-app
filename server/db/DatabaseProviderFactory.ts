@@ -1,4 +1,5 @@
 import type { DatabaseProviderConfig, DatabaseProviderConfigRegistry } from "./DatabaseProviderConfigLoader";
+import FileSystemProvider from "./FileSystem/FileSystemProvider";
 import InMemoryProvider from "./InMemory/InMemoryProvider";
 import SQLiteProvider from "./SQLite/SQLiteProvider";
 
@@ -79,6 +80,7 @@ export default class DatabaseProviderFactory {
    */
   private static providerInitializers: DatabaseProviderInitializers = {
     sqlite: (config) => new SQLiteProvider(config.databaseFilePath, config.maxConnections),
+    file: (config) => new FileSystemProvider(config.jsonFilePath),
     memory: (_config) => new InMemoryProvider(),
   };
 

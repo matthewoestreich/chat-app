@@ -70,6 +70,9 @@ export type DatabaseProviderConfigRegistry = {
     databaseFilePath: string;
     maxConnections: number;
   };
+  file: {
+    jsonFilePath: string;
+  };
   memory: unknown;
 };
 
@@ -95,6 +98,13 @@ export default class DatabaseProviderConfigLoader {
         return {
           type: "sqlite",
           config: { databaseFilePath, maxConnections: 5 },
+        };
+      }
+      case "file": {
+        const jsonFilePath = appRootPath + "/database.json";
+        return {
+          type: "file",
+          config: { jsonFilePath },
         };
       }
       case "memory": {
