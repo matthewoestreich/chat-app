@@ -3,7 +3,7 @@ import { ServerOptions } from "ws";
 import { Express } from "express";
 import expressApp, { setDatabaseProvider } from "@/server";
 import startWebSocketApp from "@/server/wss";
-import { backupDatabaseCronJob, keepAliveCronJob } from "@/cronJobs";
+import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
 import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
 import InMemoryProvider from "./server/db/InMemory/InMemoryProvider";
 
