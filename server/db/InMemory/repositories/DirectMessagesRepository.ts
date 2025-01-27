@@ -9,15 +9,6 @@ export default class DirectMessagesRepositoryInMemory implements DirectMessagesR
 
   async selectByDirectConversationId(directConversationId: string): Promise<DirectMessage[]> {
     const { db } = await this.databasePool.getConnection();
-    /*
-      id: string;
-      directConversationId: string;
-      fromUserId: string;
-      toUserId: string;
-      message: string;
-      isRead: boolean;
-      timestamp: Date;
-    */
     const directMessages: DirectMessage[] = [];
     return db.getMany<DirectMessage>((data) => {
       const dms = data.directMessages.filter((dm) => dm.directConversationId === directConversationId);

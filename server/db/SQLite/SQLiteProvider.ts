@@ -1,21 +1,24 @@
 import nodeFs from "node:fs";
 import nodePath from "node:path";
 import sqlite3 from "sqlite3";
-import SQLitePool from "./pool/SQLitePool";
-import RoomsRepositorySQLite from "@/server/db/SQLite/repositories/RoomsRepository";
-import RoomsMessagesRepositorySQLite from "@/server/db/SQLite/repositories/RoomsMessagesRepository";
-import AccountsRepositorySQLite from "@/server/db/SQLite/repositories/AccountsRepository";
-import DirectConversationsRepositorySQLite from "@/server/db/SQLite/repositories/DirectConversationsRepository";
-import DirectMessagesRepositorySQLite from "@/server/db/SQLite/repositories/DirectMessagesRepository";
-import SessionsRepositorySQLite from "@/server/db/SQLite/repositories/SessionsRepository";
 import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData, insertFakeData } from "@/scripts/fakeData";
-import appRootPath from "@/appRootPath";
+import { generateFakeData } from "@/server/fakerService";
 import { getGistFiles, updateGist } from "@/server/gistService";
+import SQLitePool from "./pool/SQLitePool";
+import { insertFakeData } from "./insertFakeData";
+// prettier-ignore
+import { 
+  AccountsRepositorySQLite, 
+  DirectConversationsRepositorySQLite, 
+  DirectMessagesRepositorySQLite, 
+  RoomsMessagesRepositorySQLite, 
+  RoomsRepositorySQLite, 
+  SessionsRepositorySQLite
+} from "./repositories/index";
 
 export default class SQLiteProvider implements DatabaseProvider {
   private parseBackupFileDelimiter: string = "~~__~~";
-  private backupSQLFilePath: string = appRootPath + `/backup.sql`;
+  private backupSQLFilePath: string;
   private databaseFilePath: string;
 
   databasePool: DatabasePool<sqlite3.Database>;
@@ -28,6 +31,12 @@ export default class SQLiteProvider implements DatabaseProvider {
 
   constructor(databaseFilePath: string, maxConnections: number) {
     this.databaseFilePath = databaseFilePath;
+    this.backupSQLFilePath = nodePath.format({
+      dir: nodePath.dirname(databaseFilePath),
+      name: "sqlite",
+      ext: ".sql",
+    });
+    console.log({ dbpath: this.databaseFilePath, backupPath: this.backupSQLFilePath });
     this.databasePool = new SQLitePool(databaseFilePath, maxConnections);
     this.rooms = new RoomsRepositorySQLite(this.databasePool);
     this.roomMessages = new RoomsMessagesRepositorySQLite(this.databasePool);
@@ -161,29 +170,29 @@ export default class SQLiteProvider implements DatabaseProvider {
       try {
         const fakeData = generateFakeData({
           userParams: {
-            numberOfUsers: 5,
+            numberOfUsers: 100,
             makeIdentical: true,
           },
           chatRoomsParams: {
-            numberOfRooms: 5,
-            longNameFrequency: 3,
+            numberOfRooms: 50,
+            longNameFrequency: 5,
           },
           chatRoomsWithMembersParams: {
-            minUsersPerRoom: 2,
-            maxUsersPerRoom: 4,
+            minUsersPerRoom: 10,
+            maxUsersPerRoom: 50,
           },
           chatRoomMessagesParams: {
-            maxMessagesPerRoom: 5,
+            maxMessagesPerRoom: 50,
             minMessageLength: 3,
             maxMessageLength: 20,
           },
           directConversationParams: {
-            minConversationsPerUser: 1,
-            maxConversationsPerUser: 3,
+            minConversationsPerUser: 3,
+            maxConversationsPerUser: 10,
           },
           directMessagesParams: {
-            minMessagesPerConversation: 1,
-            maxMessagesPerConversation: 3,
+            minMessagesPerConversation: 5,
+            maxMessagesPerConversation: 20,
             minMessageLength: 3,
             maxMessageLength: 20,
           },
@@ -214,10 +223,10 @@ export default class SQLiteProvider implements DatabaseProvider {
   async backup(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!process.env.GH_GISTS_API_KEY) {
-        return reject("[SQLiteProvider.backup()] gists api key not found (via process.env.GH_GISTS_API_KEY).");
+        return reject(new Error("[SQLiteProvider.backup()] gists api key not found (via process.env.GH_GISTS_API_KEY)."));
       }
       if (!process.env.GIST_ID) {
-        return reject("[SQLiteProvider.backup()] gist id not found (via process.env.GIST_ID).");
+        return reject(new Error("[SQLiteProvider.backup()] gist id not found (via process.env.GIST_ID)."));
       }
 
       try {
@@ -229,7 +238,7 @@ export default class SQLiteProvider implements DatabaseProvider {
         if (nodeFs.existsSync(this.backupSQLFilePath)) {
           nodeFs.unlinkSync(this.backupSQLFilePath);
         }
-        reject(`Something went wrong during database backup : error=${(e as Error).message}`);
+        reject(e);
       }
     });
   }
@@ -238,18 +247,18 @@ export default class SQLiteProvider implements DatabaseProvider {
     const backupSQLFileName = nodePath.basename(this.backupSQLFilePath);
 
     return new Promise(async (resolve, reject) => {
-      if (!process.env.GH_GISTS_API_KEY) {
-        return reject("[SQLiteProvider.restore()] gists api key not found.");
-      }
-      if (!process.env.GIST_ID) {
-        return reject("[SQLiteProvider.restore()] gist id not found");
-      }
-
       try {
+        if (!process.env.GH_GISTS_API_KEY) {
+          return reject(new Error("[SQLiteProvider.restore()] gists api key not found."));
+        }
+        if (!process.env.GIST_ID) {
+          return reject(new Error("[SQLiteProvider.restore()] gist id not found"));
+        }
+
         const files = await getGistFiles(process.env.GH_GISTS_API_KEY, process.env.GIST_ID);
         const file = files.find((f) => f.filename === backupSQLFileName);
         if (!file) {
-          return reject(`[SQLiteProvider.restore()] backup file not found in gist.`);
+          return reject(new Error(`[SQLiteProvider.restore()] backup file not found in gist.`));
         }
         nodeFs.writeFileSync(this.backupSQLFilePath, file.content);
         await this.restoreDatabaseFromFile();
@@ -259,7 +268,7 @@ export default class SQLiteProvider implements DatabaseProvider {
         if (nodeFs.existsSync(this.backupSQLFilePath)) {
           nodeFs.unlinkSync(this.backupSQLFilePath);
         }
-        reject(`[SQLiteProvider.restore()] Something went wrong during restore : error=${(e as Error).message}`);
+        reject(e);
       }
     });
   }
@@ -270,7 +279,7 @@ export default class SQLiteProvider implements DatabaseProvider {
     return new Promise((resolve, reject) => {
       try {
         if (!nodeFs.existsSync(backupDatabaseFilePath)) {
-          return reject(`No database found at dbPath: '${backupDatabaseFilePath}'`);
+          return reject(new Error(`No database found at dbPath: '${backupDatabaseFilePath}'`));
         }
 
         const db = new sqlite3.Database(backupDatabaseFilePath, sqlite3.OPEN_READONLY);
@@ -281,7 +290,7 @@ export default class SQLiteProvider implements DatabaseProvider {
 
           db.all(`SELECT sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger') AND sql NOT NULL`, (err, rows) => {
             if (err) {
-              return reject(`Error exporting schema : error=${(err as Error).message}`);
+              return reject(err);
             }
 
             rows.forEach((row) => {
@@ -298,7 +307,7 @@ export default class SQLiteProvider implements DatabaseProvider {
             // Write data
             db.all(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`, (err, tables) => {
               if (err) {
-                return reject(`Error getting table names : error=${(err as Error).message}`);
+                return reject(err);
               }
 
               tables.forEach((table) => {
@@ -309,7 +318,7 @@ export default class SQLiteProvider implements DatabaseProvider {
                   `SELECT * FROM ${tableName}`,
                   (err, row) => {
                     if (err) {
-                      return reject(`Error reading data from table '${tableName}' : error=${(err as Error).message}`);
+                      return reject(err);
                     }
 
                     // @ts-ignore
@@ -322,7 +331,7 @@ export default class SQLiteProvider implements DatabaseProvider {
                   },
                   (err) => {
                     if (err) {
-                      reject(`Error completing table '${tableName}' : error=${(err as Error).message}`);
+                      reject(err);
                     }
                   },
                 );
@@ -338,7 +347,7 @@ export default class SQLiteProvider implements DatabaseProvider {
           });
         });
       } catch (e) {
-        reject(`Something went wrong during backup : ${(e as Error).message}`);
+        reject(e);
       }
     });
   }
@@ -371,7 +380,7 @@ export default class SQLiteProvider implements DatabaseProvider {
           resolve();
         });
       } catch (e) {
-        reject(`[restoreDb] something went wrong : ${(e as Error).message}`);
+        reject(e);
       }
     });
   }

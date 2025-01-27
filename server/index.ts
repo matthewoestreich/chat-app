@@ -108,7 +108,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
       return;
     }
 
-    console.log(req.databaseProvider?.accounts);
     const foundUser = await req.databaseProvider.accounts.selectByEmail(email);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
@@ -126,7 +125,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const { name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(name, id, foundEmail);
-    console.log({ from: "/login route", task: "calling upsert" });
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
     res.status(200).send({ ok: true, session: jwt.signed });

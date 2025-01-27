@@ -1,3 +1,5 @@
+import Mutex from "@/server/Mutex";
+
 export interface InMemoryChatTable {
   userId: string;
   roomId: string;
@@ -15,20 +17,29 @@ export interface InMemoryDatabaseData {
 
 export default class InMemoryDatabase {
   private data: InMemoryDatabaseData;
+  private mut: Mutex = new Mutex();
 
   constructor(data: InMemoryDatabaseData) {
     this.data = data;
   }
 
-  getOne<T>(query: (data: InMemoryDatabaseData) => T): T {
-    return query(this.data);
+  async getOne<T>(query: (data: InMemoryDatabaseData) => T): Promise<T> {
+    await this.mut.lock();
+    const result = query(this.data);
+    this.mut.unlock();
+    return result;
   }
 
-  getMany<T>(query: (data: InMemoryDatabaseData) => T[]): T[] {
-    return query(this.data);
+  async getMany<T>(query: (data: InMemoryDatabaseData) => T[]): Promise<T[]> {
+    await this.mut.lock();
+    const result = query(this.data);
+    this.mut.unlock();
+    return result;
   }
 
-  set(query: (data: InMemoryDatabaseData) => InMemoryDatabaseData): void {
+  async set(query: (data: InMemoryDatabaseData) => InMemoryDatabaseData): Promise<void> {
+    await this.mut.lock();
     this.data = query(this.data);
+    this.mut.unlock();
   }
 }

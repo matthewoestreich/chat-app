@@ -1,16 +1,19 @@
 import nodeFs from "node:fs";
-import appRootPath from "@/appRootPath";
 import bcrypt from "bcrypt";
-import { generateFakeData } from "@/scripts/fakeData";
+import appRootPath from "@/appRootPath";
+import WebSocketApp from "@/server/wss/WebSocketApp";
+import { generateFakeData } from "@/server/fakerService";
 import InMemoryDatabase, { InMemoryDatabaseData } from "./InMemoryDatabase";
 import InMemoryPool from "./pool/InMemoryPool";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import RoomsRepositoryInMemory from "./repositories/RoomsRepository";
-import RoomsMessagesRepositoryInMemory from "./repositories/RoomsMessagesRepository";
-import AccountsRepositoryInMemory from "./repositories/AccountsRepository";
-import DirectConversationsRepositoryInMemory from "./repositories/DirectConversationsRepository";
-import DirectMessagesRepositoryInMemory from "./repositories/DirectMessagesRepository";
-import SessionsRepositoryInMemory from "./repositories/SessionsRepository";
+// prettier-ignore
+import {
+  AccountsRepositoryInMemory,
+  DirectConversationsRepositoryInMemory,
+  DirectMessagesRepositoryInMemory,
+  RoomsMessagesRepositoryInMemory,
+  RoomsRepositoryInMemory,
+  SessionsRepositoryInMemory
+} from "./repositories";
 
 export default class InMemoryProvider implements DatabaseProvider {
   databasePool: DatabasePool<InMemoryDatabase>;
@@ -27,7 +30,7 @@ export default class InMemoryProvider implements DatabaseProvider {
     this.instantiate();
   }
 
-  // Since we can'thave async in constructor
+  // Since we can't have async in constructor
   private async instantiate(): Promise<void> {
     await this.seed();
     this.databasePool = new InMemoryPool(this.database);
