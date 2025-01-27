@@ -1,16 +1,23 @@
+import nodeFs from "node:fs";
+import nodePath from "node:path";
 import sqlite3 from "sqlite3";
 import SQLitePool from "./pool/SQLitePool";
-import RoomsRepositorySQLite from "./repositories/RoomsRepository";
-import RoomsMessagesRepositorySQLite from "./repositories/RoomsMessagesRepository";
-import AccountsRepositorySQLite from "./repositories/AccountsRepository";
-import DirectConversationsRepositorySQLite from "./repositories/DirectConversationsRepository";
-import DirectMessagesRepositorySQLite from "./repositories/DirectMessagesRepository";
-import SessionsRepositorySQLite from "./repositories/SessionsRepository";
+import RoomsRepositorySQLite from "@/server/db/SQLite/repositories/RoomsRepository";
+import RoomsMessagesRepositorySQLite from "@/server/db/SQLite/repositories/RoomsMessagesRepository";
+import AccountsRepositorySQLite from "@/server/db/SQLite/repositories/AccountsRepository";
+import DirectConversationsRepositorySQLite from "@/server/db/SQLite/repositories/DirectConversationsRepository";
+import DirectMessagesRepositorySQLite from "@/server/db/SQLite/repositories/DirectMessagesRepository";
+import SessionsRepositorySQLite from "@/server/db/SQLite/repositories/SessionsRepository";
 import WebSocketApp from "@/server/wss/WebSocketApp";
 import { generateFakeData, insertFakeData } from "@/scripts/fakeData";
+import appRootPath from "@/appRootPath";
+import { getGistFiles, updateGist } from "@/server/gistService";
 
 export default class SQLiteProvider implements DatabaseProvider {
+  private parseBackupFileDelimiter: string = "~~__~~";
+  private backupSQLFilePath: string = appRootPath + `/backup.sql`;
   private databaseFilePath: string;
+
   databasePool: DatabasePool<sqlite3.Database>;
   rooms: RoomsRepository<sqlite3.Database>;
   roomMessages: RoomsMessagesRepository<sqlite3.Database>;
@@ -204,269 +211,168 @@ export default class SQLiteProvider implements DatabaseProvider {
     });
   }
 
-  backup(): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-
-  restore(): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-}
-
-/*
-import nodeFs from "node:fs";
-import sqlite3 from "sqlite3";
-import RoomsRepositorySQLite from "./repositories/RoomsRepository";
-import RoomsMessagesRepositorySQLite from "./repositories/RoomsMessagesRepository";
-import AccountsRepositorySQLite from "./repositories/AccountsRepository";
-import DirectConversationsRepositorySQLite from "./repositories/DirectConversationsRepository";
-import DirectMessagesRepositorySQLite from "./repositories/DirectMessagesRepository";
-import SessionsRepositorySQLite from "./repositories/SessionsRepository";
-import SQLitePool from "./pool/SQLitePool";
-
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData, insertFakeData } from "@/scripts/fakeData";
-import { BACKUP_FILE_NAME, BACKUP_FILE_PATH, backupDatabase, DATABASE_PATH, restoreDatabase } from "@/scripts/database";
-import { getGistFiles, updateGist } from "@/scripts/gist";
-import { RoomsService, RoomsMessagesService, AccountsService, DirectConversationsService, DirectMessagesService, SessionsService } from "../../services";
-
-export default class SQLiteProvider implements DatabaseProvider {
-  readonly databasePool: DatabasePool<sqlite3.Database>;
-
-  private databaseFilePath: string;
-
-  rooms: RoomsService<sqlite3.Database>;
-  roomMessages: RoomsMessagesService<sqlite3.Database>;
-  accounts: AccountsService<sqlite3.Database>;
-  directConversations: DirectConversationsService<sqlite3.Database>;
-  directMessages: DirectMessagesService<sqlite3.Database>;
-  sessions: SessionsService<sqlite3.Database>;
-
-  constructor(databaseFilePath: string, maxConnections: 5) {
-    this.databaseFilePath = databaseFilePath;
-    this.databasePool = new SQLitePool(databaseFilePath, maxConnections);
-    this.rooms = new RoomsService(new RoomsRepositorySQLite(this.databasePool));
-    this.roomMessages = new RoomsMessagesService(new RoomsMessagesRepositorySQLite(this.databasePool));
-    this.accounts = new AccountsService(new AccountsRepositorySQLite(this.databasePool));
-    this.directConversations = new DirectConversationsService(new DirectConversationsRepositorySQLite(this.databasePool));
-    this.directMessages = new DirectMessagesService(new DirectMessagesRepositorySQLite(this.databasePool));
-    this.sessions = new SessionsService(new SessionsRepositorySQLite(this.databasePool));
-  }
-
-  async initialize(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.databaseFilePath) {
-        reject(new Error(`databaseFilePath not set!`));
+  async backup(): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!process.env.GH_GISTS_API_KEY) {
+        return reject("[SQLiteProvider.backup()] gists api key not found (via process.env.GH_GISTS_API_KEY).");
       }
+      if (!process.env.GIST_ID) {
+        return reject("[SQLiteProvider.backup()] gist id not found (via process.env.GIST_ID).");
+      }
+
       try {
-        const db = new sqlite3.Database(this.databaseFilePath, (err) => {
-          if (err) {
-            return reject(err);
-          }
-        });
+        await this.backupDatabaseToFile();
+        await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [this.backupSQLFilePath]);
+        nodeFs.unlinkSync(this.backupSQLFilePath);
+        resolve();
+      } catch (e) {
+        if (nodeFs.existsSync(this.backupSQLFilePath)) {
+          nodeFs.unlinkSync(this.backupSQLFilePath);
+        }
+        reject(`Something went wrong during database backup : error=${(e as Error).message}`);
+      }
+    });
+  }
+
+  async restore(): Promise<void> {
+    const backupSQLFileName = nodePath.basename(this.backupSQLFilePath);
+
+    return new Promise(async (resolve, reject) => {
+      if (!process.env.GH_GISTS_API_KEY) {
+        return reject("[SQLiteProvider.restore()] gists api key not found.");
+      }
+      if (!process.env.GIST_ID) {
+        return reject("[SQLiteProvider.restore()] gist id not found");
+      }
+
+      try {
+        const files = await getGistFiles(process.env.GH_GISTS_API_KEY, process.env.GIST_ID);
+        const file = files.find((f) => f.filename === backupSQLFileName);
+        if (!file) {
+          return reject(`[SQLiteProvider.restore()] backup file not found in gist.`);
+        }
+        nodeFs.writeFileSync(this.backupSQLFilePath, file.content);
+        await this.restoreDatabaseFromFile();
+        nodeFs.unlinkSync(this.backupSQLFilePath);
+        resolve();
+      } catch (e) {
+        if (nodeFs.existsSync(this.backupSQLFilePath)) {
+          nodeFs.unlinkSync(this.backupSQLFilePath);
+        }
+        reject(`[SQLiteProvider.restore()] Something went wrong during restore : error=${(e as Error).message}`);
+      }
+    });
+  }
+
+  private backupDatabaseToFile(): Promise<void> {
+    const backupDatabaseFilePath = this.databaseFilePath;
+
+    return new Promise((resolve, reject) => {
+      try {
+        if (!nodeFs.existsSync(backupDatabaseFilePath)) {
+          return reject(`No database found at dbPath: '${backupDatabaseFilePath}'`);
+        }
+
+        const db = new sqlite3.Database(backupDatabaseFilePath, sqlite3.OPEN_READONLY);
+        const backupStream = nodeFs.createWriteStream(this.backupSQLFilePath);
 
         db.serialize(() => {
-          db.run("BEGIN TRANSACTION");
-          db.run(`
-            CREATE TABLE IF NOT EXISTS "user" (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL, 
-              password TEXT NOT NULL,
-              email TEXT NOT NULL UNIQUE,
-              CHECK(length(id) = 36)
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS room (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
-              CHECK(length(id) = 36)
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS chat (
-              roomId TEXT NOT NULL,
-              userId TEXT NOT NULL,
-              PRIMARY KEY (userId, roomId),
-              CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES room(id),
-              CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
-              CHECK(length(roomId) = 36 AND length(userId) = 36)
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS session (
-              userId TEXT PRIMARY KEY,
-              token TEXT NOT NULL,
-              CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
-              CHECK(length(userId) = 36)
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS messages (
-              id TEXT PRIMARY KEY,
-              roomId TEXT NOT NULL,
-              userId TEXT NOT NULL,
-              message TEXT NOT NULL,
-              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);
-          db.run(` -- Trigger to only store 50 messages per room.
-            CREATE TRIGGER IF NOT EXISTS enforce_messages_limit 
-            AFTER INSERT ON messages 
-            WHEN (SELECT COUNT(*) FROM messages WHERE roomId = NEW.roomId) > 50 
-            BEGIN
-              DELETE FROM messages
-              WHERE id = (
-                SELECT id
-                FROM messages
-                WHERE roomId = NEW.roomId
-                ORDER BY timestamp ASC
-                LIMIT 1
-              );
-            END;`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS direct_conversation (
-              id TEXT PRIMARY KEY,
-              userA_Id TEXT NOT NULL,
-              userB_Id TEXT NOT NULL
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS direct_messages (
-              id TEXT PRIMARY KEY,
-              directConversationId TEXT NOT NULL,
-              fromUserId TEXT NOT NULL,
-              toUserId TEXT NOT NULL,
-              message TEXT NOT NULL,
-              isRead BOOLEAN NOT NULL CHECK (isRead IN (0, 1)),
-              "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT direct_messages_direct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
-            );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_timestamp ON direct_messages (fromUserId, timestamp);`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_toUserId_timestamp ON direct_messages (fromUserId, toUserId, timestamp);`);
-          db.run(` -- Trigger to only store 50 messages per DM.
-            CREATE TRIGGER IF NOT EXISTS enforce_direct_messages_message_limit 
-            AFTER INSERT ON direct_messages 
-            WHEN (SELECT COUNT(*) FROM direct_messages WHERE directConversationId = NEW.directConversationId) > 50 
-            BEGIN 
-              DELETE FROM direct_messages WHERE id = (
-                SELECT id
-                FROM direct_messages
-                WHERE directConversationId = NEW.directConversationId
-                ORDER BY timestamp ASC
-                LIMIT 1
-              );
-            END;`);
-          db.run("COMMIT", (_result: sqlite3.RunResult, err: Error | null) => {
+          backupStream.write(`PRAGMA foreign_keys=OFF;${this.parseBackupFileDelimiter}\nBEGIN TRANSACTION;${this.parseBackupFileDelimiter}\n`);
+
+          db.all(`SELECT sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger') AND sql NOT NULL`, (err, rows) => {
             if (err) {
-              return reject(err);
+              return reject(`Error exporting schema : error=${(err as Error).message}`);
             }
-            db.close((e) => {
-              if (e) {
-                return reject(e);
+
+            rows.forEach((row) => {
+              // @ts-ignore
+              // prettier-ignore
+              const sql = String(row.sql).trim()
+                .replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+                .replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
+                .replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
+              // @ts-ignore
+              backupStream.write(`${sql};${this.parseBackupFileDelimiter}\n`);
+            });
+
+            // Write data
+            db.all(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`, (err, tables) => {
+              if (err) {
+                return reject(`Error getting table names : error=${(err as Error).message}`);
               }
-              resolve();
+
+              tables.forEach((table) => {
+                // @ts-ignore
+                const tableName = table.name;
+
+                db.each(
+                  `SELECT * FROM ${tableName}`,
+                  (err, row) => {
+                    if (err) {
+                      return reject(`Error reading data from table '${tableName}' : error=${(err as Error).message}`);
+                    }
+
+                    // @ts-ignore
+                    const columns = Object.keys(row).map((key) => `"${key}"`);
+                    // @ts-ignore
+                    const values = Object.values(row).map((value) => (value === null ? "NULL" : `'${value.toString().replace(/'/g, "''")}'`));
+
+                    const insertStmt = `INSERT INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
+                    backupStream.write(insertStmt + this.parseBackupFileDelimiter + "\n");
+                  },
+                  (err) => {
+                    if (err) {
+                      reject(`Error completing table '${tableName}' : error=${(err as Error).message}`);
+                    }
+                  },
+                );
+              });
+
+              db.close(() => {
+                backupStream.write("COMMIT;\n");
+                backupStream.end(() => {
+                  resolve();
+                });
+              });
             });
           });
         });
       } catch (e) {
-        reject(e);
+        reject(`Something went wrong during backup : ${(e as Error).message}`);
       }
     });
   }
 
-  async seed(): Promise<void> {
-    const { db, release } = await this.databasePool.getConnection();
-    return new Promise(async (resolve, reject) => {
+  private restoreDatabaseFromFile(): Promise<void> {
+    const backupDatabaseFilePath = this.databaseFilePath;
+
+    return new Promise((resolve, reject) => {
       try {
-        const fakeData = generateFakeData({
-          userParams: {
-            numberOfUsers: 5,
-            makeIdentical: true,
-          },
-          chatRoomsParams: {
-            numberOfRooms: 5,
-            longNameFrequency: 3,
-          },
-          chatRoomsWithMembersParams: {
-            minUsersPerRoom: 2,
-            maxUsersPerRoom: 4,
-          },
-          chatRoomMessagesParams: {
-            maxMessagesPerRoom: 5,
-            minMessageLength: 3,
-            maxMessageLength: 20,
-          },
-          directConversationParams: {
-            minConversationsPerUser: 1,
-            maxConversationsPerUser: 3,
-          },
-          directMessagesParams: {
-            minMessagesPerConversation: 1,
-            maxMessagesPerConversation: 3,
-            minMessageLength: 3,
-            maxMessageLength: 20,
-          },
+        const db = new sqlite3.Database(backupDatabaseFilePath);
+        // Read 'dump' file.
+        const data = nodeFs.readFileSync(this.backupSQLFilePath, "utf-8");
+        // Split the SQL statements and execute them one by one
+        const sqlStatements = data.split(this.parseBackupFileDelimiter).map((s) => s.trim());
+
+        db.serialize(() => {
+          sqlStatements.forEach((statement) => {
+            db.run(statement, (err) => {
+              if (err) {
+                return reject(`[restoreDb] Error executing statement: statement=${statement} | err=${(err as Error).message}`);
+              }
+            });
+          });
         });
 
-        // Add #general Room and add everyone to it
-        const generalRoom = {
-          name: "#general",
-          id: WebSocketApp.ID_UNASSIGNED,
-          isPrivate: 0,
-        };
-        fakeData.rooms.push(generalRoom);
-        fakeData.roomsWithMembers.push({
-          room: generalRoom,
-          members: fakeData.users,
+        db.close((err) => {
+          if (err) {
+            console.error("Database restored successfully, but we encountered an error closing database:", err);
+          }
+          resolve();
         });
-
-        await insertFakeData(db, fakeData);
-        release();
-        resolve();
       } catch (e) {
-        release();
-        reject(e);
+        reject(`[restoreDb] something went wrong : ${(e as Error).message}`);
       }
     });
-  }
-
-  async backup(): Promise<void> {
-    if (!process.env.GH_GISTS_API_KEY) {
-      return console.error("[backupDbAndUploadGist] gists api key not found.");
-    }
-    if (!process.env.GIST_ID) {
-      return console.error("[backupDbAndUploadGist] gist id not found");
-    }
-
-    try {
-      await backupDatabase(DATABASE_PATH, BACKUP_FILE_PATH);
-      // Update our gist with new data
-      await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [BACKUP_FILE_PATH]);
-      nodeFs.unlinkSync(BACKUP_FILE_PATH);
-    } catch (e) {
-      if (nodeFs.existsSync(BACKUP_FILE_PATH)) {
-        nodeFs.unlinkSync(BACKUP_FILE_PATH);
-      }
-    }
-  }
-
-  async restore(): Promise<void> {
-    if (!process.env.GH_GISTS_API_KEY) {
-      return console.error("[restoreDatabaseFromGist] gists api key not found.");
-    }
-    if (!process.env.GIST_ID) {
-      return console.error("[restoreDatabaseFromGist] gist id not found");
-    }
-
-    try {
-      const files = await getGistFiles(process.env.GH_GISTS_API_KEY, process.env.GIST_ID);
-      const file = files.find((f) => f.filename === BACKUP_FILE_NAME);
-      if (!file) {
-        return console.error(`[restoreDbFromGist] backup file not found in gist.`);
-      }
-      nodeFs.writeFileSync(BACKUP_FILE_PATH, file.content);
-      await restoreDatabase(DATABASE_PATH, BACKUP_FILE_PATH);
-      nodeFs.unlinkSync(BACKUP_FILE_PATH);
-    } catch (e) {
-      nodeFs.unlinkSync(BACKUP_FILE_PATH);
-    }
   }
 }
-*/
