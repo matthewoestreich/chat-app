@@ -2,6 +2,7 @@ import { RawData } from "ws";
 
 export default class WebSocketMessage<K extends EventTypes> {
   type: K;
+  // eslint-disable-next-line
   [key: string]: any;
 
   static from(rawData: RawData): WebSocketMessage<EventTypes> {
@@ -14,7 +15,7 @@ export default class WebSocketMessage<K extends EventTypes> {
     Object.assign(this, payload);
   }
 
-  toJSONString() {
+  toJSONString(): string {
     return JSON.stringify(this);
   }
 }

@@ -4,12 +4,12 @@ import WebSocketApp from "./WebSocketApp";
 
 export default class WebSocketClient {
   private _socket: WebSocket;
-  get socket() {
+  get socket(): WebSocket {
     return this._socket;
   }
 
   private _user: Account;
-  get user() {
+  get user(): Account {
     return this._user;
   }
   set user(account: Account) {
@@ -17,7 +17,7 @@ export default class WebSocketClient {
   }
 
   private _activeIn: CachedContainer;
-  get activeIn() {
+  get activeIn(): CachedContainer {
     return this._activeIn;
   }
 

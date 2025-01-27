@@ -1,11 +1,17 @@
+export interface WebSocketErrorCodeToReason {
+  code: number;
+  reason: string;
+  definition: string;
+}
+
 // https://github.com/Luka967/websocket-close-codes?tab=readme-ov-file#websocket-close-codes
-export default function errorCodeToReason(code: number) {
+export default function errorCodeToReason(code: number): WebSocketErrorCodeToReason {
   for (const [reason, err] of Object.entries(WEBSOCKET_ERROR_CODE)) {
     if (err.code === code) {
-      return { reason, definition: err.definition };
+      return { code: err.code, reason, definition: err.definition };
     }
   }
-  return { reason: "", definition: "" };
+  return { code, reason: "", definition: "" };
 }
 
 export const WEBSOCKET_ERROR_CODE = {

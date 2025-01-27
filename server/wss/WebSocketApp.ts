@@ -38,12 +38,15 @@ export default class WebSocketApp extends EventEmitter {
     }
   }
 
+  // TODO : come up with a better way to pass DatabaseProvider...
+  public databaseProvider: DatabaseProvider;
+
   constructor() {
     super();
     WebSocketApp.cache.set(WebSocketApp.ID_UNASSIGNED, new Map());
   }
 
-  listen(options: ServerOptions, callback?: () => void) {
+  listen(options: ServerOptions, callback?: () => void): void {
     this.server = new WebSocketServer(options);
 
     this.server.on("connection", async (socket: WebSocket, request: IncomingMessage) => {
@@ -79,12 +82,12 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   // Close the WebSocketServer
-  shutdown() {
+  shutdown(): void {
     this.server.close();
   }
 
   // Error handling
-  catch(handler: WebSocketAppCatchHandler) {
+  catch(handler: WebSocketAppCatchHandler): void {
     this.catchFn = handler;
   }
 

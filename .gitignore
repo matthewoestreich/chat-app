@@ -3,6 +3,7 @@
 .DS_Store
 *.db
 .vscode
+inMemoryData.json
 # Logs
 logs
 *.log

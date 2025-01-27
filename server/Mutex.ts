@@ -2,7 +2,7 @@ export default class Mutex {
   private _locked = false;
   private _queue: Array<(value: void | PromiseLike<void>) => void> = [];
 
-  get isLocked() {
+  get isLocked(): boolean {
     return this._locked === true;
   }
 
@@ -19,7 +19,7 @@ export default class Mutex {
     });
   }
 
-  unlock() {
+  unlock(): void {
     const next = this._queue.shift();
     if (next) {
       next();

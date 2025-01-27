@@ -18,7 +18,7 @@ mainLoginBtn.addEventListener("click", async function (event) {
     return;
   }
 
-  const loginResponse = await fetch(`${window.location.origin}/api/v1/auth/login`, {
+  const loginResponse = await fetch(`${window.location.origin}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

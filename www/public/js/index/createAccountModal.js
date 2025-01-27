@@ -43,7 +43,7 @@ createBtn.addEventListener("click", async (event) => {
   [createBtn, closeCreateAccountModalBtn, cancelBtn].forEach((e) => (e.disabled = true));
   addSpinnerToButton(createBtn, "Creating account...");
 
-  const accCreationResp = await fetch(`${window.location.origin}/api/v1/auth/register`, {
+  const accCreationResp = await fetch(`${window.location.origin}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

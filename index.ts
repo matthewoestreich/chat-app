@@ -1,66 +1,75 @@
 import "dotenv/config";
-import nodePath from "node:path";
-import initDatabase from "@/scripts/initDatabase";
-import createExpressApp from "./server";
-import createWebSocketApp from "./server/wss";
-import restoreDatabaeFromGist from "@/scripts/restoreDatabaseFromGist";
-import { keepAliveJob, backupDatabaseJob } from "@/scripts/cronJobs";
-import SQLitePool from "./server/db/SQLitePool";
+import { ServerOptions } from "ws";
+import { Express } from "express";
+import expressApp, { setDatabaseProvider } from "@/server";
+import startWebSocketApp from "@/server/wss";
+import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
+import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
+import InMemoryProvider from "./server/db/InMemory/InMemoryProvider";
 
-process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || "3000";
-process.env.WSS_URL = process.env.WSS_URL || "";
-process.env.ABSOLUTE_DB_PATH = process.env.ABSOLUTE_DB_PATH || "";
-process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || "";
+process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
+process.env.WSS_URL = process.env.WSS_URL || undefined;
+process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || undefined;
 
-if (process.env.NODE_ENV === "test") {
-  process.env.ABSOLUTE_DB_PATH = nodePath.resolve(__dirname, "./cypress/db/test.db");
+if (process.env.EXPRESS_PORT === undefined) {
+  throw new Error("[MAIN][ERROR] process.env.EXPRESS_PORT is undefined! It is required to start this server.");
 }
-if (!process.env.ABSOLUTE_DB_PATH || process.env.ABSOLUTE_DB_PATH === "") {
-  console.log("[MAIN][ERROR] missing db path via 'process.env.ABSOLUTE_DB_PATH', unable to resolve it.");
-  process.exit(1);
+if (process.env.JWT_SIGNATURE === undefined) {
+  throw new Error("[MAIN][ERROR] process.env.JWT_SIGNATURE is undefined! It is required to start this server.");
 }
-if (!process.env.JWT_SIGNATURE) {
-  console.log("[MAIN][ERROR] process.env.JWT_SIGNATURE is null! It is required to start this server.");
-  process.exit(1);
-}
-if (!process.env.WSS_URL || process.env.WSS_URL === "") {
-  console.error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
-  process.exit(1);
+if (process.env.WSS_URL === undefined) {
+  throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
-(async () => await Main())();
+const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
+const provider = DatabaseProviderFactory.createProvider(databaseConfig);
 
-async function Main() {
-  return new Promise(async (resolve) => {
-    try {
-      if (process.env.NODE_ENV === "prod") {
-        await restoreDatabaeFromGist();
-        keepAliveJob.start();
-        backupDatabaseJob.start();
-      } else {
-        process.env.WSS_URL += `:${process.env.EXPRESS_PORT}`;
-        if (process.env.NODE_ENV === "dev") {
-          await initDatabase(process.env.ABSOLUTE_DB_PATH!);
-        }
-      }
+setDatabaseProvider(provider);
 
-      const databasePool = new SQLitePool(process.env.ABSOLUTE_DB_PATH!, 5);
+if (process.env.NODE_ENV === "prod") {
+  provider
+    .restore()
+    .then(() => {
+      keepAliveCronJob.start();
+      backupDatabaseCronJob(provider.backup).start();
+      startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+    })
+    .catch((e) => console.error(e));
+} else if (process.env.NODE_ENV === "dev") {
+  provider
+    .initialize()
+    .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
+    .catch((e) => console.error(e));
+} else if (process.env.NODE_ENV === "test") {
+  const provider = new InMemoryProvider();
+  setDatabaseProvider(provider);
+  provider
+    .initialize()
+    .then(() => {
+      provider
+        .seed()
+        .then(() => startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider))
+        .catch((e) => console.error(e));
+    })
+    .catch((e) => console.error(e));
+} else {
+  console.error(`Environment variable "NODE_ENV" must be one of : ("prod" | "dev" | "test") : Got "${process.env.NODE_ENV}"`);
+}
 
-      /**
-       * Start Express App + WebSocketApp
-       */
+/**
+ * Start Express app and WebSocketApp Helpers
+ */
 
-      // Start Express
-      const server = await createExpressApp(databasePool).listenAsync(process.env.EXPRESS_PORT);
+export type WebSocketAppStartupFunction = (options: ServerOptions, databaseProvider: DatabaseProvider) => Promise<void>;
+
+function startExpressAndWebSocketApps(expressApp: Express, startWebSocketAppFn: WebSocketAppStartupFunction, provider: DatabaseProvider): void {
+  expressApp
+    .listenAsync(process.env.EXPRESS_PORT)
+    .then((server) => {
       console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);
-      // Start WebSocketApp
-      await createWebSocketApp(databasePool).listenAsync({ server });
-      console.log(`WebSocketApp listening via Express server`);
-
-      resolve(null);
-    } catch (e) {
-      console.log(`[MAIN][ERROR] Error during startup!`, { error: e });
-      process.exit(1);
-    }
-  });
+      startWebSocketAppFn({ server }, provider)
+        .then(() => console.log(`WebSocketApp listening via Express server`))
+        .catch((e) => console.error(e));
+    })
+    .catch((e) => console.error(e));
 }

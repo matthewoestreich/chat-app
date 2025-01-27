@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import Express from "express";
 
-export default function useCookieParser(req: Request, _res: Response, next: NextFunction) {
+export default function useCookieParser(req: Express.Request, _res: Express.Response, next: Express.NextFunction): void {
   req.cookies = {}; // Initialize an empty cookie object
 
   if (req.headers.cookie) {

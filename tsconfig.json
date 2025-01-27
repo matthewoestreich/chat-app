@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2015",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "noImplicitAny": true,
     "sourceMap": true,
     "outDir": "./dist",
@@ -15,10 +15,10 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "typeRoots": ["./types", "./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "./types"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["dist/", "node_modules/**", "__tests__/**", "**/*.test.*", "*.config.js", ".env.example", "cypress.config.ts", "cypress/**/*", "cypress"]
+  "exclude": ["dist/", "node_modules/**", "__tests__/**", "**/*.test.*", "*.config.*", ".env.example", "cypress/**/*", "cypress"]
 }

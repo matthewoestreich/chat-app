@@ -1,7 +1,7 @@
 export default class RTChatError extends Error {
   internalErrorCode?: number;
   httpErrorCode?: number;
-  data?: { [key: string]: any };
+  data?: { [key: string]: string };
 
   constructor(options: IRTChatErrorOptions) {
     super(options.message);

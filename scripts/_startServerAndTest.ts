@@ -83,12 +83,12 @@ async function isUrlAlive(url: string): Promise<boolean> {
   try {
     const response = await fetch(url);
     return response.ok;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }
 
-function sleep(ms: number) {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
