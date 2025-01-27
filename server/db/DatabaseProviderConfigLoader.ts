@@ -92,7 +92,6 @@ export default class DatabaseProviderConfigLoader {
        */
       case "sqlite": {
         const databaseFilePath = process.env.NODE_ENV === "test" ? appRootPath + "/test.db" : appRootPath + "/rtchat.db";
-
         return {
           type: "sqlite",
           config: { databaseFilePath, maxConnections: 5 },
