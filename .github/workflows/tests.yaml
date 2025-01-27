@@ -20,6 +20,7 @@ jobs:
       EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
       WSS_URL: ${{ secrets.WSS_URL }}
       NODE_ENV: ${{ secrets.NODE_ENV }}
+      DATABASE_PROVIDER: ${{ secrets.DATABASE_PROVIDER }}
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
     steps:
