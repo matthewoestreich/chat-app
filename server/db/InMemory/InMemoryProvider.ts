@@ -162,6 +162,10 @@ export default class InMemoryProvider implements DatabaseProvider {
       // Add sessions (empty)
       inMemoryData.session = [];
 
+      console.log("\n\n");
+      console.log({ in: "InMemoryProvider.seed", data: JSON.stringify(inMemoryData, null, 2) });
+      console.log("\n\n");
+
       this.database = new InMemoryDatabase(inMemoryData);
       // TODO remove this, it is just for testing
       nodeFs.writeFileSync(inMemoryJSONFile, JSON.stringify(inMemoryData, null, 2));
