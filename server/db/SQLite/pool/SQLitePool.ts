@@ -160,7 +160,8 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     this._mutex.unlock();
   }
 
-  async query(sql: string, ...params: string[]): Promise<unknown> {
+  // eslint-disable-next-line
+  async query(sql: string, params: any[]): Promise<unknown> {
     const connection = await this.getConnection();
 
     return new Promise(async (resolve, reject) => {

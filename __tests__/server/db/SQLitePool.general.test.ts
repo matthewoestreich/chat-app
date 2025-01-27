@@ -1,4 +1,4 @@
-import SQLitePool from "../../../server/db/SQLitePool";
+import SQLitePool from "../../../server/db/SQLite/pool/SQLitePool";
 import fs from "fs";
 import path from "path";
 //import SQLitePoolConnection from "../../../server/db/SQLitePoolConnection";
