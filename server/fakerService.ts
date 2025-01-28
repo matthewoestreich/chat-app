@@ -153,7 +153,7 @@ export function addFakeUsersToFakeChatRooms(users: FakeUser[], chatRooms: FakeCh
 }
 
 /**
- * Generate direct conversations between users.
+ * Generate direct conversations between users (min not guaranteed here)
  * @param users
  * @param minConversationsPerUser
  * @param maxConversationsPerUser
@@ -171,6 +171,7 @@ export function generateFakeDirectConversations(users: FakeUser[], minConversati
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
     const numOfConversations = getRandomIntInclusive(minConversationsPerUser, maxConversationsPerUser);
+    // Exlude "this" user from unique items. Otherwise you could be in a conversation with yourself.
     const uniqueUsers = getUniqueItems(users, numOfConversations, user);
 
     for (let j = 0; j < uniqueUsers.length; j++) {
@@ -252,6 +253,10 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
 
 /**
  * Get array of unique items.
+ *
+ * If the array you provided already contains unique items, we filter them out prior to performing
+ * any calculations as far as numOfItems to return, etc..
+ *
  * @param items List of items that you want to get N unique items from
  * @param numOfItems Number of unique items you want
  * @param excludeItem Item you want to exclude from being selected as a unique item.
@@ -269,7 +274,7 @@ export function getUniqueItems<T>(items: T[], numOfItems: number, excludeItem?: 
   if (numOfItems === items.length) {
     return items;
   }
-  // If they want a number of users that is greater than or equal to the amount of users we were given.
+  // If they want a number of items that is greater than the amount of items we were given.
   if (numOfItems > items.length) {
     throw new Error(`[getUniqueItems] numOfItems:${numOfItems} is greater than items.length:${items.length}.\nNOTE: length may be different than what you expect because: \n\t1) If you provided 'excludeItem', that is factored into items.length. \n\t2)If any duplicates existed withhin the 'items' array you provided, they are subtracted from original length.`);
   }
