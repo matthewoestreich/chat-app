@@ -32,10 +32,11 @@ if (process.env.NODE_ENV !== "test") {
 
 app.post("/auth/validate", [useHasValidSessionCookie], async (req: Request, res: Response) => {
   if (req.cookies.session) {
+    // If no valid session exists, middleware would have removed cookie by now.
     res.status(200).send({ ok: true, redirectTo: "/chat" });
     return;
   }
-  res.status(200).send({ ok: true });
+  res.status(200).send({ ok: true, redirectTo: false });
 });
 
 /**
