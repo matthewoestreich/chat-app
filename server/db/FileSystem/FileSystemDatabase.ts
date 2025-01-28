@@ -29,8 +29,9 @@ export default class FileSystemDatabase {
       throw new Error("jsonFilePath not a json file!");
     }
     if (!nodeFs.existsSync(jsonFilePath)) {
-      nodeFs.writeFileSync(jsonFilePath, "");
+      nodeFs.writeFileSync(jsonFilePath, "{}");
     }
+    this.databaseFilePath = jsonFilePath;
   }
 
   async read(): Promise<FileSystemDatabaseData> {

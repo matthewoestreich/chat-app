@@ -5,7 +5,6 @@ import expressApp, { setDatabaseProvider } from "@/server";
 import startWebSocketApp from "@/server/wss";
 import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
 import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
-//import InMemoryProvider from "./server/db/InMemory/InMemoryProvider";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
 process.env.WSS_URL = process.env.WSS_URL || undefined;
@@ -44,7 +43,6 @@ setDatabaseProvider(provider);
       }
       case "test": {
         await provider.initialize();
-        await provider.seed();
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
         break;
       }

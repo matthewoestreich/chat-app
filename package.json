@@ -33,6 +33,7 @@
     "ext": "*",
     "ignore": [
       "**/*.db",
+      "database.json",
       "./dist/**",
       "./data.json"
     ],
