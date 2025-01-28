@@ -1,6 +1,6 @@
 import { WebSocket, ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
-import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
