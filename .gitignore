@@ -5,6 +5,7 @@
 .vscode
 inMemoryData.json
 database.json
+www
 # Logs
 logs
 *.log

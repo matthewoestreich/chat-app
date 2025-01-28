@@ -18,8 +18,7 @@ const config: Linter.Config[] = [
       ".github/**",
       "www/**",
       "cypress/**",
-      "node_modules/**",
-      "client/**"
+      "node_modules/**"
     ],
     languageOptions: {
       parser: tsParser,
