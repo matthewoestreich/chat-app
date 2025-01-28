@@ -177,6 +177,9 @@ export function generateFakeDirectConversations(users: FakeUser[], minConversati
     for (let j = 0; j < uniqueUsers.length; j++) {
       const otherUser = uniqueUsers[j];
 
+      // This is why a min is not guaranteed here. I am too lazy to make sure a
+      // min amount is provided becuase this is just for fake data anyway.
+      //
       // The following direct conversations are redundant:
       //  - directConvo1 = { userA: "Joe", userB: "Amy" };
       //  - directConvo2 = { userA: "Amy", userB: "Joe" };
