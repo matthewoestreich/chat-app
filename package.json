@@ -4,7 +4,8 @@
   "description": "Real time chat app built with websockets",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsx scripts/_build.ts",
+    "build:server": "tsc -p tsconfig.json && tsx scripts/_build.ts",
+    "build:frontend": "vite --config ./client/vite.config.ts build",
     "cy:open": "NODE_ENV=test cypress open",
     "cy:run": "NODE_ENV=test cypress run --spec 'cypress/e2e/*.cy.ts'",
     "fmt": "prettier --write \"**/*.{ts,js,json,pug}\"",
@@ -12,7 +13,9 @@
     "lint": "eslint .",
     "postbuild": "tsc-alias -p tsconfig.json",
     "prebuild": "rm -rf dist",
+    "preview:frontend": "vite --config ./client/vite.config.ts preview",
     "start": "tsx index.ts",
+    "start:frontend": "vite --config ./client/vite.config.ts serve",
     "start:nodemon": "nodemon --verbose",
     "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",
     "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
@@ -69,11 +72,14 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.7",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
     "@types/sqlite3": "^3.1.11",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "babel-jest": "^29.7.0",
     "cron": "^3.2.1",
     "cypress": "^14.0.0",
@@ -83,8 +89,11 @@
     "nodemon": "^3.1.7",
     "prettier": "^3.3.3",
     "pug": "^3.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "ts-jest": "^29.2.5",
     "tsc-alias": "^1.8.10",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "vite": "^6.0.11"
   }
 }
