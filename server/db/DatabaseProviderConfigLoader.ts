@@ -112,14 +112,14 @@ export default class DatabaseProviderConfigLoader {
       case "memory": {
         return {
           type: "memory",
-          config: { seedOnCreation: false },
+          config: { seedOnCreation: true },
         };
       }
       default: {
         console.warn(`DATABASE_PROVIDER was not found. Using "in-memory" store. DATA WILL NOT BE SAVED AFTER SERVER IS STOPPED!`);
         return {
           type: "memory",
-          config: { seedOnCreation: false },
+          config: { seedOnCreation: true },
         };
       }
     }
