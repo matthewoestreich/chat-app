@@ -1,5 +1,5 @@
-import React, { ForwardedRef, forwardRef, HTMLAttributes, useRef } from "react";
-import { Modal, ModalDialog, FloatingInput } from "@components";
+import React, { forwardRef, HTMLAttributes } from "react";
+import { Modal, ModalDialog, ModalContent, FloatingInput } from "@components";
 
 interface CreateAccountModalProperties extends HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -10,7 +10,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
   return (
     <Modal ref={ref} classes={["fade", "modal-lg"]} dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
-        <div className="modal-content">
+        <ModalContent>
           <div className="modal-header">
             <h1 className="modal-title fs-5">{props.title}</h1>
             <button id="close-modal-btn" className="btn btn-close" type="button" data-bs-dismiss="modal"></button>
@@ -18,13 +18,34 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
           <div className="modal-body">
             <div className="form-group">
               <form id="form">
-                <FloatingInput id="ca-un-input" className="mb-3" inputProps={{ type: "text", placeholder: "Username" }} invalidMessage="Username is required!">
+                <FloatingInput
+                  id="ca-un-input"
+                  className="mb-3"
+                  type="text"
+                  placeholder="Username"
+                  required={true}
+                  invalidMessage="Username is required!"
+                >
                   Username
                 </FloatingInput>
-                <FloatingInput id="ca-email-input" className="mb-3" inputProps={{ type: "email", placeholder: "Email" }} invalidMessage="Email is required!">
+                <FloatingInput
+                  id="ca-email-input"
+                  className="mb-3"
+                  type="email"
+                  placeholder="Email"
+                  required={true}
+                  invalidMessage="Email is required!"
+                >
                   Email
                 </FloatingInput>
-                <FloatingInput id="ca-pw-input" className="mb-3" inputProps={{ type: "password", placeholder: "Password", required: true }} invalidMessage="Username is required!">
+                <FloatingInput
+                  id="ca-pw-input"
+                  className="mb-3"
+                  type="password"
+                  placeholder="Password"
+                  required={true}
+                  invalidMessage="Username is required!"
+                >
                   Password
                 </FloatingInput>
               </form>
@@ -38,7 +59,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
               Create Account
             </button>
           </div>
-        </div>
+        </ModalContent>
       </ModalDialog>
     </Modal>
   );

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { ChangeEvent, useRef, useState } from "react";
 import { FloatingInput } from "@components";
 import CreateAccountModal from "./CreateAccountModal";
 
@@ -7,15 +7,25 @@ import CreateAccountModal from "./CreateAccountModal";
  * @returns React.JSX.Element
  */
 export default function Login(): React.JSX.Element {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const modalRef = useRef<ModalMethods>(null);
 
-  const openModal = () => {
-    modalRef.current?.show();
-  }
+  const handleEmailInput = (event: ChangeEvent<HTMLInputElement>): void => {
+    setEmail(() => event.target.value);
+  };
 
-  const closeModal = () => {
+  const handlePasswordInput = (event: ChangeEvent<HTMLInputElement>): void => {
+    setPassword(() => event.target.value);
+  };
+
+  const openModal = (): void => {
+    modalRef.current?.show();
+  };
+
+  const closeModal = (): void => {
     modalRef.current?.hide();
-  }
+  };
 
   return (
     <>
@@ -42,19 +52,35 @@ export default function Login(): React.JSX.Element {
         <div className="col-lg-6 offset-lg-3">
           <div className="form-group">
             <form id="login-form">
-              <FloatingInput id="login-email-input" className="mb-3" invalidMessage="Email is required!" inputProps={{ type: "text", placeholder: "Email Address", required: true, className: "form-control" }}>
+              <FloatingInput
+                id="login-email-input"
+                className="mb-3"
+                invalidMessage="Email is required!"
+                type="text"
+                placeholder="Email Address"
+                required={true}
+                onChange={handleEmailInput}
+                value={email}
+              >
                 Email
               </FloatingInput>
-              <FloatingInput id="login-pw-input" className="mb-3" invalidMessage="Password is required!" inputProps={{ type: "password", placeholder: "Password", required: true, className: "form-control" }}>
+              <FloatingInput
+                id="login-pw-input"
+                className="mb-3"
+                invalidMessage="Password is required!"
+                type="password"
+                placeholder="Password"
+                required={true}
+                onChange={handlePasswordInput}
+                value={password}
+              >
                 Password
               </FloatingInput>
               <div className="d-flex justify-content-end">
-                <button onClick={openModal} id="open-create-account-modal-btn" className="btn btn-outline-secondary me-2" type="button">
+                <button onClick={openModal} className="btn btn-outline-secondary me-2" type="button">
                   Create Account
                 </button>
-                <button id="login-btn" className="btn btn-primary">
-                  Login
-                </button>
+                <button className="btn btn-primary">Login</button>
               </div>
             </form>
           </div>

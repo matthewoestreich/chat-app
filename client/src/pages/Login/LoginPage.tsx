@@ -4,20 +4,20 @@ import Login from "./Login";
 import "../../styles/index.css";
 
 export default function LoginPage(): React.JSX.Element {
-  const [shouldRender, setShouldRender] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function checkForExistingSession() {
+    async function checkForExistingSession(): Promise<void> {
       try {
         const response = await fetch("/auth/validate", { method: "POST" });
         const result = await response.json();
         if (response.status === 200 && result.redirectTo) {
           return navigate(result.redirectTo);
         }
-        setShouldRender(true);
-      } catch (e) {
-        setShouldRender(true);
+        setIsLoading(false);
+      } catch (_e) {
+        setIsLoading(false);
       }
     }
 
@@ -26,7 +26,7 @@ export default function LoginPage(): React.JSX.Element {
 
   return (
     <div className="container d-flex flex-column h-100 justify-content-center align-items-center">
-      {shouldRender === true ? <Login /> : <div>Loading...</div>}
+      {isLoading === false ? <Login /> : <div>Loading...</div>}
     </div>
   );
 }
