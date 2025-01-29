@@ -14,8 +14,15 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "paths": {
+      "@client/*": ["../client/*"],
+      "@components": ["./src/components/index.ts"],
+      "@pages": ["./src/pages/index.ts"],
+      "@hooks": ["./src/hooks/index.ts"]
+    },
+    "typeRoots": ["./types", "../node_modules/@types"]
   },
-  "include": ["./src", "vite.config.dev.ts"],
-  "exclude": ["./node_modules", "./build", "./dist"]
+  "include": ["./src/**/*", "./types/**/*"],
+  "exclude": ["./build", "./dist"]
 }
