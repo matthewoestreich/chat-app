@@ -2,7 +2,6 @@ import { Linter } from "eslint";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
-import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 /**
  * ================================================================================================================
@@ -87,7 +86,7 @@ const clientConfig: Linter.Config = {
   plugins: {
     "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
     react: reactPlugin,
-    "react-hooks": reactHooksPlugin,
+    "react-hooks": require("eslint-plugin-react-hooks"),
   },
   settings: {
     react: {
@@ -124,7 +123,7 @@ const clientConfig: Linter.Config = {
 
 /**
  * ================================================================================================================
- * Main, flat, config
+ * Main, "flat", config
  * ================================================================================================================
  */
 const config: Linter.Config[] = [

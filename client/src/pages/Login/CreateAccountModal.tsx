@@ -2,6 +2,8 @@ import React, { forwardRef, HTMLAttributes } from "react";
 import { Modal, ModalDialog, ModalContent, FloatingInput } from "@components";
 
 interface CreateAccountModalProperties extends HTMLAttributes<HTMLDivElement> {
+  onCreate: () => void;
+  onClose: () => void;
   title: string;
 }
 
