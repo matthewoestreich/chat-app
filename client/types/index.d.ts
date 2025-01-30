@@ -8,9 +8,21 @@ interface BootstrapFormMethods {
   setIsValid: (isValid: boolean) => void;
 }
 
+interface AlertState {
+  type?: BootstrapContextualClasses;
+  shown: boolean;
+  message?: string;
+  icon?: string;
+}
+
 interface LoginResult {
   ok: boolean;
   session: string;
+}
+
+interface AutoLoginCheckResult {
+  ok: boolean;
+  redirectTo: string;
 }
 
 interface CreateAccountResult {

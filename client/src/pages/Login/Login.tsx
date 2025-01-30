@@ -5,21 +5,10 @@ import { sendLoginRequest } from "@client/auth/authService";
 import CreateAccountModal from "./CreateAccountModal";
 import { useNavigate } from "react-router-dom";
 
-interface AlertStatus {
-  type?: BootstrapContextualClasses;
-  shown: boolean;
-  message?: string;
-  icon?: string;
-}
-
-/**
- *
- * @returns React.JSX.Element
- */
 export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [alert, setAlert] = useState<AlertStatus>({ type: undefined, shown: false });
+  const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
@@ -57,17 +46,18 @@ export default function Login(): React.JSX.Element {
     try {
       setIsLoggingIn(true);
       const loginResult = await sendLoginRequest(email, password);
-      if (loginResult.ok) {
-        setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-person-fill-check" });
-        setCookie("session", loginResult.session, 1);
+
+      if (!loginResult.ok) {
+        setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
         setIsLoggingIn(false);
-        navigate("/chat");
         return;
       }
-      setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
+
+      setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-person-fill-check" });
+      setCookie("session", loginResult.session, 1);
       setIsLoggingIn(false);
-    } catch (e) {
-      console.error(e);
+      navigate("/chat");
+    } catch (_e) {
       setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
       setIsLoggingIn(false);
     }
@@ -93,22 +83,20 @@ export default function Login(): React.JSX.Element {
           <h1 className="display-5">Welcome to RTChat!</h1>
         </div>
       </div>
-      {/*  */}
       <div className="row" style={{ maxHeight: "400px" }}>
         <div className="col mh-100">
           <Alert
             isOpen={alert.shown}
+            icon={alert.icon}
+            type={alert.type}
             onClose={closeAlert}
             rootClassName="d-flex flex-row align-items-center justify-content-between mh-100"
             messageClassName="mb-0 max-h-100px overf-scroll"
-            icon={alert.icon}
-            type={alert.type}
           >
             {alert.message}
           </Alert>
         </div>
       </div>
-      {/*  */}
       <div className="row w-100">
         <div className="col-lg-6 offset-lg-3">
           <div className="form-group">

@@ -47,6 +47,7 @@ app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
  * @route {POST} /auth/auto-login
  *
  * If someone visits "/" and they have a valid token, we don't force them to reauth.
+ * The diff between this route and validate route is validate will handle refreshing.
  */
 app.post("/auth/auto-login", [useAutoLogin], async (req: Request, res: Response) => {
   if (req.cookies.session) {

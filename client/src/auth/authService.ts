@@ -52,6 +52,22 @@ export async function sendRegisterRequest(name: string, password: string, email:
 }
 
 /**
+ * If someone visits "/" for example.. and they have a valid session, this makes
+ * sure they don't have to reauth.
+ * The diff between this route and validate route is validate will handle refreshing.
+ * @returns {Promise<AutoLoginCheckResult>}
+ */
+export async function sendAutoLoginCheckRequest(): Promise<AutoLoginCheckResult> {
+  const URL_PATH = "/auth/auto-login";
+  const response = await fetch(URL_PATH, { method: "POST" });
+  const result = await response.json();
+  if (response.status !== 200 && !result.redirectTo) {
+    return { ok: false, redirectTo: "" };
+  }
+  return { ok: true, redirectTo: result.redirectTo };
+}
+
+/**
  * Sends a logout request to the backend.
  *
  * @returns {Promise<LogoutResult>}

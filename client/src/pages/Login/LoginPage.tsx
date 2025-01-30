@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks";
+import { sendAutoLoginCheckRequest } from "@client/auth/authService";
 import Login from "./Login";
 import "../../styles/index.css";
 
@@ -12,13 +13,12 @@ export default function LoginPage(): React.JSX.Element {
   useEffect(() => {
     async function checkForExistingSession(): Promise<void> {
       try {
-        const response = await fetch("/auth/auto-login", { method: "POST" });
-        const result = await response.json();
-        if (response.status === 200 && result.redirectTo) {
-          login();
-          return navigate(result.redirectTo);
+        const result = await sendAutoLoginCheckRequest();
+        if (!result.ok || result.redirectTo === "") {
+          return setIsLoading(false);
         }
-        setIsLoading(false);
+        login();
+        navigate(result.redirectTo);
       } catch (_e) {
         setIsLoading(false);
       }

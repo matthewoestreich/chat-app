@@ -41,10 +41,10 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
       return;
     }
 
-    const form = event.currentTarget;
-    const isFormValid = form.checkValidity();
+    const isFormValid = event.currentTarget.checkValidity();
     formRef.current.setIsValid(isFormValid);
     setIsFormValidated(true);
+
     if (!isFormValid) {
       return;
     }
