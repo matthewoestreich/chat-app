@@ -16,13 +16,14 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "paths": {
-      "@client/*": ["../client/*"],
+      "@": ["../client/*"],
+      "@client/*": ["../client/src/*"],
       "@components": ["./src/components/index.ts"],
       "@pages": ["./src/pages/index.ts"],
       "@hooks": ["./src/hooks/index.ts"]
     },
     "typeRoots": ["./types", "../node_modules/@types"]
   },
-  "include": ["./src/**/*", "./types/**/*"],
+  "include": ["index.tsx", "./src/**/*", "./types/**/*"],
   "exclude": ["./build", "./dist"]
 }

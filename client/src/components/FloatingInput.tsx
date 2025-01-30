@@ -16,7 +16,7 @@ export default function FloatingInput(props: FloatingInputProperties): React.JSX
       <label className="form-label" htmlFor={id}>
         {children}
       </label>
-      <div className="invalid-feedback">{invalidMessage}</div>
+      <div className="invalid-feedback mt-0">{invalidMessage}</div>
     </div>
   );
 }

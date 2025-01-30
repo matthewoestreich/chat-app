@@ -5,13 +5,12 @@ import helmet, { HelmetOptions } from "helmet";
 import bcrypt from "bcrypt";
 import { generateSessionToken } from "@/server/generateTokens.js";
 import morgan from "morgan";
-import { useCookieParser, useCspNonce, attachDatabaseProvider, useHasValidSessionCookie } from "@/server/middleware";
+import { useCookieParser, useCspNonce, attachDatabaseProvider, useAutoLogin, useJwt, useErrorCatchall } from "@/server/middleware";
 
 const app = express();
 export const setDatabaseProvider = attachDatabaseProvider(app);
 export default app;
 
-//const useJwt = useJwtSession({ onError: (_, res: Response) => res.redirect("/") });
 const helmetConfig: HelmetOptions = {
   // @ts-ignore
   contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`] } },
@@ -30,17 +29,37 @@ if (process.env.NODE_ENV !== "test") {
   app.use(morgan(morganSchema, { skip: morganSkip }));
 }
 
-app.post("/auth/validate", [useHasValidSessionCookie], async (req: Request, res: Response) => {
+/**
+ * @route {POST} /auth/validate
+ *
+ * Validates JWT and handles refresh.
+ */
+app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
+  if (req.cookies.session) {
+    // If no valid session exists, middleware would have removed cookie by now.
+    res.status(200).send({ ok: true });
+    return;
+  }
+  res.status(200).send({ ok: false });
+});
+
+/**
+ * @route {POST} /auth/auto-login
+ *
+ * If someone visits "/" and they have a valid token, we don't force them to reauth.
+ */
+app.post("/auth/auto-login", [useAutoLogin], async (req: Request, res: Response) => {
   if (req.cookies.session) {
     // If no valid session exists, middleware would have removed cookie by now.
     res.status(200).send({ ok: true, redirectTo: "/chat" });
     return;
   }
-  res.status(200).send({ ok: true, redirectTo: false });
+  res.status(401).send({ ok: true, redirectTo: false });
 });
 
 /**
  * @route {POST} /auth/register
+ *
  * Content-Type: application/json
  * {
  *    u: string, // username
@@ -66,6 +85,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
 
 /**
  * @route {POST} /auth/login
+ *
  * Content-Type: application/json
  * {
  *    e: string, // email
@@ -108,18 +128,37 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 });
 
 /**
+ * Logs account out if they have req.cookies.session
+ *
+ * @route {POST} /logout
+ */
+app.post("/auth/logout", async (req: Request, res: Response) => {
+  try {
+    const { session } = req.cookies.session;
+    await req.databaseProvider.sessions.delete(session);
+    res.clearCookie("session");
+    res.status(200).send({ ok: true });
+  } catch (e) {
+    console.error("Error during logout", e);
+    res.clearCookie("session");
+    res.status(500).send({ ok: false });
+  }
+});
+
+/**
  * Serve React to everything else
+ *
  * @route {GET} *
  */
-app.get("*", (_, res: Response) => {
-  console.log("serving");
-  res.sendFile(path.join(__dirname, "www", "index.html"));
+app.get("*", (req: Request, res: Response) => {
+  console.log("serving", req.url);
+  res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 
 /**
  * Catch-all error handler
  */
-//app.use(useErrorCatchall);
+app.use(useErrorCatchall);
 
 app.listenAsync = function (...args: any[]): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> {
   return new Promise((resolve, reject) => {

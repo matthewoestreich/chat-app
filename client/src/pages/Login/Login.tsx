@@ -1,8 +1,9 @@
-import React, { ChangeEvent, useRef, useState, MouseEvent } from "react";
-import { FloatingInput, Alert } from "@components";
+import React, { ChangeEvent, useRef, useState, FormEvent } from "react";
+import { FloatingInput, Alert, BootstrapForm, ButtonLoading } from "@components";
 import { useSetCookie } from "@hooks";
+import { sendLoginRequest } from "@client/auth/authService";
 import CreateAccountModal from "./CreateAccountModal";
-import sendLoginRequest from "./sendLoginRequest";
+import { useNavigate } from "react-router-dom";
 
 interface AlertStatus {
   type?: BootstrapContextualClasses;
@@ -19,6 +20,9 @@ export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [alert, setAlert] = useState<AlertStatus>({ type: undefined, shown: false });
+  const [isFormValidated, setIsFormValidated] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const navigate = useNavigate();
   const modalRef = useRef<ModalMethods>(null);
   const setCookie = useSetCookie();
 
@@ -30,22 +34,43 @@ export default function Login(): React.JSX.Element {
     setPassword(() => event.target.value);
   }
 
-  async function handleLogin(event: MouseEvent<HTMLButtonElement>): Promise<void> {
+  function handleCreateAccountResult(result: CreateAccountResult): void {
+    if (!result.ok) {
+      setAlert({ type: "danger", icon: "bi-exclamation-triangle-fill", message: "Something went wrong :(", shown: true });
+      return;
+    }
+    setAlert({ type: "success", icon: "bi-person-fill-check", message: "Success!", shown: true });
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
 
-    if (email === "" || password === "") {
-      console.error("Missing email or pw", { email, password });
-      setAlert({ type: "danger", shown: true, message: "Missing email or password!", icon: "bi-exclamation-triangle-fill" });
-    }
+    const form = event.currentTarget;
+    const isFormValid = form.checkValidity();
+    setIsFormValidated(true);
 
-    const loginResult = await sendLoginRequest(email, password);
-    if (loginResult.ok) {
-      setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-success" });
-      setCookie("session", loginResult.session, 1);
+    if (!isFormValid) {
       return;
     }
-    setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
+
+    try {
+      setIsLoggingIn(true);
+      const loginResult = await sendLoginRequest(email, password);
+      if (loginResult.ok) {
+        setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-person-fill-check" });
+        setCookie("session", loginResult.session, 1);
+        setIsLoggingIn(false);
+        navigate("/chat");
+        return;
+      }
+      setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
+      setIsLoggingIn(false);
+    } catch (e) {
+      console.error(e);
+      setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
+      setIsLoggingIn(false);
+    }
   }
 
   function openModal(): void {
@@ -62,7 +87,7 @@ export default function Login(): React.JSX.Element {
 
   return (
     <>
-      <CreateAccountModal ref={modalRef} title="Create Account" onCreate={() => {}} onClose={closeModal} />
+      <CreateAccountModal ref={modalRef} title="Create Account" onCreate={handleCreateAccountResult} onClose={closeModal} />
       <div className="row">
         <div className="text-center mb-3">
           <h1 className="display-5">Welcome to RTChat!</h1>
@@ -87,7 +112,7 @@ export default function Login(): React.JSX.Element {
       <div className="row w-100">
         <div className="col-lg-6 offset-lg-3">
           <div className="form-group">
-            <form id="login-form">
+            <BootstrapForm onSubmit={handleSubmit} validated={isFormValidated}>
               <FloatingInput
                 id="login-email-input"
                 className="mb-3"
@@ -116,11 +141,11 @@ export default function Login(): React.JSX.Element {
                 <button onClick={openModal} className="btn btn-outline-secondary me-2" type="button">
                   Create Account
                 </button>
-                <button onClick={handleLogin} className="btn btn-primary">
+                <ButtonLoading isLoading={isLoggingIn} type="submit" className="btn btn-primary">
                   Login
-                </button>
+                </ButtonLoading>
               </div>
-            </form>
+            </BootstrapForm>
           </div>
         </div>
       </div>

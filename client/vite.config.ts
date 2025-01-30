@@ -15,7 +15,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@client": nodePath.resolve(__dirname, "../client"),
+      "@": nodePath.resolve(__dirname),
+      "@client": nodePath.resolve(__dirname, "../client/src"),
       "@components": nodePath.resolve(__dirname, "./src/components/index.ts"),
       "@pages": nodePath.resolve(__dirname, "./src/pages/index.ts"),
       "@hooks": nodePath.resolve(__dirname, "./src/hooks/index.ts"),

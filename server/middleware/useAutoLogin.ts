@@ -16,14 +16,12 @@ export default async function (req: Request, res: Response, next: NextFunction):
     const decodedToken = jsonwebtoken.decode(session) as JSONWebToken;
     const storedSession = await req.databaseProvider.sessions.selectByUserId(decodedToken.id);
 
-    if (!storedSession || (storedSession.token && storedSession.token !== session)) {
+    if (!storedSession || storedSession.token !== session) {
       res.clearCookie("session");
       req.cookies.session = "";
-      next();
-      return;
     }
 
-    return res.redirect("/chat");
+    next();
   } catch (e) {
     console.log(`[useHasValidSessionCookie][ERROR] `, e);
     return next();

@@ -18,7 +18,7 @@
     "preview:frontend": "vite --config ./client/vite.config.ts preview",
     "start": "npm run build:frontend:dev && tsx index.ts",
     "start:frontend": "vite --config ./client/vite.config.ts serve",
-    "start:nodemon": "nodemon --verbose",
+    "start:nodemon": "VITE_ENV=dev nodemon --verbose",
     "test:cy:open": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:open",
     "test:cy:run": "NODE_ENV=test tsx ./scripts/_startServerAndTest.ts --startServer npm start --url http://localhost:3000 --startTest npm run cy:run",
     "test:jest": "jest"
