@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks";
 import { sendAutoLoginCheckRequest } from "@client/auth/authService";
@@ -9,14 +9,19 @@ export default function LoginPage(): React.JSX.Element {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const loginRef = useRef(false);
 
   useEffect(() => {
     async function checkForExistingSession(): Promise<void> {
+      if (!document.cookie) {
+        return setIsLoading(false);
+      }
       try {
         const result = await sendAutoLoginCheckRequest();
         if (!result.ok || result.redirectTo === "") {
           return setIsLoading(false);
         }
+        loginRef.current = true;
         login();
         navigate(result.redirectTo);
       } catch (_e) {
@@ -24,7 +29,9 @@ export default function LoginPage(): React.JSX.Element {
       }
     }
 
-    checkForExistingSession();
+    if (!loginRef.current) {
+      checkForExistingSession();
+    }
   }, [navigate, login]);
 
   return (

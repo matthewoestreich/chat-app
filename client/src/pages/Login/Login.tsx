@@ -24,11 +24,12 @@ export default function Login(): React.JSX.Element {
   }
 
   function handleCreateAccountResult(result: CreateAccountResult): void {
-    if (!result.ok) {
-      setAlert({ type: "danger", icon: "bi-exclamation-triangle-fill", message: "Something went wrong :(", shown: true });
-      return;
-    }
-    setAlert({ type: "success", icon: "bi-person-fill-check", message: "Success!", shown: true });
+    setAlert(
+      result.ok
+        ? { type: "success", icon: "bi-person-fill-check", message: "Success!", shown: true }
+        : { type: "danger", icon: "bi-exclamation-triangle-fill", message: "Something went wrong :(", shown: true },
+    );
+    modalRef.current?.hide();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -55,7 +56,6 @@ export default function Login(): React.JSX.Element {
 
       setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-person-fill-check" });
       setCookie("session", loginResult.session, 1);
-      setIsLoggingIn(false);
       navigate("/chat");
     } catch (_e) {
       setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
@@ -102,7 +102,6 @@ export default function Login(): React.JSX.Element {
           <div className="form-group">
             <BootstrapForm onSubmit={handleSubmit} validated={isFormValidated}>
               <FloatingInput
-                id="login-email-input"
                 className="mb-3"
                 invalidMessage="Email is required!"
                 type="text"
@@ -114,7 +113,6 @@ export default function Login(): React.JSX.Element {
                 Email
               </FloatingInput>
               <FloatingInput
-                id="login-pw-input"
                 className="mb-3"
                 invalidMessage="Password is required!"
                 type="password"

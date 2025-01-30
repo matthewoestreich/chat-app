@@ -52,8 +52,10 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
     setIsCreatingAccount(true);
     const result = await sendRegisterRequest(username, password, email);
     props.onCreate(result);
-    setIsCreatingAccount(false);
     props.onClose();
+    [setEmail, setUsername, setPassword].forEach((setInputState) => setInputState(""));
+    setIsFormValidated(false);
+    setIsCreatingAccount(false);
   }
 
   return (
@@ -68,7 +70,6 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
             <div className="form-group">
               <BootstrapForm ref={formRef} onSubmit={handleSubmitForm} validated={isFormValidated}>
                 <FloatingInput
-                  id="ca-un-input"
                   className="mb-3"
                   type="text"
                   placeholder="Username"
@@ -80,7 +81,6 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
                   Username
                 </FloatingInput>
                 <FloatingInput
-                  id="ca-email-input"
                   className="mb-3"
                   type="email"
                   placeholder="Email"
@@ -92,12 +92,11 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
                   Email
                 </FloatingInput>
                 <FloatingInput
-                  id="ca-pw-input"
                   className="mb-3"
                   type="password"
                   placeholder="Password"
                   required={true}
-                  invalidMessage="Username is required!"
+                  invalidMessage="Password is required!"
                   onChange={handlePasswordInput}
                   value={password}
                 >
@@ -107,7 +106,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
             </div>
           </div>
           <div className="modal-footer">
-            <button id="cancel-btn" className="btn btn-danger" type="button" data-bs-dismiss="modal">
+            <button onClick={props.onClose} className="btn btn-danger" type="button">
               Close
             </button>
             <ButtonLoading onClick={handleSubmitClick} isLoading={isCreatingAccount} type="button" className="btn btn-primary">

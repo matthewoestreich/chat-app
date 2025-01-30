@@ -1,18 +1,20 @@
-import React, { InputHTMLAttributes } from "react";
+import React, { useId, InputHTMLAttributes } from "react";
 
-interface FloatingInputProperties extends Omit<InputHTMLAttributes<HTMLInputElement>, "children"> {
-  className?: string;
-  id: string;
-  children?: string;
+interface FloatingInputProperties extends Omit<InputHTMLAttributes<HTMLInputElement>, "children" | "id"> {
   invalidMessage: string;
+  className?: string;
+  children?: string;
+  inputClassName?: string;
 }
 
 export default function FloatingInput(props: FloatingInputProperties): React.JSX.Element {
-  const { className, id, children, invalidMessage, ...inputProps } = props;
+  const id = useId();
+
+  const { className, children, invalidMessage, inputClassName, ...inputProps } = props;
 
   return (
     <div className={`form-floating ${className ?? ""}`}>
-      <input {...inputProps} id={id} className="form-control" />
+      <input id={id} {...inputProps} className={`form-control ${inputClassName}`} />
       <label className="form-label" htmlFor={id}>
         {children}
       </label>

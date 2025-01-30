@@ -61,7 +61,7 @@ export async function sendAutoLoginCheckRequest(): Promise<AutoLoginCheckResult>
   const URL_PATH = "/auth/auto-login";
   const response = await fetch(URL_PATH, { method: "POST" });
   const result = await response.json();
-  if (response.status !== 200 && !result.redirectTo) {
+  if (response.status !== 200 || result.redirectTo === "") {
     return { ok: false, redirectTo: "" };
   }
   return { ok: true, redirectTo: result.redirectTo };

@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef, HTMLAttributes, ReactNode, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, HTMLAttributes, ReactNode, useImperativeHandle, useRef, useState } from "react";
 import * as bootstrap from "bootstrap";
 import { useFirstChildShouldBe } from "@hooks";
 import ModalDialog from "./ModalDialog";
@@ -9,7 +9,6 @@ interface ModalProperties extends HTMLAttributes<HTMLDivElement> {
   dataBsKeyboard?: boolean;
   tabIndex?: number;
   children?: ReactNode;
-  ref: ForwardedRef<ModalMethods>;
 }
 
 export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
@@ -19,19 +18,24 @@ export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
   }
 
   const modalRef = useRef<HTMLDivElement | null>(null);
-  let modalInstance: InstanceType<typeof bootstrap.Modal> | null = null;
+  const [modalInstance, setModalInstance] = useState<InstanceType<typeof bootstrap.Modal> | null>(null);
 
-  useImperativeHandle(ref, () => ({
-    show: (): void => {
-      if (modalRef.current) {
-        modalInstance = new bootstrap.Modal(modalRef.current);
-        modalInstance.show();
-      }
-    },
-    hide: (): void => {
-      modalInstance?.hide();
-    },
-  }));
+  useImperativeHandle(
+    ref,
+    () => ({
+      show: (): void => {
+        if (modalRef.current) {
+          const instance = bootstrap.Modal.getInstance(modalRef.current) || new bootstrap.Modal(modalRef.current);
+          setModalInstance(instance);
+          instance.show();
+        }
+      },
+      hide: (): void => {
+        modalInstance?.hide();
+      },
+    }),
+    [modalInstance],
+  );
 
   return (
     <div

@@ -55,7 +55,7 @@ app.post("/auth/auto-login", [useAutoLogin], async (req: Request, res: Response)
     res.status(200).send({ ok: true, redirectTo: "/chat" });
     return;
   }
-  res.status(401).send({ ok: true, redirectTo: false });
+  res.status(200).send({ ok: false, redirectTo: "" });
 });
 
 /**
@@ -80,7 +80,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
     res.status(200).send({ ok: true, id: result.id, name: result.name, email: result.email });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
-    res.status(500).send({ ok: false });
+    res.status(200).send({ ok: false });
   }
 });
 

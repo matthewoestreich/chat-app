@@ -12,7 +12,7 @@ export default function ModalDialog(props: ModalDialogProperties): React.JSX.Ele
   }
 
   return (
-    <div className={`modal-dialog ${className}`} {...restOfProps}>
+    <div className={`modal-dialog ${className || ""}`} {...restOfProps}>
       {children}
     </div>
   );

@@ -13,7 +13,6 @@ export default forwardRef<BootstrapFormMethods, BootstrapFormProperties>((props,
   useImperativeHandle(ref, () => ({
     submitForm: (): void => {
       if (formRef.current) {
-        console.log("[BootstrapForm]::useImperativeHandle.submitForm() : formRef.current exists");
         const event = new Event("submit", { bubbles: true, cancelable: true });
         formRef.current.dispatchEvent(event);
       }
