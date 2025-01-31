@@ -1,6 +1,6 @@
-import * as React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "@components";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoutes, AutoLoginRoutes } from "@client/auth/ProtectedRoutes";
 import { LoginPage, ChatPage } from "@pages";
 import AuthProvider from "@client/auth/AuthProvider";
 
@@ -10,16 +10,18 @@ import "./app.css";
 
 export default function App(): React.JSX.Element {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <Router>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route element={<ProtectedRoute />}>
+          <Route element={<AutoLoginRoutes />}>
+            <Route path="/" element={<LoginPage />} />
+          </Route>
+          <Route element={<ProtectedRoutes />}>
             <Route path="/chat" element={<ChatPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }

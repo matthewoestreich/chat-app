@@ -13,8 +13,9 @@ export default async function useJwt(req: Request, res: Response, next: NextFunc
       return next();
     }
 
-    const decodedToken = await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "");
+    const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as Account | null;
     if (decodedToken) {
+      req.user = { name: decodedToken.name, email: decodedToken.email, id: decodedToken.id };
       return next();
     }
 
@@ -60,6 +61,8 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     const sessionToken = generateSessionToken(decodedToken.name, decodedToken.id, decodedToken.email);
     // Update refresh token in db to newly generated refresh token.
     await req.databaseProvider.sessions.upsert(decodedToken.id, sessionToken.signed);
+    // Update request object
+    req.user = { name: decodedToken.name, id: decodedToken.id, email: decodedToken.email };
     // Update client side cookie
     res.cookie("session", sessionToken, { maxAge: ONE_DAY, httpOnly: true });
     return true;

@@ -15,14 +15,12 @@ interface AlertState {
   icon?: string;
 }
 
-interface LoginResult {
+interface AuthenticationResult {
   ok: boolean;
-  session: string;
-}
-
-interface AutoLoginCheckResult {
-  ok: boolean;
-  redirectTo: string;
+  session?: string;
+  id?: string;
+  name?: string;
+  email?: string;
 }
 
 interface CreateAccountResult {
@@ -44,8 +42,10 @@ interface UserData {
 }
 
 interface AuthContextValue {
-  isAuthenticated: boolean;
-  login: () => void;
+  user: UserData | null;
+  session: string | null;
+  validateSession: () => Promise<void>;
+  login: (email: string, password: string) => void;
   logout: () => void;
 }
 

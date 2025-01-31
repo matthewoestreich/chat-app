@@ -5,7 +5,8 @@ import helmet, { HelmetOptions } from "helmet";
 import bcrypt from "bcrypt";
 import { generateSessionToken } from "@/server/generateTokens.js";
 import morgan from "morgan";
-import { useCookieParser, useCspNonce, attachDatabaseProvider, useAutoLogin, useJwt, useErrorCatchall } from "@/server/middleware";
+import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@/server/middleware";
+import clearAllCookies from "./clearAllCookies";
 
 const app = express();
 export const setDatabaseProvider = attachDatabaseProvider(app);
@@ -35,27 +36,14 @@ if (process.env.NODE_ENV !== "test") {
  * Validates JWT and handles refresh.
  */
 app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
-  if (req.cookies.session) {
-    // If no valid session exists, middleware would have removed cookie by now.
-    res.status(200).send({ ok: true });
+  if (!req.cookies.session || !req.user) {
+    // If nothing valid was found, clear all cookies.
+    clearAllCookies(req, res);
+    res.status(200).send({ ok: false });
     return;
   }
-  res.status(200).send({ ok: false });
-});
-
-/**
- * @route {POST} /auth/auto-login
- *
- * If someone visits "/" and they have a valid token, we don't force them to reauth.
- * The diff between this route and validate route is validate will handle refreshing.
- */
-app.post("/auth/auto-login", [useAutoLogin], async (req: Request, res: Response) => {
-  if (req.cookies.session) {
-    // If no valid session exists, middleware would have removed cookie by now.
-    res.status(200).send({ ok: true, redirectTo: "/chat" });
-    return;
-  }
-  res.status(200).send({ ok: false, redirectTo: "" });
+  const { name, id, email } = req.user;
+  res.status(200).send({ ok: true, name, id, email, session: req.cookies.session });
 });
 
 /**
@@ -121,7 +109,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const jwt = generateSessionToken(name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
-    res.status(200).send({ ok: true, session: jwt.signed });
+    res.status(200).send({ ok: true, session: jwt.signed, id, name, email });
   } catch (e) {
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });

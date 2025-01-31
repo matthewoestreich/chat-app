@@ -2,7 +2,8 @@ import nodePath from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const OUTPUT_PATH: string = process.env.VITE_ENV === "dev" ? "../www" : "../dist/www";
+const OUTPUT_PATH: string = process.env.NODE_ENV === "development" ? "../www" : "../dist/www";
+console.log({ from: "vite.config.ts", "process.env.NODE_ENV": process.env.NODE_ENV });
 
 // https://vitejs.dev/config/
 export default defineConfig({

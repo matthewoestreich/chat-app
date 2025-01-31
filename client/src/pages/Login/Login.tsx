@@ -1,9 +1,7 @@
 import React, { ChangeEvent, useRef, useState, FormEvent } from "react";
 import { FloatingInput, Alert, BootstrapForm, ButtonLoading } from "@components";
-import { useSetCookie } from "@hooks";
-import { sendLoginRequest } from "@client/auth/authService";
+import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
-import { useNavigate } from "react-router-dom";
 
 export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState("");
@@ -11,9 +9,8 @@ export default function Login(): React.JSX.Element {
   const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const navigate = useNavigate();
   const modalRef = useRef<ModalMethods>(null);
-  const setCookie = useSetCookie();
+  const { login } = useAuth();
 
   function handleEmailInput(event: ChangeEvent<HTMLInputElement>): void {
     setEmail(() => event.target.value);
@@ -44,23 +41,9 @@ export default function Login(): React.JSX.Element {
       return;
     }
 
-    try {
-      setIsLoggingIn(true);
-      const loginResult = await sendLoginRequest(email, password);
-
-      if (!loginResult.ok) {
-        setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
-        setIsLoggingIn(false);
-        return;
-      }
-
-      setAlert({ type: "success", shown: true, message: "Success!", icon: "bi-person-fill-check" });
-      setCookie("session", loginResult.session, 1);
-      navigate("/chat");
-    } catch (_e) {
-      setAlert({ type: "danger", shown: true, message: "Something went wrong :(", icon: "bi-exclamation-triangle-fill" });
-      setIsLoggingIn(false);
-    }
+    setIsLoggingIn(true);
+    login(email, password);
+    setIsLoggingIn(false);
   }
 
   function openModal(): void {

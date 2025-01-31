@@ -41,6 +41,12 @@ interface Account {
 
 type PublicAccount = Omit<Account, "password" | "email">;
 
+interface AuthenticatedUser {
+  name: string;
+  email: string;
+  id: string;
+}
+
 interface RoomWithMembers {
   id: string;
   name: string;
@@ -92,6 +98,7 @@ declare namespace Express {
     listenAsync(handle: any, listeningListener?: () => void): Promise<import("node:http").Server<typeof import("node:http").IncomingMessage, typeof import("node:http").ServerResponse>>;
   }
   export interface Request {
+    user: AuthenticatedUser | null;
     databaseProvider: DatabaseProvider;
     cookies: unknown;
     sessionToken: string;
