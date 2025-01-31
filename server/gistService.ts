@@ -1,3 +1,6 @@
+/**
+ * Functions to interact with GitHub Gists.
+ */
 import nodePath from "node:path";
 import nodeFs from "node:fs";
 
