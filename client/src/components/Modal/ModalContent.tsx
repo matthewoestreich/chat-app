@@ -6,7 +6,7 @@ export default function ModalContent(props: ModalContentProperties): React.JSX.E
   const { children, className, ...restOfProps } = props;
 
   return (
-    <div className={`modal-content ${className}`} {...restOfProps}>
+    <div className={`modal-content ${className || ""}`} {...restOfProps}>
       {children}
     </div>
   );

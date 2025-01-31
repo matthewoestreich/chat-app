@@ -1,10 +1,9 @@
 import React, { forwardRef, HTMLAttributes, ReactNode, useImperativeHandle, useRef, useState } from "react";
-import * as bootstrap from "bootstrap";
+import { Modal as BsModal } from "bootstrap";
 import { useFirstChildShouldBe } from "@hooks";
 import ModalDialog from "./ModalDialog";
 
 interface ModalProperties extends HTMLAttributes<HTMLDivElement> {
-  classes?: string[];
   dataBsBackdrop?: "static" | boolean;
   dataBsKeyboard?: boolean;
   tabIndex?: number;
@@ -18,14 +17,13 @@ export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
   }
 
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof bootstrap.Modal> | null>(null);
+  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
 
-  useImperativeHandle(
-    ref,
-    () => ({
+  // prettier-ignore
+  useImperativeHandle(ref, () => ({
       show: (): void => {
         if (modalRef.current) {
-          const instance = bootstrap.Modal.getInstance(modalRef.current) || new bootstrap.Modal(modalRef.current);
+          const instance = BsModal.getInstance(modalRef.current) || new BsModal(modalRef.current);
           setModalInstance(instance);
           instance.show();
         }
@@ -41,7 +39,7 @@ export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
     <div
       ref={modalRef}
       id={props.id}
-      className={`modal ${props.classes?.join(" ") || ""}`}
+      className={`modal ${props.className || ""}`}
       data-bs-backdrop={props.dataBsBackdrop ?? "static"}
       data-bs-keyboard={props.dataBsKeyboard ?? true}
       tabIndex={props.tabIndex ?? -1}

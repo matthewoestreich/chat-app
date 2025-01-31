@@ -13,6 +13,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [isCloseButtonDisabled, setIsCloseButtonDisabled] = useState(false);
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const formRef = useRef<BootstrapFormMethods | null>(null);
@@ -29,6 +30,12 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
     setEmail(event.target.value);
   }
 
+  function handleClose(): void {
+    props.onClose();
+    resetModal();
+  }
+
+  // Programmatically submit form.
   function handleSubmitClick(): void {
     formRef.current?.submitForm();
   }
@@ -41,6 +48,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
       return;
     }
 
+    // `.checkValidity()` comes from Bootstrap
     const isFormValid = event.currentTarget.checkValidity();
     formRef.current.setIsValid(isFormValid);
     setIsFormValidated(true);
@@ -49,17 +57,23 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
       return;
     }
 
+    setIsCloseButtonDisabled(true);
     setIsCreatingAccount(true);
     const result = await sendRegisterRequest(username, password, email);
     props.onCreate(result);
     props.onClose();
+    resetModal();
+  }
+
+  function resetModal(): void {
     [setEmail, setUsername, setPassword].forEach((setInputState) => setInputState(""));
     setIsFormValidated(false);
     setIsCreatingAccount(false);
+    setIsCloseButtonDisabled(false);
   }
 
   return (
-    <Modal ref={ref} classes={["fade", "modal-lg"]} dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal ref={ref} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <div className="modal-header">
@@ -106,7 +120,7 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
             </div>
           </div>
           <div className="modal-footer">
-            <button onClick={props.onClose} className="btn btn-danger" type="button">
+            <button onClick={handleClose} className="btn btn-danger" type="button" disabled={isCloseButtonDisabled}>
               Close
             </button>
             <ButtonLoading onClick={handleSubmitClick} isLoading={isCreatingAccount} type="button" className="btn btn-primary">

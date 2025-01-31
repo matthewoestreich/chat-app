@@ -12,10 +12,11 @@ export default forwardRef<BootstrapFormMethods, BootstrapFormProperties>((props,
 
   useImperativeHandle(ref, () => ({
     submitForm: (): void => {
-      if (formRef.current) {
-        const event = new Event("submit", { bubbles: true, cancelable: true });
-        formRef.current.dispatchEvent(event);
+      if (!formRef.current) {
+        return;
       }
+      const event = new Event("submit", { bubbles: true, cancelable: true });
+      formRef.current.dispatchEvent(event);
     },
     setIsValid: (isValid: boolean): void => {
       if (!formRef.current) {
@@ -35,9 +36,7 @@ export default forwardRef<BootstrapFormMethods, BootstrapFormProperties>((props,
     }
 
     formRef.current.classList.add("was-validated");
-    if (props.onSubmit) {
-      props.onSubmit(event);
-    }
+    props.onSubmit?.(event);
   }
 
   return (

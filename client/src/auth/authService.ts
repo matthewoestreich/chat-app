@@ -1,5 +1,6 @@
 /**
  * Sends login request to backend.
+ *
  * @param email
  * @param password
  * @returns {Promise<AuthenticationResult>}
@@ -17,7 +18,6 @@ export async function sendLoginRequest(email: string, password: string): Promise
     }),
   });
   const result = await response.json();
-  console.log({ response, result });
   if (response.status !== 200 || !result.ok) {
     return { ok: false };
   }
@@ -26,6 +26,7 @@ export async function sendLoginRequest(email: string, password: string): Promise
 
 /**
  * Send register request to backend.
+ *
  * @param name
  * @param password
  * @param email
@@ -51,6 +52,11 @@ export async function sendRegisterRequest(name: string, password: string, email:
   return { ok: true, id: result.id, name: result.name, email: result.email };
 }
 
+/**
+ * Send a request to validate a cookie.
+ *
+ * @returns {Promise<AuthenticationResult>}
+ */
 export async function sendValidateRequest(): Promise<AuthenticationResult> {
   const URL_PATH = "/auth/validate";
   const response = await fetch(URL_PATH, { method: "POST" });
@@ -59,21 +65,6 @@ export async function sendValidateRequest(): Promise<AuthenticationResult> {
     return { ok: true, session: result.session, name: result.name, id: result.id, email: result.email };
   }
   return { ok: false };
-}
-
-/**
- * If someone visits "/" for example.. and they have a valid session, this makes
- * sure they don't have to reauth.
- * The diff between this route and validate route is validate will handle refreshing.
- */
-export async function sendAutoLoginCheckRequest(): Promise<AuthenticationResult> {
-  const URL_PATH = "/auth/auto-login";
-  const response = await fetch(URL_PATH, { method: "POST" });
-  const result = await response.json();
-  if (response.status !== 200 || result.redirectTo === "") {
-    return { ok: false };
-  }
-  return { ok: true };
 }
 
 /**
