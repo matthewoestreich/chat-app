@@ -23,8 +23,8 @@
       "@hooks": ["./src/hooks/index.ts"],
       "@styles/*": ["./src/styles/*"]
     },
-    "typeRoots": ["./types", "../node_modules/@types"]
+    "typeRoots": ["./types", "../node_modules/@types", "../types/index.d.ts", "../types/WebSocketApp.d.ts"]
   },
-  "include": ["src/index.tsx", "./src/**/*", "./types/**/*"],
+  "include": ["src/index.tsx", "./src/**/*", "./types/**/*", "../types/index.d.ts", "../types/WebSocketApp.d.ts"],
   "exclude": ["./build", "./dist"]
 }

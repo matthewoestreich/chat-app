@@ -2,8 +2,7 @@ import nodePath from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const OUTPUT_PATH: string = process.env.NODE_ENV === "development" ? "../www" : "../dist/www";
-console.log({ from: "vite.config.ts", "process.env.NODE_ENV": process.env.NODE_ENV });
+const IS_DEV = process.env.NODE_ENV === "development";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,8 +10,11 @@ export default defineConfig({
   base: "/",
   root: nodePath.resolve(__dirname, "./src"),
   build: {
-    outDir: nodePath.resolve(__dirname, OUTPUT_PATH),
+    outDir: nodePath.resolve(__dirname, IS_DEV ? "../www" : "../dist/www"),
     emptyOutDir: true,
+  },
+  esbuild: {
+    drop: IS_DEV ? undefined : ["console", "debugger"],
   },
   resolve: {
     alias: {

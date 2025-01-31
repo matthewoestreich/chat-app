@@ -1,16 +1,3 @@
-export interface Cookie {
-  name: string;
-  value: string;
-}
-
-export interface UseCookie {
-  setCookie(name: string, value: string, days: number, path?: string): void;
-  getAllCookies(): Cookie[];
-  getCookie(name: string): Cookie | undefined;
-  clearAllCookies(): void;
-  clearCookie(name: string, path: string): boolean;
-}
-
 /**
  * Sets document.cookie
  * @param name
@@ -27,14 +14,13 @@ function setCookie(name: string, value: string, days: number, path = "/"): void 
 /**
  * Gets all cookies name and value
  */
-function getAllCookies(): Cookie[] {
-  return document.cookie.split("; ").map((cookieStr) => {
+function getAllCookies(): Cookies {
+  const cookies: Cookies = {};
+  document.cookie.split("; ").map((cookieStr) => {
     const [name, value] = cookieStr.split("=");
-    return {
-      name: decodeURIComponent(name),
-      value: decodeURIComponent(value),
-    };
+    cookies[decodeURIComponent(name)] = decodeURIComponent(value);
   });
+  return cookies;
 }
 
 /**
@@ -42,11 +28,34 @@ function getAllCookies(): Cookie[] {
  * @param name
  */
 function getCookie(name: string): Cookie | undefined {
-  return getAllCookies().find((c) => c.name === name);
+  return { name, value: getAllCookies()[name] };
 }
 
 function clearAllCookies(): void {
-  document.cookie = "";
+  const FORCE_COOKIE_EXPIRATION_PAYLOAD = "; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+  document.cookie.split(";").forEach((cookie) => {
+    const [name, value] = cookie.split("=");
+    if (value === undefined) {
+      //
+      // As odd as it sounds, if value === undefined it means we were sent a malformed cookie where the name is actually undefined, not the value.
+      //
+      // Example:
+      //  The cookie below actually has no name, but we see it as having one... (created by doing `document.cookie = "fake"` in FireFox console):
+      //    console.log(malformedCookie); // -> { name: ' fake', value: undefined }
+      //
+      // The cookie below legit doesn't have a value. I created a random cookie and removed the value:
+      //    console.log(cookieWithoutValue); // -> { name: ' {36b29ec7-423c-4c9a-b644-3b4ddcd7409c}', value: '' }
+      //
+      // ********* NOTICE *********************************************************************************************************************
+      // how the malformed cookie has a value of `undefined` but the cookie without a value has a value of `''`?
+      // **************************************************************************************************************************************
+      //
+      document.cookie = `=${name.trim()}${FORCE_COOKIE_EXPIRATION_PAYLOAD}`;
+      return;
+    }
+    document.cookie = `${name.trim()}=${value.trim()}${FORCE_COOKIE_EXPIRATION_PAYLOAD}`;
+  });
 }
 
 function clearCookie(name: string, path: string): boolean {
@@ -57,7 +66,7 @@ function clearCookie(name: string, path: string): boolean {
   return true;
 }
 
-export default function useCookie(): UseCookie {
+export default function useCookies(): UseCookie {
   return {
     setCookie,
     getAllCookies,

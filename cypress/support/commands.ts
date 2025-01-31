@@ -2,7 +2,7 @@
 
 Cypress.Commands.add("createAccount", (name: string, email: string, password: string) => {
   cy.visit("/");
-  cy.get("#open-create-account-modal-btn").click();
+  cy.get(".btn").contains("Create Account").click();
   cy.get("#ca-un-input").type(name);
   cy.get("#ca-email-input").type(email, { force: true });
   cy.get("#ca-pw-input").type(password);

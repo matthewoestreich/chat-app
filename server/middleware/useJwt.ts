@@ -64,7 +64,8 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     // Update request object
     req.user = { name: decodedToken.name, id: decodedToken.id, email: decodedToken.email };
     // Update client side cookie
-    res.cookie("session", sessionToken, { maxAge: ONE_DAY, httpOnly: true });
+    console.log({ from: "useJwt", action: "Setting session cookie", cookie: sessionToken.signed });
+    res.cookie("session", sessionToken.signed, { maxAge: ONE_DAY });
     return true;
   } catch (_e) {
     return false;

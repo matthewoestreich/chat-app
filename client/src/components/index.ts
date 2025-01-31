@@ -1,7 +1,7 @@
-export { default as Modal } from "./Modal/Modal";
-export { default as ModalDialog } from "./Modal/ModalDialog";
-export { default as ModalContent } from "./Modal/ModalContent";
-export { default as FloatingInput } from "./FloatingInput";
+export { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "./Modal";
+export { default as InputFloating } from "./InputFloating";
 export { default as Alert } from "./Alert";
-export { default as BootstrapForm } from "./BootstrapForm";
+export { default as Form } from "./Form";
 export { default as ButtonLoading } from "./ButtonLoading";
+export { default as Topbar } from "./Topbar";
+export { default as LoadingSpinner } from "./LoadingSpinner";

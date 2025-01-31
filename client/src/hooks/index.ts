@@ -1,3 +1,4 @@
 export { default as useFirstChildShouldBe } from "./useFirstChildShouldBe";
 export { default as useCookies } from "./useCookies";
 export { default as useAuth } from "./useAuth";
+export { default as useTheme } from "./useTheme";

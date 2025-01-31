@@ -1,8 +1,3 @@
-interface ModalMethods {
-  show: () => void;
-  hide: () => void;
-}
-
 interface BootstrapFormMethods {
   submitForm: () => void;
   setIsValid: (isValid: boolean) => void;
@@ -30,6 +25,16 @@ interface CreateAccountResult {
   email?: string;
 }
 
+interface CreateRoomResult {
+  name: string; // ?? not sure what all i need yet
+  id: string;
+}
+
+interface JoinRoomResult {
+  name: string;
+  id: string;
+}
+
 interface LogoutResult {
   ok: boolean;
   status: number;
@@ -44,9 +49,17 @@ interface UserData {
 interface AuthContextValue {
   user: UserData | null;
   session: string | null;
-  validateSession: () => Promise<void>;
+  validateSession: () => void;
   login: (email: string, password: string) => void;
   logout: () => void;
 }
 
 type BootstrapContextualClasses = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
+
+type ThemeMode = "light" | "dark";
+
+interface ThemeContextValue {
+  theme: ThemeMode;
+  setTheme: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
+}

@@ -43,6 +43,7 @@ app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
     return;
   }
   const { name, id, email } = req.user;
+  console.log({ from: "server /auth/validate/", sendingCookie: req.cookies.session });
   res.status(200).send({ ok: true, name, id, email, session: req.cookies.session });
 });
 
@@ -86,6 +87,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const { p: password, e: email } = req.body;
     if (!password || !email) {
       console.log(`[POST /login] missing either email or password from body!`, { email, password });
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
@@ -94,6 +96,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { foundUser, password, email });
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
@@ -101,16 +104,19 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
       console.log(`[POST /login][ERROR] incorrect password!`);
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
 
+    clearAllCookies(req, res);
     const { name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
     res.status(200).send({ ok: true, session: jwt.signed, id, name, email });
   } catch (e) {
+    clearAllCookies(req, res);
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
   }

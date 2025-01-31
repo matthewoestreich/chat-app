@@ -1,22 +1,50 @@
-import React, { ChangeEvent, FormEvent, forwardRef, HTMLAttributes, useRef, useState } from "react";
-import { Modal, ModalDialog, ModalContent, FloatingInput, BootstrapForm, ButtonLoading } from "@components";
+import React, { ChangeEvent, FormEvent, HTMLAttributes, useEffect, useRef, useState } from "react";
+import { Modal as BsModal } from "bootstrap";
+// prettier-ignore
+import { 
+  Modal,
+  ModalDialog,
+  ModalContent,
+  InputFloating,
+  Form,
+  ButtonLoading,
+  ModalHeader,
+  ModalBody,
+  ModalFooter
+} from "@components";
 import { sendRegisterRequest } from "@client/auth/authService";
 
 interface CreateAccountModalProperties extends HTMLAttributes<HTMLDivElement> {
+  isOpen: boolean;
   onCreate: (registerResult: CreateAccountResult) => void;
   onClose: () => void;
   title: string;
 }
 
 // CreateAccountModal
-export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, ref) => {
+export default function CreateAccountModal(props: CreateAccountModalProperties): React.JSX.Element {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [isCloseButtonDisabled, setIsCloseButtonDisabled] = useState(false);
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const formRef = useRef<BootstrapFormMethods | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  useEffect(() => {
+    if (modalInstance) {
+      if (props.isOpen === true) {
+        modalInstance.show();
+      } else if (props.isOpen === false) {
+        modalInstance.hide();
+      }
+    }
+  }, [props.isOpen, modalInstance]);
+
+  function handleGetModalInstance(instance: BsModal | null): void {
+    setModalInstance(instance);
+  }
 
   function handleUsernameInput(event: ChangeEvent<HTMLInputElement>): void {
     setUsername(event.target.value);
@@ -35,22 +63,25 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
     resetModal();
   }
 
+  function handleGetFormRef(current: HTMLFormElement | null): void {
+    formRef.current = current;
+  }
+
   // Programmatically submit form.
   function handleSubmitClick(): void {
-    formRef.current?.submitForm();
+    formRef.current?.requestSubmit();
   }
 
   async function handleSubmitForm(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
 
-    if (!formRef.current) {
+    if (!formRef) {
       return;
     }
 
     // `.checkValidity()` comes from Bootstrap
     const isFormValid = event.currentTarget.checkValidity();
-    formRef.current.setIsValid(isFormValid);
     setIsFormValidated(true);
 
     if (!isFormValid) {
@@ -73,17 +104,17 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
   }
 
   return (
-    <Modal ref={ref} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal getInstance={handleGetModalInstance} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
-          <div className="modal-header">
+          <ModalHeader>
             <h1 className="modal-title fs-5">{props.title}</h1>
-            <button id="close-modal-btn" className="btn btn-close" type="button" data-bs-dismiss="modal"></button>
-          </div>
-          <div className="modal-body">
+            <button onClick={handleClose} className="btn btn-close" type="button"></button>
+          </ModalHeader>
+          <ModalBody>
             <div className="form-group">
-              <BootstrapForm ref={formRef} onSubmit={handleSubmitForm} validated={isFormValidated}>
-                <FloatingInput
+              <Form getRef={handleGetFormRef} onSubmit={handleSubmitForm} validated={isFormValidated}>
+                <InputFloating
                   className="mb-3"
                   type="text"
                   placeholder="Username"
@@ -93,19 +124,20 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
                   value={username}
                 >
                   Username
-                </FloatingInput>
-                <FloatingInput
+                </InputFloating>
+                <InputFloating
                   className="mb-3"
                   type="email"
                   placeholder="Email"
                   required={true}
                   invalidMessage="Email is required!"
+                  extraText="Use a fake one if you'd like!"
                   onChange={handleEmailInput}
                   value={email}
                 >
                   Email
-                </FloatingInput>
-                <FloatingInput
+                </InputFloating>
+                <InputFloating
                   className="mb-3"
                   type="password"
                   placeholder="Password"
@@ -115,20 +147,20 @@ export default forwardRef<ModalMethods, CreateAccountModalProperties>((props, re
                   value={password}
                 >
                   Password
-                </FloatingInput>
-              </BootstrapForm>
+                </InputFloating>
+              </Form>
             </div>
-          </div>
-          <div className="modal-footer">
+          </ModalBody>
+          <ModalFooter>
             <button onClick={handleClose} className="btn btn-danger" type="button" disabled={isCloseButtonDisabled}>
               Close
             </button>
             <ButtonLoading onClick={handleSubmitClick} isLoading={isCreatingAccount} type="button" className="btn btn-primary">
               Create Account
             </ButtonLoading>
-          </div>
+          </ModalFooter>
         </ModalContent>
       </ModalDialog>
     </Modal>
   );
-});
+}

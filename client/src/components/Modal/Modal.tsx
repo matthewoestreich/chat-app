@@ -1,44 +1,40 @@
-import React, { forwardRef, HTMLAttributes, ReactNode, useImperativeHandle, useRef, useState } from "react";
+import React, { HTMLAttributes, ReactNode, useEffect, useRef } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { useFirstChildShouldBe } from "@hooks";
 import ModalDialog from "./ModalDialog";
 
+/**
+ *
+ */
 interface ModalProperties extends HTMLAttributes<HTMLDivElement> {
+  getInstance?: (bsModal: BsModal | null) => void;
   dataBsBackdrop?: "static" | boolean;
   dataBsKeyboard?: boolean;
   tabIndex?: number;
   children?: ReactNode;
 }
 
-export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
+export default function Modal(props: ModalProperties): React.JSX.Element {
   const isFirstChildModalDialog = useFirstChildShouldBe(props.children, ModalDialog);
   if (!isFirstChildModalDialog) {
     console.warn("[Modal] firt child not ModalDialog! This may cause issues.");
   }
 
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
+  const getInstance = props.getInstance;
 
-  // prettier-ignore
-  useImperativeHandle(ref, () => ({
-      show: (): void => {
-        if (modalRef.current) {
-          const instance = BsModal.getInstance(modalRef.current) || new BsModal(modalRef.current);
-          setModalInstance(instance);
-          instance.show();
-        }
-      },
-      hide: (): void => {
-        modalInstance?.hide();
-      },
-    }),
-    [modalInstance],
-  );
+  useEffect(() => {
+    if (getInstance) {
+      if (modalRef.current) {
+        const bsModal = BsModal.getOrCreateInstance(modalRef.current) || new BsModal(modalRef.current);
+        getInstance(bsModal);
+      }
+    }
+  }, [getInstance]);
 
   return (
     <div
       ref={modalRef}
-      id={props.id}
       className={`modal ${props.className || ""}`}
       data-bs-backdrop={props.dataBsBackdrop ?? "static"}
       data-bs-keyboard={props.dataBsKeyboard ?? true}
@@ -47,4 +43,4 @@ export default forwardRef<ModalMethods, ModalProperties>(function (props, ref) {
       {props.children}
     </div>
   );
-});
+}

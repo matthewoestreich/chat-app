@@ -8,7 +8,10 @@ interface ButtonLoadingProperties extends ButtonHTMLAttributes<HTMLButtonElement
 }
 
 /**
+ * A button that allows you to display a loading spinner within it.
+ *
  * 'size' defaults to "sm" if not provided.
+ *
  * @param props
  * @returns
  */

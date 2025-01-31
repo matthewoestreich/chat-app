@@ -1,5 +1,5 @@
-import React, { ChangeEvent, useRef, useState, FormEvent } from "react";
-import { FloatingInput, Alert, BootstrapForm, ButtonLoading } from "@components";
+import React, { ChangeEvent, useState, FormEvent } from "react";
+import { InputFloating, Alert, Form, ButtonLoading, Topbar } from "@components";
 import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
 import "../../styles/index.css";
@@ -10,7 +10,7 @@ export default function LoginPage(): React.JSX.Element {
   const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const modalRef = useRef<ModalMethods>(null);
+  const [isCreateAccountModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const { login } = useAuth();
 
   function handleEmailInput(event: ChangeEvent<HTMLInputElement>): void {
@@ -27,7 +27,18 @@ export default function LoginPage(): React.JSX.Element {
         ? { type: "success", icon: "bi-person-fill-check", message: "Success!", shown: true }
         : { type: "danger", icon: "bi-exclamation-triangle-fill", message: "Something went wrong :(", shown: true },
     );
-    modalRef.current?.hide();
+  }
+
+  function handleCloseCreateAccountModal(): void {
+    setIsCreateRoomModalOpen(false);
+  }
+
+  function handleOpenCreateAccountModal(): void {
+    setIsCreateRoomModalOpen(true);
+  }
+
+  function handleCloseAlert(): void {
+    setAlert({ type: undefined, shown: false, message: "", icon: "" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -47,21 +58,15 @@ export default function LoginPage(): React.JSX.Element {
     setIsLoggingIn(false);
   }
 
-  function openModal(): void {
-    modalRef.current?.show();
-  }
-
-  function closeModal(): void {
-    modalRef.current?.hide();
-  }
-
-  function closeAlert(): void {
-    setAlert({ type: undefined, shown: false, message: "", icon: "" });
-  }
-
   return (
     <div className="container d-flex flex-column h-100 justify-content-center align-items-center">
-      <CreateAccountModal ref={modalRef} title="Create Account" onCreate={handleCreateAccountResult} onClose={closeModal} />
+      <CreateAccountModal
+        isOpen={isCreateAccountModalOpen}
+        title="Create Account"
+        onCreate={handleCreateAccountResult}
+        onClose={handleCloseCreateAccountModal}
+      />
+      <Topbar showLogoutButton={false} />
       <div className="row">
         <div className="text-center mb-3">
           <h1 className="display-5">Welcome to RTChat!</h1>
@@ -73,7 +78,7 @@ export default function LoginPage(): React.JSX.Element {
             isOpen={alert.shown}
             icon={alert.icon}
             type={alert.type}
-            onClose={closeAlert}
+            onClose={handleCloseAlert}
             rootClassName="d-flex flex-row align-items-center justify-content-between mh-100"
             messageClassName="mb-0 max-h-100px overf-scroll"
           >
@@ -84,8 +89,8 @@ export default function LoginPage(): React.JSX.Element {
       <div className="row w-100">
         <div className="col-lg-6 offset-lg-3">
           <div className="form-group">
-            <BootstrapForm onSubmit={handleSubmit} validated={isFormValidated}>
-              <FloatingInput
+            <Form onSubmit={handleSubmit} validated={isFormValidated}>
+              <InputFloating
                 className="mb-3"
                 invalidMessage="Email is required!"
                 type="text"
@@ -95,8 +100,8 @@ export default function LoginPage(): React.JSX.Element {
                 value={email}
               >
                 Email
-              </FloatingInput>
-              <FloatingInput
+              </InputFloating>
+              <InputFloating
                 className="mb-3"
                 invalidMessage="Password is required!"
                 type="password"
@@ -106,16 +111,16 @@ export default function LoginPage(): React.JSX.Element {
                 value={password}
               >
                 Password
-              </FloatingInput>
+              </InputFloating>
               <div className="d-flex justify-content-end">
-                <button onClick={openModal} className="btn btn-outline-secondary me-2" type="button">
+                <button onClick={handleOpenCreateAccountModal} className="btn btn-outline-secondary me-2" type="button">
                   Create Account
                 </button>
                 <ButtonLoading isLoading={isLoggingIn} type="submit" className="btn btn-primary">
                   Login
                 </ButtonLoading>
               </div>
-            </BootstrapForm>
+            </Form>
           </div>
         </div>
       </div>

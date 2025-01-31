@@ -1,7 +1,7 @@
 import React, { ReactNode, useState } from "react";
 import AuthContext from "./AuthContext";
 import { useNavigate } from "react-router-dom";
-import { sendLoginRequest, sendValidateRequest } from "./authService";
+import { sendLoginRequest, sendLogoutRequest, sendValidateRequest } from "./authService";
 import { useCookies } from "@hooks";
 
 interface AuthProviderProperties {
@@ -11,7 +11,7 @@ interface AuthProviderProperties {
 export default function AuthProvider(props: AuthProviderProperties): React.JSX.Element {
   const [user, setUser] = useState<UserData | null>(null);
   const [session, setSession] = useState<string | null>(null);
-  const { setCookie } = useCookies();
+  const { setCookie, clearAllCookies } = useCookies();
   const navigate = useNavigate();
 
   /**
@@ -24,6 +24,7 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
     if (ok && name && id && email && sessionToken) {
       setUser({ name, id, email });
       setSession(sessionToken);
+      console.log({ from: "AuthProvider::login.setCookie()", cookie: sessionToken });
       setCookie("session", sessionToken, 1);
       navigate("/chat");
       return;
@@ -36,57 +37,32 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    */
   async function validateSession(): Promise<void> {
     if (session) {
+      console.log({ from: "AuthProvider::ValidateSession", action: "Session exists, already validated." });
       // Already validated.
       return;
     }
+    console.log({ from: "AuthProvider::ValidateSession", action: "Sending validation request..." });
     const { ok, name, id, email, session: sessionToken } = await sendValidateRequest();
     if (ok && name && id && email && sessionToken) {
       setUser({ name, id, email });
       setSession(sessionToken);
+      console.log({ from: "AuthProvider::ValidateSession", action: "Got validation result. Validation success, returning..." });
       return;
     }
+    console.log({ from: "AuthProvider::ValidateSession", action: "Got validation result. Validation failed, user needs to reauth. navigate('/')" });
     navigate("/");
   }
 
   /**
    * Logout to clear cookies and "reset" state.
    */
-  function logout(): void {
+  async function logout(): Promise<void> {
+    await sendLogoutRequest();
     setUser(null);
     setSession(null);
-    deleteAllCookies();
+    clearAllCookies();
     navigate("/");
   }
 
   return <AuthContext.Provider value={{ validateSession, session, user, login, logout }}>{props.children}</AuthContext.Provider>;
-}
-
-/**
- * Delete all cookies in browser (covers some edge cases for malformed cookies).
- */
-function deleteAllCookies(): void {
-  const FORCE_COOKIE_EXPIRATION_PAYLOAD = "; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-  document.cookie.split(";").forEach((cookie) => {
-    const [name, value] = cookie.split("=");
-    if (value === undefined) {
-      //
-      // As odd as it sounds, if value === undefined it means we were sent a malformed cookie where the name is actually undefined, not the value.
-      //
-      // Example:
-      //  The cookie below actually has no name, but we see it as having one... (created by doing `document.cookie = "fake"` in FireFox console):
-      //    console.log(malformedCookie); // -> { name: ' fake', value: undefined }
-      //
-      // The cookie below legit doesn't have a value. I created a random cookie and removed the value:
-      //    console.log(cookieWithoutValue); // -> { name: ' {36b29ec7-423c-4c9a-b644-3b4ddcd7409c}', value: '' }
-      //
-      // ********* NOTICE *********************************************************************************************************************
-      // how the malformed cookie has a value of `undefined` but the cookie without a value has a value of `''`?
-      // **************************************************************************************************************************************
-      //
-      document.cookie = `=${name.trim()}${FORCE_COOKIE_EXPIRATION_PAYLOAD}`;
-      return;
-    }
-    document.cookie = `${name.trim()}=${value.trim()}${FORCE_COOKIE_EXPIRATION_PAYLOAD}`;
-  });
 }

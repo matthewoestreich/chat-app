@@ -1,61 +1,69 @@
+import React, { useState } from "react";
+import { LoadingSpinner, Topbar } from "@components";
 import { useAuth } from "@hooks";
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { sendLogoutRequest } from "@client/auth/authService";
+import LeaveRoomModal from "./LeaveRoomModal";
+import CreateRoomModal from "./CreateRoomModal";
+import JoinRoomModal from "./JoinRoomModal";
+import DirectMessagesDrawer from "./DirectMessagesDrawer";
 import "../../styles/chat.css";
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";
+
+  const [currentRoom] = useState(null);
+
+  const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
+  const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
+  const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
+
   const { logout, user } = useAuth();
-  const navigate = useNavigate();
+
+  function handleOpenJoinRoomModal(): void {
+    setIsJoinRoomModalShown(true);
+  }
+
+  function handleOpenLeaveRoomModal(): void {
+    setIsLeaveRoomModalShown(true);
+  }
+
+  function handleOpenCreateRoomModal(): void {
+    setIsCreateRoomModalShown(true);
+  }
 
   async function handleLogout(): Promise<void> {
-    await sendLogoutRequest();
     logout();
-    navigate("/");
+  }
+
+  function handleCloseLeaveRoomModal(): void {
+    setIsLeaveRoomModalShown(false);
+  }
+
+  function handleCloseCreateRoomModal(): void {
+    setIsCreateRoomModalShown(false);
+  }
+
+  function handleCloseJoinRoomModal(): void {
+    setIsJoinRoomModalShown(false);
+  }
+
+  function handleOnLeaveRoom(): void {
+    throw new Error("handleonleaveroom not impl");
+  }
+
+  function handleOnCreateRoom(result: CreateRoomResult): void {
+    throw new Error(`oncreateroomhandler not impl ${result}`);
+  }
+
+  function handleOnJoinRoom(result: JoinRoomResult): void {
+    throw new Error(`onjoinroomhandler notimpl ${result}`);
   }
 
   return (
     <>
-      <header className="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
-        <nav className="container">
-          <div className="me-auto">
-            <span className="navbar-brand">RTChat</span>
-          </div>
-          <div className="mx-auto">
-            <a className="navbar-icon d-inline-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#members-offcanvas">
-              <button className="btn btn-primary shadow" type="button" title="View Members">
-                <i className="bi bi-people-fill"></i>
-              </button>
-            </a>
-            <></>
-            <a className="navbar-icon d-inline-block d-lg-none">
-              <button
-                className="btn btn-primary shadow"
-                type="button"
-                title="View Rooms"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#rooms-offcanvas"
-              >
-                <i className="bi bi-door-open-fill"></i>
-              </button>
-            </a>
-          </div>
-          <div className="ms-auto g-1">
-            <a id="toggle-theme" className="navbar-icon" title="Toggle theme">
-              <button className="btn btn-light shadow">
-                <i id="dark-theme-icon" className="bi bi-moon-fill"></i>
-                <i id="light-theme-icon" className="d-none bi bi-sun-fill"></i>
-              </button>
-            </a>
-            <a className="navbar-icon" onClick={handleLogout}>
-              <button className="btn btn-light flex-fill shadow" type="button" title="Logout">
-                <i className="bi bi-power"></i>
-              </button>
-            </a>
-          </div>
-        </nav>
-      </header>
+      <LeaveRoomModal isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} onLeave={handleOnLeaveRoom} />
+      <CreateRoomModal isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} onCreate={handleOnCreateRoom} />
+      <JoinRoomModal isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} onJoin={handleOnJoinRoom} />
+      <Topbar onLogoutClick={handleLogout} />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
           <div className="col">
@@ -79,38 +87,9 @@ export default function ChatPage(): React.JSX.Element {
               </div>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              <div id="loading-members-spinner" className="d-none d-flex mt-4 justify-content-center">
-                <div className="spinner-border">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
+              <LoadingSpinner isShown={true} thickness=".5rem" style={{ width: "5rem", height: "5rem" }} />
               <ul id="members-list" className="list-group list-group-flush"></ul>
-              <div id="direct-messages-drawer" className="drawer card">
-                <div className="drawer-header card-header fs-3">
-                  <div className="flex-fill text-center">Direct Messages</div>
-                  <button id="close-direct-messages-drawer" className="btn btn-close btn-sm drawer-close-button" type="button"></button>
-                </div>
-                <div id="direct-messages-container" className="drawer-body card-body"></div>
-                <div className="card-footer">
-                  <div className="row">
-                    <div className="col-4 d-flex p-1">
-                      <button id="create-direct-conversation-btn" className="btn btn-success shadow flex-grow-1" type="button" title="New">
-                        <i className="bi bi-person-plus-fill"></i>
-                      </button>
-                    </div>
-                    <div className="col-4 d-flex p-1">
-                      <button id="leave-direct-conversation-btn" className="btn btn-warning shadow flex-grow-1" type="button" title="Leave">
-                        <i className="bi bi-person-dash-fill"></i>
-                      </button>
-                    </div>
-                    <div className="col-4 d-flex-p-1">
-                      <button id="close-dms-footer-btn" className="btn btn-danger shadow flex-grow-1" type="button" title="Close Direct Messages">
-                        <i className="bi bi-x-square"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <DirectMessagesDrawer isShown={false} />
             </div>
             <div className="card-footer">
               <div className="row">
@@ -149,26 +128,41 @@ export default function ChatPage(): React.JSX.Element {
               ></button>
             </div>
             <div id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
-              <div id="loading-rooms-spinner" className="d-flex mt-4 justify-content-center">
-                <div className="spinner-border">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
+              <LoadingSpinner isShown={true} thickness=".5rem" style={{ width: "5rem", height: "5rem" }} />
             </div>
             <div className="card-footer">
               <div className="row">
                 <div className="col-4 d-flex p-1">
-                  <button id="open-join-room-modal" className="btn btn-primary shadow flex-grow-1" type="button" title="Join Room">
+                  <button
+                    onClick={handleOpenJoinRoomModal}
+                    id="open-join-room-modal"
+                    className="btn btn-primary shadow flex-grow-1"
+                    type="button"
+                    title="Join Room"
+                  >
                     <i className="bi bi-box-arrow-in-up-right"></i>
                   </button>
                 </div>
                 <div className="col-4 d-flex p-1">
-                  <button id="open-leave-room-modal" className="btn btn-warning shadow flex-grow-1" type="button" title="Leave Current Room" disabled>
+                  <button
+                    onClick={handleOpenLeaveRoomModal}
+                    id="open-leave-room-modal"
+                    className="btn btn-warning shadow flex-grow-1"
+                    type="button"
+                    title="Leave Current Room"
+                    disabled={currentRoom === null}
+                  >
                     <i className="bi bi-box-arrow-down-left"></i>
                   </button>
                 </div>
                 <div className="col-4 d-flex p-1">
-                  <button id="open-create-room-modal-btn" className="btn btn-primary shadow flex-grow-1" type="button" title="Create Room">
+                  <button
+                    onClick={handleOpenCreateRoomModal}
+                    id="open-create-room-modal-btn"
+                    className="btn btn-primary shadow flex-grow-1"
+                    type="button"
+                    title="Create Room"
+                  >
                     <i className="bi bi-folder-plus"></i>
                   </button>
                 </div>
