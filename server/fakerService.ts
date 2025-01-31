@@ -1,3 +1,6 @@
+/**
+ * Functions to generate fake data.
+ */
 import { faker } from "@faker-js/faker";
 import { v7 as uuidV7 } from "uuid";
 
