@@ -8,7 +8,7 @@ console.log({ from: "vite.config.ts", "process.env.NODE_ENV": process.env.NODE_E
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react({ include: "**/*.{ts,js,tsx}" })],
-  base: "./",
+  base: "/",
   root: nodePath.resolve(__dirname, "./src"),
   build: {
     outDir: nodePath.resolve(__dirname, OUTPUT_PATH),
@@ -21,6 +21,7 @@ export default defineConfig({
       "@components": nodePath.resolve(__dirname, "./src/components/index.ts"),
       "@pages": nodePath.resolve(__dirname, "./src/pages/index.ts"),
       "@hooks": nodePath.resolve(__dirname, "./src/hooks/index.ts"),
+      "@styles": nodePath.resolve(__dirname, "./src/styles"),
     },
   },
   server: {

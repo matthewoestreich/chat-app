@@ -20,10 +20,11 @@
       "@client/*": ["../client/src/*"],
       "@components": ["./src/components/index.ts"],
       "@pages": ["./src/pages/index.ts"],
-      "@hooks": ["./src/hooks/index.ts"]
+      "@hooks": ["./src/hooks/index.ts"],
+      "@styles/*": ["./src/styles/*"]
     },
     "typeRoots": ["./types", "../node_modules/@types"]
   },
-  "include": ["index.tsx", "./src/**/*", "./types/**/*"],
+  "include": ["src/index.tsx", "./src/**/*", "./types/**/*"],
   "exclude": ["./build", "./dist"]
 }
