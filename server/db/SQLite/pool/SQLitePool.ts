@@ -96,6 +96,10 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
+  /**
+   * Get a connection from the pool.
+   * @returns
+   */
   getConnection(): Promise<SQLitePoolConnection> {
     return new Promise(async (resolve, reject) => {
       await this._mutex.lock();
@@ -127,6 +131,11 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     });
   }
 
+  /**
+   * Release a connection back to the pool
+   * @param connection
+   * @returns
+   */
   async releaseConnection(connection: SQLitePoolConnection): Promise<void> {
     await this._mutex.lock();
 
@@ -160,8 +169,13 @@ export default class SQLitePool implements DatabasePool<sqlite3.Database> {
     this._mutex.unlock();
   }
 
-  // eslint-disable-next-line
-  async query(sql: string, params: any[]): Promise<unknown> {
+  /**
+   * Send a sql query
+   * @param sql
+   * @param params
+   * @returns
+   */
+  async query(sql: string, params: unknown[]): Promise<unknown> {
     const connection = await this.getConnection();
 
     return new Promise(async (resolve, reject) => {

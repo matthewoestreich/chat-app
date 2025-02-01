@@ -12,6 +12,7 @@ export default defineConfig({
   build: {
     outDir: nodePath.resolve(__dirname, IS_DEV ? "../www" : "../dist/www"),
     emptyOutDir: true,
+    minify: "esbuild",
   },
   esbuild: {
     drop: IS_DEV ? undefined : ["console", "debugger"],

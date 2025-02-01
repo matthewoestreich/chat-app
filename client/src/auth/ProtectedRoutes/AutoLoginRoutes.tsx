@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@hooks";
-//import { LoadingSpinner } from "@components";
+import { LoadingSpinner } from "@components";
 
 /**
  * If a user has a cookie and visits one of these routes, we try to validate the cookie
@@ -18,18 +18,15 @@ export default function AutoLoginRoutes(): React.JSX.Element | null {
     // If `document.cookie` exists but no session,
     // we need to validate before letting them through.
     if (document.cookie && !session) {
-      (async (): Promise<void> => {
-        await validateSession();
-      })();
+      validateSession();
     }
   }, [validateSession, session]);
 
   // If the user has a cookie but no session stored in state, validate
   // the cookie to see if we can log them in automatically.
   if (document.cookie && !session) {
-    //return <LoadingSpinner isShown={true} />
     console.log({ from: "AutoLoginRoutes", action: "Loading" });
-    return <div>Loading....</div>;
+    return <LoadingSpinner />;
   }
   // If the user has a cookie and a session in state, it means they are authenticated
   // and we can send them to the protected route.

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@hooks";
-//import { LoadingSpinner } from "@components";
+import { LoadingSpinner } from "@components";
 
 /**
  * Validates session cookie when visiting one of these routes.
@@ -16,9 +16,7 @@ export default function PrivateRoute(): React.JSX.Element {
     // If `document.cookie` exists but no session in state,
     // we need to validate before letting them through.
     if (document.cookie && !session) {
-      (async (): Promise<void> => {
-        await validateSession();
-      })();
+      validateSession();
     }
   }, [validateSession, session]);
 
@@ -26,7 +24,7 @@ export default function PrivateRoute(): React.JSX.Element {
   // in our state, we need to validate the cookie.
   if (document.cookie && !session) {
     console.log({ from: "ProtectedRoutes", action: "Loading" });
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
   // If there is no cookie and no session, it
   // means the user has to authenticate manually.

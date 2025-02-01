@@ -14,7 +14,7 @@ const serverConfig: Linter.Config = {
   ignores: [
     "**/*.*config.*",
     "__tests__/**",
-    "dist/**",
+    "dist/**/*",
     "coverage/**",
     ".husky/**",
     ".vscode/**",
@@ -37,6 +37,7 @@ const serverConfig: Linter.Config = {
   rules: {
     ...tsPlugin.configs.recommended.rules,
     "no-async-promise-executor": "off",
+    "@typescript-eslint/await-thenable": "error",
     "@typescript-eslint/explicit-function-return-type": "error",
     "@typescript-eslint/ban-ts-comment": [
       "error",
@@ -71,7 +72,7 @@ const serverConfig: Linter.Config = {
  */
 const clientConfig: Linter.Config = {
   files: ["client/**/*.{ts,tsx}"],
-  ignores: ["**/*.*config.*"],
+  ignores: ["**/*.*config.*", "dist/**/*"],
   languageOptions: {
     parser: tsParser,
     parserOptions: {
@@ -103,6 +104,7 @@ const clientConfig: Linter.Config = {
     "react-hooks/exhaustive-deps": "warn",
     // TypeScript
     "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/await-thenable": "error",
     "@typescript-eslint/no-empty-object-type": [
       "error",
       {
@@ -121,7 +123,7 @@ const clientConfig: Linter.Config = {
     "@typescript-eslint/ban-ts-comment": [
       "error",
       {
-        "ts-expect-error": "allow-with-description",
+        "ts-expect-error": false,
         "ts-ignore": false,
         "ts-nocheck": false,
       },

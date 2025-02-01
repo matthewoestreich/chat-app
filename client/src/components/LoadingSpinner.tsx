@@ -3,7 +3,7 @@ import React, { CSSProperties, HTMLAttributes } from "react";
 type SpinnerStyle = CSSProperties & Record<string, string | number>;
 
 interface LoadingSpinnerProperties extends HTMLAttributes<HTMLDivElement> {
-  isShown: boolean;
+  isShown?: boolean;
   containerClassName?: string;
   visuallyHiddenText?: string;
   style?: SpinnerStyle;
@@ -14,7 +14,7 @@ export default function LoadingSpinner(props: LoadingSpinnerProperties): React.J
   const { containerClassName, visuallyHiddenText, style, isShown, ...restOfProps } = props;
   return (
     <>
-      {isShown && (
+      {(isShown === true || isShown === undefined) && (
         <div className={`container d-flex flex-column h-100 justify-content-center align-items-center ${containerClassName || ""}`}>
           <div
             {...restOfProps}
