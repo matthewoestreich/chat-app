@@ -1,4 +1,4 @@
-import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect } from "react";
+import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 
@@ -31,17 +31,27 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     setAlert({ type: undefined, shown: false, message: "", icon: "" });
   }
 
-  function handleGetFormRef(current: HTMLFormElement | null): void {
+  function _handleGetFormRef(current: HTMLFormElement | null): void {
     formRef.current = current;
   }
+
+  const handleGetFormRef = useCallback(
+    (current: HTMLFormElement | null) => {
+      formRef.current = current;
+    },
+    [formRef],
+  );
 
   function handleClose(): void {
     props.onClose();
   }
 
-  function handleGetModalInstance(instance: BsModal | null): void {
+  function _handleGetModalInstance(instance: BsModal | null): void {
     setModalInstance(instance);
   }
+  const handleGetModalInstance = useCallback((instance: BsModal | null) => {
+    setModalInstance(instance);
+  }, []);
 
   function handleCreateRoom(): void {
     formRef.current?.requestSubmit();

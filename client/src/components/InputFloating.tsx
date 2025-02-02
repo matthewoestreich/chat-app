@@ -9,7 +9,7 @@ interface InputFloatingProperties extends Omit<InputHTMLAttributes<HTMLInputElem
   extraText?: string;
 }
 
-export default function FloatingInput(props: InputFloatingProperties): React.JSX.Element {
+export default function InputFloating(props: InputFloatingProperties): React.JSX.Element {
   const id = useId();
 
   const { className, children, invalidMessage, inputClassName, extraText, ...inputProps } = props;

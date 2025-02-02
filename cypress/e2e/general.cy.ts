@@ -15,7 +15,7 @@ describe("Homepage", () => {
  * WITHIN THIS "describe" BLOCK. THIS IS BC WE LOGIN `beforeEach(..)`
  * WHICH REDIRECTS US TO `/chat` AUTOMATICALLY!!!
  */
-describe("Functionality", () => {
+describe("Global", () => {
   const USER = generateAccountInfo();
   const NEW_ROOM_NAME = getRandomString(7);
 
@@ -37,17 +37,17 @@ describe("Functionality", () => {
   });
 
   it("should toggle theme", () => {
-    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
-    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "dark");
+    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+    cy.getCurrentTheme().should("have.attr", "data-bs-theme", "dark");
     cy.localStorageItemEquals("theme", "dark");
-    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
-    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "light");
+    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+    cy.getCurrentTheme().should("have.attr", "data-bs-theme", "light");
     cy.localStorageItemEquals("theme", "light");
-    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
-    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "dark");
+    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+    cy.getCurrentTheme().should("have.attr", "data-bs-theme", "dark");
     cy.localStorageItemEquals("theme", "dark");
-    cy.get("#toggle-theme").should("exist").children().first().should("exist").click();
-    cy.get("[data-bs-theme]").should("have.attr", "data-bs-theme", "light");
+    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+    cy.getCurrentTheme().should("have.attr", "data-bs-theme", "light");
     cy.localStorageItemEquals("theme", "light");
   });
 

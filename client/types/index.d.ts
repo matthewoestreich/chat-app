@@ -63,3 +63,15 @@ interface ThemeContextValue {
   setTheme: (mode: ThemeMode) => void;
   toggleTheme: () => void;
 }
+
+interface WebSocketeerEventMap {
+  // eslint-disable-next-line
+  [K: symbol]: { [K: string]: any } | any;
+}
+
+type WebSocketeerEventType<T extends WebSocketeerEventMap> = keyof T;
+type WebSocketeerEventPayload<T extends WebSocketeerEventMap, K extends WebSocketeerEventType<T>> = T[K];
+
+type WebSocketeerEventHandlerMap<T extends WebSocketeerEventMap> = {
+  [K in keyof T]?: ((payload: T[K]) => void)[];
+};

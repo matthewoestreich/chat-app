@@ -1,24 +1,38 @@
-import { useTheme } from "@hooks";
-import React, { DetailedHTMLProps, HTMLAttributes, MouseEventHandler, useEffect, useState } from "react";
+import { useAuth, useTheme } from "@hooks";
+import React, { DetailedHTMLProps, HTMLAttributes, memo, useEffect, useState } from "react";
 
 interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {
-  onLogoutClick?: MouseEventHandler<HTMLAnchorElement>;
   showLogoutButton?: boolean;
 }
 
-export default function Topbar(props: TopbarProperties): React.JSX.Element {
-  const { theme, toggleTheme } = useTheme();
+function LightThemeIcon(): React.JSX.Element {
+  return <i id="light-theme-icon" className="bi bi-sun-fill"></i>;
+}
+
+function DarkThemeIcon(): React.JSX.Element {
+  return <i id="dark-theme-icon" className="bi bi-moon-fill"></i>;
+}
+
+export default memo(Topbar);
+
+function Topbar(props: TopbarProperties): React.JSX.Element {
   const [themeIcon, setThemeIcon] = useState<React.JSX.Element>(<></>);
+  const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (theme === "dark") {
-      setThemeIcon(<i id="light-theme-icon" className="bi bi-sun-fill"></i>);
+      setThemeIcon(<LightThemeIcon />);
     } else if (theme === "light") {
-      setThemeIcon(<i id="dark-theme-icon" className="bi bi-moon-fill"></i>);
+      setThemeIcon(<DarkThemeIcon />);
     } else {
       setThemeIcon(<></>);
     }
   }, [theme]);
+
+  function handleLogout(): void {
+    logout();
+  }
 
   return (
     <header className="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
@@ -47,7 +61,7 @@ export default function Topbar(props: TopbarProperties): React.JSX.Element {
             (props.showLogoutButton === undefined && (
               <>
                 {" "}
-                <a className="navbar-icon" onClick={props.onLogoutClick}>
+                <a className="navbar-icon" onClick={handleLogout}>
                   <button className="btn btn-light flex-fill shadow" type="button" title="Logout">
                     <i className="bi bi-power"></i>
                   </button>

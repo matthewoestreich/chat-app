@@ -24,7 +24,6 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
     if (ok && name && id && email && sessionToken) {
       setUser({ name, id, email });
       setSession(sessionToken);
-      console.log({ from: "AuthProvider::login.setCookie()", cookie: sessionToken });
       setCookie("session", sessionToken, 1);
       navigate("/chat");
       return;
@@ -37,19 +36,15 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    */
   async function validateSession(): Promise<void> {
     if (session) {
-      console.log({ from: "AuthProvider::ValidateSession", action: "Session exists, already validated." });
       // Already validated.
       return;
     }
-    console.log({ from: "AuthProvider::ValidateSession", action: "Sending validation request..." });
     const { ok, name, id, email, session: sessionToken } = await sendValidateRequest();
     if (ok && name && id && email && sessionToken) {
       setUser({ name, id, email });
       setSession(sessionToken);
-      console.log({ from: "AuthProvider::ValidateSession", action: "Got validation result. Validation success, returning..." });
       return;
     }
-    console.log({ from: "AuthProvider::ValidateSession", action: "Got validation result. Validation failed, user needs to reauth. navigate('/')" });
     navigate("/");
   }
 

@@ -1,9 +1,18 @@
 import { WebSocket, ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
-import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
+
+import Logger, { LogMetaData } from "@/server/Logger";
+
+const logger = new Logger("WebSocketApp");
+const logInfo = (message: string, data?: LogMetaData): void => logger.log({ level: "info", message, data });
+// @ts-ignore
+// eslint-disable-next-line
+const logWarn = (message: string, data?: LogMetaData): void => logger.log({ level: "warn", message, data });
+const logError = (message: string, data?: LogMetaData): void => logger.log({ level: "error", message, data });
 
 const wsapp = new WebSocketApp();
 
@@ -20,6 +29,7 @@ export default async function startWebSocketApp(options: ServerOptions, database
 
 // Catch any errors.
 wsapp.catch((error: Error, socket: WebSocket) => {
+  logError(`Something went wrong!`, { error });
   console.error({ error, user: socket.user! });
 });
 
@@ -32,6 +42,7 @@ wsapp.catch((error: Error, socket: WebSocket) => {
  *
  */
 wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
+  logInfo("CONNECTION_ESTABLISHED");
   const cookies = parseCookies(request.headers.cookie || "");
 
   if (!(await isAuthenticated(cookies?.session))) {
@@ -57,14 +68,14 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  * log the reason for socket closure.
  *
  */
-wsapp.on("CONNECTION_CLOSED", (client /*{ code, reason }*/) => {
+wsapp.on("CONNECTION_CLOSED", (client, { code, reason }) => {
   if (client.activeIn?.container) {
     client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
-  //const reasonString = reason.toString();
-  //const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  //console.log(`socket closed.`, { why });
+  const reasonString = reason.toString();
+  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  logInfo("Connection closed!", { why });
 });
 
 /**
@@ -75,6 +86,7 @@ wsapp.on("CONNECTION_CLOSED", (client /*{ code, reason }*/) => {
  *
  */
 wsapp.on("SEND_MESSAGE", async (client, { message }) => {
+  logInfo("Send message", { message });
   client.broadcast("RECEIVE_MESSAGE", {
     userId: client.user.id,
     userName: client.user.name,

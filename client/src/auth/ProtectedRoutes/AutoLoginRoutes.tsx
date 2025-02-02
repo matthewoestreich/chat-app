@@ -25,7 +25,6 @@ export default function AutoLoginRoutes(): React.JSX.Element | null {
   // If the user has a cookie but no session stored in state, validate
   // the cookie to see if we can log them in automatically.
   if (document.cookie && !session) {
-    console.log({ from: "AutoLoginRoutes", action: "Loading" });
     return <LoadingSpinner />;
   }
   // If the user has a cookie and a session in state, it means they are authenticated
@@ -34,15 +33,8 @@ export default function AutoLoginRoutes(): React.JSX.Element | null {
   // and the cookie was bad, the backend removes all cookies. Meaning, they would not
   // have a `document.cookie` here.
   if (document.cookie && session) {
-    console.log({ from: "AutoLoginRoutes", action: "<Navigate to='/chat' />" });
     return <Navigate to="/chat" />;
   }
   // If we make it here, it means the user has to authenticate manually.
-  console.log({
-    from: "AutoLoginRoutes",
-    action: "<Outlet /> : either no cookie OR no session | no cookie AND no session. Proceeding to login.",
-    cookie: document.cookie,
-    session,
-  });
   return <Outlet />;
 }

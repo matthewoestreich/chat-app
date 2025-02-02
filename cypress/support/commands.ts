@@ -1,26 +1,49 @@
 /// <reference types="cypress" />
 
+Cypress.Commands.add("getLoginInputEmail", () => {
+  cy.get("input[placeholder='Email Address']");
+});
+
+Cypress.Commands.add("getLoginInputPassword", () => {
+  cy.get("input[placeholder='Password']").filter(":visible");
+});
+
+Cypress.Commands.add("getLoginButton", () => {
+  cy.get("button[type='submit']");
+});
+
+Cypress.Commands.add("getLogoutButton", () => {
+  cy.get("button[title='Logout']");
+});
+
+Cypress.Commands.add("getToggleThemeButton", () => {
+  cy.get("a[title='Toggle theme']");
+});
+
+Cypress.Commands.add("getCurrentTheme", () => {
+  cy.get("[data-bs-theme]");
+});
+
 Cypress.Commands.add("createAccount", (name: string, email: string, password: string) => {
   cy.visit("/");
-  cy.get(".btn").contains("Create Account").click();
-  cy.get("#ca-un-input").type(name);
-  cy.get("#ca-email-input").type(email, { force: true });
-  cy.get("#ca-pw-input").type(password);
-  cy.get("#create-btn").click();
-  cy.get("#alert-message").should("contain", "Success! Account created successfully.");
+  cy.get(".btn-outline-secondary").contains("Create Account").should("exist").should("be.visible").click();
+  cy.get("input[placeholder='Username']").type(name);
+  cy.get("input[placeholder='Email']").type(email, { force: true });
+  cy.get(".modal-body input[placeholder='Password']").type(password);
+  cy.get(".modal-footer").find("button").contains("Create Account").click();
+  cy.get("div[role='alert']").should("contain.text", "Success");
 });
 
 Cypress.Commands.add("login", (email: string, password: string) => {
   cy.visit("/");
-  cy.get("#login-email-input").type(email);
-  cy.get("#login-password-input").type(password);
-  cy.get("#login-btn").click();
+  cy.getLoginInputEmail().type(email);
+  cy.getLoginInputPassword().type(password);
+  cy.getLoginButton().click();
   cy.url().should("include", "/chat");
 });
 
 Cypress.Commands.add("logout", () => {
-  cy.get('a[href="logout"]').click();
-  cy.get("#logout-message").should("contain.text", "Success");
+  cy.getLogoutButton().should("be.visible").click();
 });
 
 Cypress.Commands.add("enterRoom", (roomName: string) => {

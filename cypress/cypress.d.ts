@@ -1,5 +1,11 @@
 declare namespace Cypress {
   export interface Chainable {
+    getLoginInputEmail(): Chainable<void>;
+    getLoginInputPassword(): Chainable<void>;
+    getLoginButton(): Chainable<void>;
+    getLogoutButton(): Chainable<void>;
+    getToggleThemeButton(): Chainable<void>;
+    getCurrentTheme(): Chainable<void>;
     /**
      * Custom command to log in.
      * @example cy.login('user@example.com', 'password123')

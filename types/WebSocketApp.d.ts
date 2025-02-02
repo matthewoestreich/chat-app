@@ -95,26 +95,26 @@ interface WebSocketAppEventRegistry {
     containerId: string;
     message: string;
   };
-  LEAVE_ROOM: unknown; //{};
+  LEAVE_ROOM: unknown;
   LIST_JOINABLE_ROOMS: {
     rooms: Room[];
   };
-  GET_JOINABLE_ROOMS: unknown; //{};
+  GET_JOINABLE_ROOMS: unknown;
   LIST_ROOMS: {
     rooms: Room | Room[];
   };
-  LIST_ROOM_MEMBERS: unknown; //{};
+  LIST_ROOM_MEMBERS: unknown;
   LIST_DIRECT_CONVERSATIONS: {
     directConversations: DirectConversationByUserId[];
   };
-  GET_DIRECT_CONVERSATIONS: unknown; //{};
+  GET_DIRECT_CONVERSATIONS: unknown;
   GET_DIRECT_MESSAGES: {
     id: string;
   };
   LIST_DIRECT_MESSAGES: {
     directMessages: DirectMessage[];
   };
-  GET_INVITABLE_USERS: unknown; //{};
+  GET_INVITABLE_USERS: unknown;
   LIST_INVITABLE_USERS: {
     users: PublicAccount[];
   };
