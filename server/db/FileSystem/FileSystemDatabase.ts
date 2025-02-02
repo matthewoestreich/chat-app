@@ -13,7 +13,7 @@ export interface FileSystemDatabaseData {
   directConversations: DirectConversation[];
   directMessages: DirectMessage[];
   messages: Message[];
-  room: Room[];
+  room: IRoom[];
   session: Session[];
 }
 

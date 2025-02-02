@@ -11,14 +11,14 @@ interface DatabasePool<T> {
 
 interface RoomsRepository<DB> {
   databasePool: DatabasePool<DB>;
-  getAll(): Promise<Room[]>;
-  getById(id: string): Promise<Room>;
-  create(name: string, isPrivate?: 0 | 1): Promise<Room>;
-  update(id: string, entity: Room): Promise<Room | null>;
+  getAll(): Promise<IRoom[]>;
+  getById(id: string): Promise<IRoom>;
+  create(name: string, isPrivate?: 0 | 1): Promise<IRoom>;
+  update(id: string, entity: IRoom): Promise<IRoom | null>;
   delete(id: string): Promise<boolean>;
-  selectUnjoinedRooms(userId: string): Promise<Room[]>;
+  selectUnjoinedRooms(userId: string): Promise<IRoom[]>;
   addUserToRoom(userId: string, roomId: string): Promise<boolean>;
-  selectByUserId(userId: string): Promise<Room[]>;
+  selectByUserId(userId: string): Promise<IRoom[]>;
   removeUserFromRoom(userId: string, roomId: string): Promise<boolean>;
   selectRoomsWithMembersByUserId(userId: string): Promise<RoomWithMembers[]>;
   selectRoomMembersExcludingUser(roomId: string, excludingUserId: string): Promise<RoomMember[]>;

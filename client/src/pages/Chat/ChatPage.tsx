@@ -1,11 +1,12 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingSpinner, Topbar } from "@components";
+import { LoadingSpinner, Topbar, Room } from "@components";
 import { useAuth, useWebSocketeer } from "@hooks";
 import { WsEvents as WebSocketEvents } from "@client/ws/WsEvents";
 import LeaveRoomModal from "./LeaveRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
+import { RoomsState } from "./types";
 import "../../styles/chat.css";
 
 const WS_URL = `${document.location.protocol.replace("http", "ws")}//${document.location.host}`;
@@ -14,16 +15,17 @@ const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const CreateRoomModalMemo = memo(CreateRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
+const LoadingSpinnerMemo = memo(LoadingSpinner);
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";
-
   const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
   const loadingSpinnerStyle = useMemo(() => ({ width: "5rem", height: "5rem" }), []);
   const { user } = useAuth();
 
+  const [rooms, setRooms] = useState<RoomsState>({ joined: [], unjoined: [] });
   const wsteer = useWebSocketeer<WebSocketEvents>(WS_URL);
 
   useEffect(() => {
@@ -31,71 +33,56 @@ export default function ChatPage(): React.JSX.Element {
 
     wsteer.on("RECEIVE_MESSAGE", ({ userId, userName, message }) => {
       console.log("Got message", { userId, userName, message });
-      // handleMessage(userName, messageText, userId);
     });
 
     wsteer.on("ENTERED_ROOM", ({ members, messages }) => {
       console.log({ from: "entered_room", members, messages });
-      //  handleEnteredRoom(members, messages);
     });
 
-    wsteer.on("LIST_ROOMS", ({ rooms }) => {
-      console.log({ from: "list rooms", rooms });
-      // handleRooms(roomsContainer, rooms);
+    wsteer.on("LIST_ROOMS", ({ rooms: joinedRooms }) => {
+      setRooms((prev) => ({ ...prev, joined: joinedRooms }));
     });
 
-    wsteer.on("JOINED_ROOM", ({ rooms }) => {
-      console.log({ from: "joined room", rooms });
-      // handleJoinedRoom(rooms);
+    wsteer.on("JOINED_ROOM", ({ updatedRoomMembership, updatedJoinableRooms }) => {
+      setRooms({ joined: updatedRoomMembership, unjoined: updatedJoinableRooms });
     });
 
     wsteer.on("UNJOINED_ROOM", ({ rooms }) => {
       console.log({ from: "unjoined room", rooms });
-      // handleUnjoined(rooms);
     });
 
-    wsteer.on("LIST_JOINABLE_ROOMS", ({ rooms }) => {
-      console.log({ from: "list joinable rooms", rooms });
-      // handleJoinableEntity(joinRoomModalRoomsContainer, rooms);
+    wsteer.on("LIST_JOINABLE_ROOMS", ({ rooms: unjoinedRooms }) => {
+      setRooms((prev) => ({ ...prev, unjoined: unjoinedRooms }));
     });
 
     wsteer.on("CREATED_ROOM", ({ id, rooms }) => {
       console.log({ from: "created room", id, rooms });
-      // handleCreatedRoom(rooms, id);
     });
 
     wsteer.on("LIST_ROOM_MEMBERS", (/* why is payload unknown here? */) => {
       console.log({ from: "list room members" });
-      // handleRoomMembers(membersContainer, members);
     });
 
     wsteer.on("MEMBER_ENTERED_ROOM", ({ id }) => {
       console.log({ from: "member entered room", id });
-      // handleMemberEntered(id);
     });
 
     wsteer.on("MEMBER_LEFT_ROOM", ({ id }) => {
       console.log({ from: "member left room", id });
-      //  handleMemberLeft(id);
     });
 
     wsteer.on("LIST_DIRECT_CONVERSATIONS", ({ directConversations }) => {
       console.log({ from: "list direct conversations", directConversations });
-      // handleDirectConversations(directConversations, directMessagesDrawerContainer);
     });
 
     wsteer.on("LIST_DIRECT_MESSAGES", ({ directMessages }) => {
       console.log({ from: "list direct messages", directMessages });
-      // handleDirectMessages(directMessages);
     });
 
     wsteer.on("LIST_INVITABLE_USERS", ({ users }) => {
       console.log({ from: "list invitable users", users });
-      // handleJoinableEntity(joinDirectConvoModalPeopleContainer, users);
     });
   }, [wsteer]);
-
-  const [currentRoom] = useState(null);
 
   const handleOpenJoinRoomModal = useCallback(() => {
     setIsJoinRoomModalShown(true);
@@ -130,15 +117,24 @@ export default function ChatPage(): React.JSX.Element {
     throw new Error(`oncreateroomhandler not impl ${result}`);
   }, []);
 
-  const handleOnJoinRoom = useCallback((result: JoinRoomResult) => {
-    throw new Error(`onjoinroomhandler notimpl ${result}`);
-  }, []);
+  const handleOnJoinRoom = useCallback(
+    (room: IRoom) => {
+      wsteer.send("JOIN_ROOM", { id: room.id });
+    },
+    [wsteer],
+  );
 
   return (
     <>
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} onLeave={handleOnLeaveRoom} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} onCreate={handleOnCreateRoom} />
-      <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} onJoin={handleOnJoinRoom} />
+      <JoinRoomModalMemo
+        isLoading={false}
+        rooms={rooms.unjoined}
+        isOpen={isJoinRoomModalShown}
+        onClose={handleCloseJoinRoomModal}
+        onJoin={handleOnJoinRoom}
+      />
       <Topbar />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
@@ -163,7 +159,7 @@ export default function ChatPage(): React.JSX.Element {
               </div>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              <LoadingSpinner thickness=".5rem" style={loadingSpinnerStyle} />
+              <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />
               <ul id="members-list" className="list-group list-group-flush"></ul>
               <DirectMessagesDrawerMemo isShown={false} />
             </div>
@@ -204,7 +200,11 @@ export default function ChatPage(): React.JSX.Element {
               ></button>
             </div>
             <div id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
-              <LoadingSpinner thickness=".5rem" style={loadingSpinnerStyle} />
+              {rooms !== null ? (
+                rooms.joined.map((room) => <Room key={room.id} roomId={room.id} name={room.name} />)
+              ) : (
+                <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />
+              )}
             </div>
             <div className="card-footer">
               <div className="row">
@@ -226,7 +226,7 @@ export default function ChatPage(): React.JSX.Element {
                     className="btn btn-warning shadow flex-grow-1"
                     type="button"
                     title="Leave Current Room"
-                    disabled={currentRoom === null}
+                    disabled={true}
                   >
                     <i className="bi bi-box-arrow-down-left"></i>
                   </button>

@@ -5,14 +5,15 @@ import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 
-import Logger, { LogMetaData } from "@/server/Logger";
+import Logger from "@/server/Logger";
 
 const logger = new Logger("WebSocketApp");
-const logInfo = (message: string, data?: LogMetaData): void => logger.log({ level: "info", message, data });
-// @ts-ignore
 // eslint-disable-next-line
-const logWarn = (message: string, data?: LogMetaData): void => logger.log({ level: "warn", message, data });
-const logError = (message: string, data?: LogMetaData): void => logger.log({ level: "error", message, data });
+const logInfo = (message: string, data?: any): void => logger.log({ level: "info", message, data });
+// eslint-disable-next-line
+const logWarn = (message: string, data?: any): void => logger.log({ level: "warn", message, data });
+// eslint-disable-next-line
+const logError = (message: string, data?: any): void => logger.log({ level: "error", message, data });
 
 const wsapp = new WebSocketApp();
 
@@ -143,9 +144,11 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
  */
 wsapp.on("JOIN_ROOM", async (client, { id }) => {
   try {
+    logInfo("Join room", { user: client.user, roomId: id });
     await wsapp.databaseProvider.rooms.addUserToRoom(client.user.id, id);
     const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
-    client.send("JOINED_ROOM", { rooms });
+    const joinableRooms = await wsapp.databaseProvider.rooms.selectUnjoinedRooms(client.user.id);
+    client.send("JOINED_ROOM", { updatedRoomMembership: rooms, updatedJoinableRooms: joinableRooms });
   } catch (e) {
     client.send("ERROR", { event: "JOIN_ROOM", error: e as Error });
   }

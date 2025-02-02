@@ -4,7 +4,7 @@ body {
 }
 
 .active-room {
-  background-color: var(--bs-secondary-color);
+  background-color: var(--bs-secondary-color) !important;
 }
 
 .min-h-0 {

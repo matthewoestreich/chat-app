@@ -13,7 +13,7 @@ interface RoomMember {
   isActive: boolean;
 }
 
-interface Room {
+interface IRoom {
   id: string;
   name: string;
   isPrivate: 0 | 1;
@@ -61,7 +61,7 @@ interface RoomWithMembers {
   members: RoomMember[];
 }
 
-interface Room {
+interface IRoom {
   id: string;
   name: string;
 }

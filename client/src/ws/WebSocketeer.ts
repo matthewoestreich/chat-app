@@ -74,15 +74,15 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     }
   }
 
+  // For the `payload` param : `...payload: T[K] extends Record<string, any> ? [T[K]] : []` : that essentially just
+  // means to make the `payload` param optional if the payload for "that" event is `unknown`.
+  // - So you DON'T have to do: `websocketeer.send("EVENT_THAT_DOESNT_HAVE_PAYLOAD", {})`
+  // - And can just do : `websocketeer.send("EVENT_THAT_DOESNT_HAVE_PAYLOAD")`
   // eslint-disable-next-line
   public send<K extends WebSocketeerEventType<T>>(event: K, ...payload: T[K] extends Record<string, any> ? [T[K]] : []): void {
     if (!this.socket) {
       return console.warn("Socket is empty. Have you called `listen()` yet?");
     }
-    const message: { type: K; payload?: T[K] } = { type: event };
-    if (payload.length > 0) {
-      message.payload = payload[0];
-    }
-    this.socket.send(JSON.stringify(message));
+    this.socket.send(JSON.stringify({ type: event, ...payload[0] }));
   }
 }

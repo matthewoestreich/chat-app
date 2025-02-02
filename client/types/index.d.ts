@@ -30,11 +30,6 @@ interface CreateRoomResult {
   id: string;
 }
 
-interface JoinRoomResult {
-  name: string;
-  id: string;
-}
-
 interface LogoutResult {
   ok: boolean;
   status: number;

@@ -1,15 +1,11 @@
 type LogLevels = "info" | "warn" | "error";
 
-export interface LogMetaData {
-  // eslint-disable-next-line
-  [K: string]: any;
-}
-
 interface LogOptions {
   level: LogLevels;
   message: string;
   from?: string;
-  data?: LogMetaData;
+  // eslint-disable-next-line
+  data?: any;
 }
 
 interface LogTo {
@@ -34,7 +30,10 @@ export default class Logger {
 
     const logToSelection = logTo[options.level];
     const from = options.from !== undefined ? options.from : this.from !== undefined ? this.from : null;
-
-    return console[logToSelection]({ from, [options.level]: options.message });
+    const obj = { from, [options.level]: options.message };
+    if (options.data) {
+      obj.data = options.data;
+    }
+    return console[logToSelection](obj);
   }
 }

@@ -68,7 +68,8 @@ interface WebSocketAppEventRegistry {
   // The message sent back to the client after joining a room.
   // We send them an updated list of rooms.
   JOINED_ROOM: {
-    rooms: Room[];
+    updatedJoinableRooms: IRoom[];
+    updatedRoomMembership: IRoom[];
   };
   // The message a client sends us when they want to unjoin a room.
   // `id` is the id of the room they want to unjoin.
@@ -78,7 +79,7 @@ interface WebSocketAppEventRegistry {
   // The message sent back to the client after unjoining a room.
   // We send them an updated list of rooms.
   UNJOINED_ROOM: {
-    rooms: Room[];
+    rooms: IRoom[];
   };
   // The message a client sends us when they want to create a new room.
   CREATE_ROOM: {
@@ -89,7 +90,7 @@ interface WebSocketAppEventRegistry {
   // We send them the id of the newly created room plus a list of updated rooms.
   CREATED_ROOM: {
     id: string;
-    rooms: Room[];
+    rooms: IRoom[];
   };
   SEND_MESSAGE: {
     containerId: string;
@@ -97,11 +98,11 @@ interface WebSocketAppEventRegistry {
   };
   LEAVE_ROOM: unknown;
   LIST_JOINABLE_ROOMS: {
-    rooms: Room[];
+    rooms: IRoom[];
   };
   GET_JOINABLE_ROOMS: unknown;
   LIST_ROOMS: {
-    rooms: Room | Room[];
+    rooms: IRoom[];
   };
   LIST_ROOM_MEMBERS: unknown;
   LIST_DIRECT_CONVERSATIONS: {
