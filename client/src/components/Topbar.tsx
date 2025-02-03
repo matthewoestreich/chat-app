@@ -1,5 +1,5 @@
 import { useAuth, useTheme } from "@hooks";
-import React, { DetailedHTMLProps, HTMLAttributes, memo, useEffect, useState } from "react";
+import React, { DetailedHTMLProps, HTMLAttributes, useEffect, useState } from "react";
 
 interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {
   showLogoutButton?: boolean;
@@ -13,9 +13,7 @@ function DarkThemeIcon(): React.JSX.Element {
   return <i id="dark-theme-icon" className="bi bi-moon-fill"></i>;
 }
 
-export default memo(Topbar);
-
-function Topbar(props: TopbarProperties): React.JSX.Element {
+export default function Topbar(props: TopbarProperties): React.JSX.Element {
   const [themeIcon, setThemeIcon] = useState<React.JSX.Element>(<></>);
   const { theme, toggleTheme } = useTheme();
   const { logout } = useAuth();

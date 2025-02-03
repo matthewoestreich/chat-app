@@ -100,74 +100,78 @@ export default function ChatPage(): React.JSX.Element {
     });
   }, [wsteer]);
 
-  const handleOpenJoinRoomModal = useCallback(() => {
+  function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
-  }, []);
+  }
 
-  const handleOpenLeaveRoomModal = useCallback(() => {
+  function handleOpenLeaveRoomModal(): void {
     setIsLeaveRoomModalShown(true);
-  }, []);
+  }
 
-  const handleOpenCreateRoomModal = useCallback(() => {
+  function handleOpenCreateRoomModal(): void {
     setIsCreateRoomModalShown(true);
-  }, []);
+  }
 
-  const handleCloseLeaveRoomModal = useCallback(() => {
+  function handleCloseLeaveRoomModal(): void {
     setIsLeaveRoomModalShown(false);
-  }, []);
+  }
 
-  const handleCloseCreateRoomModal = useCallback(() => {
+  function handleCloseCreateRoomModal(): void {
     setIsCreateRoomModalShown(false);
-  }, []);
+  }
 
-  const handleCloseJoinRoomModal = useCallback(() => {
+  function handleCloseJoinRoomModal(): void {
     setIsJoinRoomModalShown(false);
-  }, []);
+  }
 
-  const handleOnLeaveRoom = useCallback(() => {
+  function handleOnLeaveRoom(): void {
     throw new Error("handleonleaveroom not impl");
-  }, []);
+  }
 
   const handleOnCreateRoom = useCallback((result: CreateRoomResult) => {
     throw new Error(`oncreateroomhandler not impl ${result}`);
   }, []);
 
   // prettier-ignore
-  const handleRoomClick = useCallback((room: IRoom) => {
-    if (currentRoom === room) {
-      return;
-    }
-    wsteer.send("ENTER_ROOM", { id: room.id });
-    setCurrentRoom(room);
-  }, [wsteer, currentRoom]);
+  const handleRoomClick = useCallback((roomId: string) => {
+    setCurrentRoom((prev) => {
+      if (prev?.id === roomId) {
+        return prev;
+      }
+      wsteer.send("ENTER_ROOM", { id: roomId });
+      return rooms?.find((r) => r.id === roomId) || null;
+    });
+  }, [wsteer, rooms]);
 
-  /**
-   *
-   */
+  // Store room click handlers to prevent unnecessary re-renders.
+  const roomClickHandlers = useMemo(() => {
+    return new Map(rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
+  }, [rooms, handleRoomClick]);
+
   const renderRooms = useCallback(() => {
     if (rooms === null) {
       return <LoadingSpinnerMemo style={loadingSpinnerStyle} />;
     }
     return rooms.map((room) => (
-      <RoomMemo key={room.id} roomId={room.id} roomName={room.name} onClick={() => handleRoomClick(room)} isSelected={currentRoom === room} />
+      <RoomMemo
+        key={room.id}
+        roomId={room.id}
+        roomName={room.name}
+        onClick={roomClickHandlers.get(room.id)}
+        isSelected={currentRoom?.id === room.id}
+      />
     ));
-  }, [rooms, handleRoomClick, loadingSpinnerStyle, currentRoom]);
+  }, [rooms, roomClickHandlers, loadingSpinnerStyle, currentRoom]);
 
-  /**
-   *
-   */
   const renderMessages = useCallback(() => {
     if (messages === null) {
       return;
     }
     return messages.map((message) => (
-      <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || ""} />
+      <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || "-"} />
     ));
   }, [messages]);
 
-  /**
-   *
-   */
   const renderMembers = useCallback(() => {
     if (members === null) {
       return <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />;
@@ -210,7 +214,7 @@ export default function ChatPage(): React.JSX.Element {
               </div>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              {useMemo(() => renderMembers(), [renderMembers])}
+              {renderMembers()}
               <DirectMessagesDrawerMemo isShown={false} />
             </div>
             <div className="card-footer">
@@ -230,7 +234,7 @@ export default function ChatPage(): React.JSX.Element {
               </div>
             </div>
             <div ref={chatDisplayRef} id="chat-display" className="card-body overf-y-scroll">
-              {useMemo(() => renderMessages(), [renderMessages])}
+              {renderMessages()}
             </div>
             <div className="card-footer">
               <div className="input-group">
@@ -252,7 +256,7 @@ export default function ChatPage(): React.JSX.Element {
               ></button>
             </div>
             <ul id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
-              {useMemo(() => renderRooms(), [renderRooms])}
+              {renderRooms()}
             </ul>
             <div className="card-footer">
               <div className="row">

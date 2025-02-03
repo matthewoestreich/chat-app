@@ -1,16 +1,7 @@
-import React, { ChangeEvent, HTMLAttributes, memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { WebSocketeer, WebSocketEvents } from "@client/ws";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-
-const ModalMemo = memo(Modal);
-const ModalBodyMemo = memo(ModalBody);
-const ModalContentMemo = memo(ModalContent);
-const ModalDialogMemo = memo(ModalDialog);
-const ModalFooterMemo = memo(ModalFooter);
-const ModalHeaderMemo = memo(ModalHeader);
-const JoinableRoomMemo = memo(JoinableRoom);
-const ButtonLoadingMemo = memo(ButtonLoading);
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -69,7 +60,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
     return rooms
       ?.filter((room) => room.name.includes(searchText))
       .map((room) => (
-        <JoinableRoomMemo key={room.id} onClick={() => setSelectedRoom(room)} isSelected={selectedRoom === room} roomId={room.id} name={room.name} />
+        <JoinableRoom key={room.id} onClick={() => setSelectedRoom(room)} isSelected={selectedRoom === room} roomId={room.id} name={room.name} />
       ));
   }, [searchText, rooms, selectedRoom]);
 
@@ -82,14 +73,14 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   }
 
   return (
-    <ModalMemo getInstance={handleGetModalInstance} className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
-      <ModalDialogMemo>
-        <ModalContentMemo>
-          <ModalHeaderMemo>
+    <Modal getInstance={handleGetModalInstance} className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
+      <ModalDialog>
+        <ModalContent>
+          <ModalHeader>
             <h1 className="modal-title fs-5">Join Room</h1>
             <button onClick={handleCloseModal} className="btn btn-close" tabIndex={-1} type="button"></button>
-          </ModalHeaderMemo>
-          <ModalBodyMemo>
+          </ModalHeader>
+          <ModalBody>
             <Alert
               isOpen={alert.shown}
               icon={alert.icon}
@@ -103,20 +94,20 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
             <input onChange={handleSearchInput} value={searchText} className="form-control" type="text" placeholder="Search Rooms" />
             <div className="border mt-3">
               <ul className="list-group" style={{ maxHeight: "35vh", overflowY: "scroll" }}>
-                {useMemo(() => renderRooms(), [renderRooms])}
+                {renderRooms()}
               </ul>
             </div>
-          </ModalBodyMemo>
-          <ModalFooterMemo>
+          </ModalBody>
+          <ModalFooter>
             <button onClick={handleCloseModal} className="btn btn-danger" type="button">
               Close
             </button>
-            <ButtonLoadingMemo onClick={handleJoinRoom} isLoading={isLoading} className="btn btn-primary" type="button">
+            <ButtonLoading onClick={handleJoinRoom} isLoading={isLoading} className="btn btn-primary" type="button">
               Join Room
-            </ButtonLoadingMemo>
-          </ModalFooterMemo>
-        </ModalContentMemo>
-      </ModalDialogMemo>
-    </ModalMemo>
+            </ButtonLoading>
+          </ModalFooter>
+        </ModalContent>
+      </ModalDialog>
+    </Modal>
   );
 }
