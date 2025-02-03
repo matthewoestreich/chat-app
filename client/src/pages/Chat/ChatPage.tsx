@@ -93,15 +93,6 @@ export default function ChatPage(): React.JSX.Element {
     });
   }, [websocketeer]);
 
-  function handleOpenDirectMessagesDrawer(): void {
-    console.log("opening dms");
-    setIsDirectMessagesShown(true);
-  }
-
-  const handleCloseDirectMessagesDrawer = useCallback(() => {
-    setIsDirectMessagesShown(false);
-  }, []);
-
   function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
   }
@@ -129,6 +120,14 @@ export default function ChatPage(): React.JSX.Element {
   function handleOnLeaveRoom(): void {
     throw new Error("handleonleaveroom not impl");
   }
+
+  function handleOpenDirectMessagesDrawer(): void {
+    setIsDirectMessagesShown(true);
+  }
+
+  const handleCloseDirectMessagesDrawer = useCallback(() => {
+    setIsDirectMessagesShown(false);
+  }, []);
 
   // Create room onClick handler.
   // prettier-ignore
