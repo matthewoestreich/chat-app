@@ -1,12 +1,10 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoadingSpinner, Topbar, Room, Member, Message } from "@components";
 import { useAuth, useWebSocketeer } from "@hooks";
-import { WsEvents as WebSocketEvents } from "@client/ws/WsEvents";
 import LeaveRoomModal from "./LeaveRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
-import "../../styles/chat.css";
 
 document.title = "RTChat | Chat";
 
@@ -19,22 +17,21 @@ const RoomMemo = memo(Room);
 const MemberMemo = memo(Member);
 const MessageMemo = memo(Message);
 
-const WS_URL = `${document.location.protocol.replace("http", "ws")}//${document.location.host}`;
-
 export default function ChatPage(): React.JSX.Element {
   const chatDisplayRef = useRef<HTMLDivElement>(null);
 
   const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
+  const [isDirectMessagesShown, setIsDirectMessagesShown] = useState(false);
   const loadingSpinnerStyle = useMemo(() => ({ width: "5rem", height: "5rem" }), []);
   const { user } = useAuth();
 
   const [rooms, setRooms] = useState<IRoom[] | null>(null);
-  const [members, setMembers] = useState<RoomMember[] | null>(null);
+  const [members, setMembers] = useState<RoomMember[]>([]);
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
-  const websocketeer = useWebSocketeer<WebSocketEvents>(WS_URL);
+  const { websocketeer } = useWebSocketeer();
 
   // Scroll to bottom of chat display when we get messages
   useEffect(() => {
@@ -43,7 +40,6 @@ export default function ChatPage(): React.JSX.Element {
     }
   }, [messages]);
 
-  // Only connect and build handlers if websocketeer changes
   useEffect(() => {
     websocketeer.connect();
 
@@ -68,8 +64,8 @@ export default function ChatPage(): React.JSX.Element {
       console.log({ from: "unjoined room", rooms });
     });
 
-    websocketeer.on("CREATED_ROOM", ({ id, rooms }) => {
-      console.log({ from: "created room", id, rooms });
+    websocketeer.on("CREATED_ROOM", ({ rooms }) => {
+      setRooms(rooms);
     });
 
     websocketeer.on("LIST_ROOM_MEMBERS", (/* why is payload unknown here? */) => {
@@ -96,6 +92,15 @@ export default function ChatPage(): React.JSX.Element {
       console.log({ from: "list invitable users", users });
     });
   }, [websocketeer]);
+
+  function handleOpenDirectMessagesDrawer(): void {
+    console.log("opening dms");
+    setIsDirectMessagesShown(true);
+  }
+
+  const handleCloseDirectMessagesDrawer = useCallback(() => {
+    setIsDirectMessagesShown(false);
+  }, []);
 
   function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
@@ -125,10 +130,7 @@ export default function ChatPage(): React.JSX.Element {
     throw new Error("handleonleaveroom not impl");
   }
 
-  const handleOnCreateRoom = useCallback((result: CreateRoomResult) => {
-    throw new Error(`oncreateroomhandler not impl ${result}`);
-  }, []);
-
+  // Create room onClick handler.
   // prettier-ignore
   const handleRoomClick = useCallback((roomId: string) => {
     setCurrentRoom((prev) => {
@@ -140,7 +142,7 @@ export default function ChatPage(): React.JSX.Element {
     });
   }, [websocketeer, rooms]);
 
-  // Store room click handlers to prevent unnecessary re-renders.
+  // Create onClick handler specific to each room and store them to prevent unnecessary re-renders.
   const roomClickHandlers = useMemo(() => {
     return new Map(rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
   }, [rooms, handleRoomClick]);
@@ -185,8 +187,8 @@ export default function ChatPage(): React.JSX.Element {
   return (
     <>
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} onLeave={handleOnLeaveRoom} />
-      <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} onCreate={handleOnCreateRoom} />
-      <JoinRoomModalMemo websocketeer={websocketeer} isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
+      <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
+      <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
       <Topbar />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
@@ -200,24 +202,28 @@ export default function ChatPage(): React.JSX.Element {
             className="card col-xl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start"
           >
             <div className="card-header d-flex flex-row display-6 text-center">
-              <div className="flex-fill text-center">
-                Members
-                <button
-                  className="btn btn-close btn-sm d-lg-none ms-auto"
-                  type="button"
-                  data-bs-dismiss="offcanvas"
-                  data-bs-target="#members-offcanvas"
-                ></button>
-              </div>
+              <div className="flex-fill text-center">Members</div>
+              <button
+                className="btn btn-close btn-sm d-lg-none ms-auto"
+                type="button"
+                data-bs-dismiss="offcanvas"
+                data-bs-target="#members-offcanvas"
+              ></button>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
               {renderMembers()}
-              <DirectMessagesDrawerMemo isShown={false} />
+              <DirectMessagesDrawerMemo isShown={isDirectMessagesShown} onClose={handleCloseDirectMessagesDrawer} />
             </div>
             <div className="card-footer">
               <div className="row">
                 <div className="col-12 d-flex p-1">
-                  <button id="open-direct-messages" className="btn btn-primary flex-grow-1 shadow" type="button" title="Direct Messages">
+                  <button
+                    onClick={handleOpenDirectMessagesDrawer}
+                    id="open-direct-messages"
+                    className="btn btn-primary flex-grow-1 shadow"
+                    type="button"
+                    title="Direct Messages"
+                  >
                     <i className="bi bi-chat-dots-fill"></i>
                   </button>
                 </div>
@@ -246,7 +252,7 @@ export default function ChatPage(): React.JSX.Element {
             <div className="card-header d-flex flex-row display-6 text-center">
               <div className="flex-fill text-center">Rooms</div>
               <button
-                className="btn btn-clise btn-sm d-lg-none ms-auto shadow"
+                className="btn btn-close btn-sm d-lg-none ms-auto shadow"
                 type="button"
                 data-bs-dismiss="offcanvas"
                 data-bs-target="#rooms-offcanvas"

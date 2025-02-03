@@ -35,7 +35,7 @@ export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.J
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal getInstance={handleGetModalInstance} size="sm" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>

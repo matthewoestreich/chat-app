@@ -40,13 +40,13 @@ export default function Topbar(props: TopbarProperties): React.JSX.Element {
         </div>
         <div className="mx-auto">
           <a className="navbar-icon d-inline-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#members-offcanvas">
-            <button className="btn btn-primary shadow" type="button" title="View Members">
+            <button className="btn btn-secondary shadow" type="button" title="View Members">
               <i className="bi bi-people-fill"></i>
             </button>
           </a>
-          <></>
-          <a className="navbar-icon d-inline-block d-lg-none">
-            <button className="btn btn-primary shadow" type="button" title="View Rooms" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">
+          {" " /* THIS SPACE IS INTENTIONAL */}
+          <a className="navbar-icon d-inline-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">
+            <button className="btn btn-secondary shadow" type="button" title="View Rooms">
               <i className="bi bi-door-open-fill"></i>
             </button>
           </a>
@@ -58,7 +58,7 @@ export default function Topbar(props: TopbarProperties): React.JSX.Element {
           {props.showLogoutButton === true ||
             (props.showLogoutButton === undefined && (
               <>
-                {" "}
+                {" " /* THIS SPACE IS INTENTIONAL */}
                 <a className="navbar-icon" onClick={handleLogout}>
                   <button className="btn btn-light flex-fill shadow" type="button" title="Logout">
                     <i className="bi bi-power"></i>

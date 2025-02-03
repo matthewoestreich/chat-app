@@ -1,23 +1,24 @@
 import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
-import { WebSocketeer, WebSocketEvents } from "@client/ws";
+import { useWebSocketeer } from "@hooks";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onClose: () => void;
-  websocketeer: WebSocketeer<WebSocketEvents>;
 }
 
 export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX.Element {
-  const { isOpen, websocketeer, onClose } = props;
-
   const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
   const [searchText, setSearchText] = useState("");
   const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [rooms, setRooms] = useState<IRoom[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+
+  const { websocketeer } = useWebSocketeer();
+
+  const { isOpen, onClose } = props;
 
   useEffect(() => {
     if (modalInstance) {
@@ -42,6 +43,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
       return;
     }
     if (selectedRoom) {
+      setAlert({ type: "success", icon: "bi-check", shown: true, message: `Successfully joined room "${selectedRoom.name}"!` });
       setRooms((prevRooms) => prevRooms?.filter((room) => room.id !== selectedRoom.id));
     }
     setIsLoading(false);
@@ -53,6 +55,9 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   }
 
   function handleCloseModal(): void {
+    setAlert({ type: undefined, icon: "", shown: false, message: "" });
+    setSearchText("");
+    setIsLoading(false);
     onClose();
   }
 

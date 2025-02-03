@@ -7,7 +7,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     onError: (_e: Event): void => {},
   };
 
-  protected handlers: WebSocketeerEventHandlerMap<T> = {};
+  private handlers: WebSocketeerEventHandlerMap<T> = {};
 
   public url: string;
 
@@ -59,7 +59,6 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     if (!this.handlers[event]) {
       this.handlers[event] = [];
     }
-    //(this.handlers[event] as ((payload: T[K]) => void)[]).push(handler);
     this.handlers[event].push(handler);
   }
 

@@ -59,6 +59,23 @@ interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
+declare class WebSocketeer<T extends WebSocketeerEventMap> {
+  constructor(url: string);
+  url: string;
+  connect(): void;
+  onOpen(handler: (e: Event) => void): void;
+  onClose(handler: (e: CloseEvent) => void): void;
+  onError(handler: (e: Event) => void): void;
+  on<K extends WebSocketeerEventType<T>>(event: K, handler: (payload: WebSocketeerEventPayload<T, K>) => void): void;
+  emit<K extends keyof T>(event: K, payload: T[K]): void;
+  // eslint-disable-next-line
+  send<K extends WebSocketeerEventType<T>>(event: K, ...payload: T[K] extends Record<string, any> ? [T[K]] : []): void;
+}
+
+interface WebSocketeerContextValue<T extends WebSocketeerEventMap> {
+  websocketeer: WebSocketeer<T>;
+}
+
 interface WebSocketeerEventMap {
   // eslint-disable-next-line
   [K: symbol]: { [K: string]: any } | any;

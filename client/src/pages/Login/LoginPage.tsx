@@ -2,7 +2,6 @@ import React, { ChangeEvent, useState, FormEvent } from "react";
 import { InputFloating, Alert, Form, ButtonLoading, Topbar } from "@components";
 import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
-import "../../styles/index.css";
 
 export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState("");

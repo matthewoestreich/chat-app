@@ -12,6 +12,7 @@ interface ModalProperties extends HTMLAttributes<HTMLDivElement> {
   dataBsKeyboard?: boolean;
   tabIndex?: number;
   children?: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export default function Modal(props: ModalProperties): React.JSX.Element {
@@ -32,10 +33,12 @@ export default function Modal(props: ModalProperties): React.JSX.Element {
     }
   }, [getInstance]);
 
+  const modalSize = props?.size === undefined ? "modal-md" : `modal-${props.size}`;
+
   return (
     <div
       ref={modalRef}
-      className={`modal ${props.className || ""}`}
+      className={`modal ${modalSize} ${props.className || ""}`}
       data-bs-backdrop={props.dataBsBackdrop ?? "static"}
       data-bs-keyboard={props.dataBsKeyboard ?? true}
       tabIndex={props.tabIndex ?? -1}

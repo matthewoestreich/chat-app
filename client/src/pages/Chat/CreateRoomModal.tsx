@@ -1,54 +1,69 @@
-import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback } from "react";
+import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback, ChangeEvent } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
+import { useWebSocketeer } from "@hooks";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (room: CreateRoomResult) => void;
 }
 
 export default function CreateRoomModal(props: CreateRoomModalProperties): React.JSX.Element {
+  const checkboxId = useId();
   const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
   const [isFormValidated, setIsFormValidated] = useState(false);
-  const [isCloseButtonDisabled, setIsCloseButtonDisabled] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
+  const [roomNameInput, setRoomNameInput] = useState("");
+  const [isPrivateCheckboxChecked, setIsPrivateCheckboxChecked] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const checkboxId = useId();
+  const { websocketeer } = useWebSocketeer();
+
+  const { isOpen, onClose } = props;
 
   useEffect(() => {
     if (modalInstance) {
-      if (props.isOpen === true) {
+      if (isOpen === true) {
         modalInstance.show();
-      } else if (props.isOpen === false) {
+      } else if (isOpen === false) {
         modalInstance.hide();
       }
     }
-  }, [props.isOpen, modalInstance]);
+  }, [isOpen, modalInstance]);
+
+  websocketeer.on("CREATED_ROOM", () => {
+    if (!isOpen) {
+      return;
+    }
+    setAlert({ type: "success", shown: true, message: `Successfully created room!`, icon: "bi-check" });
+    setIsCreatingRoom(false);
+  });
 
   function closeAlert(): void {
     setAlert({ type: undefined, shown: false, message: "", icon: "" });
   }
 
-  function _handleGetFormRef(current: HTMLFormElement | null): void {
+  // prettier-ignore
+  const handleGetFormRef = useCallback((current: HTMLFormElement | null) => {
     formRef.current = current;
+  }, [formRef]);
+
+  function handleRoomNameInput(e: ChangeEvent<HTMLInputElement>): void {
+    setRoomNameInput(e.target.value);
   }
 
-  const handleGetFormRef = useCallback(
-    (current: HTMLFormElement | null) => {
-      formRef.current = current;
-    },
-    [formRef],
-  );
+  function handleIsPrivateCheckboxChange(e: ChangeEvent<HTMLInputElement>): void {
+    setIsPrivateCheckboxChecked(e.target.checked);
+  }
 
   function handleClose(): void {
-    props.onClose();
+    closeAlert();
+    setRoomNameInput("");
+    setIsPrivateCheckboxChecked(false);
+    setIsCreatingRoom(false);
+    onClose();
   }
 
-  function _handleGetModalInstance(instance: BsModal | null): void {
-    setModalInstance(instance);
-  }
   const handleGetModalInstance = useCallback((instance: BsModal | null) => {
     setModalInstance(instance);
   }, []);
@@ -57,28 +72,24 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     formRef.current?.requestSubmit();
   }
 
-  async function handleSubmitForm(event: FormEvent<HTMLFormElement>): Promise<void> {
+  function handleSubmitForm(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     event.stopPropagation();
     if (!formRef.current) {
       return;
     }
-    // `.checkValidity()` comes from Bootstrap
+    // checkValidity() comes from Bootstrap
     const isFormValid = event.currentTarget.checkValidity();
-    formRef.current.setIsValid(isFormValid);
     setIsFormValidated(true);
     if (!isFormValid) {
       return;
     }
     setIsCreatingRoom(true);
-    setIsCloseButtonDisabled(true);
-    setIsCreatingRoom(true);
-    props.onCreate({ id: "", name: "" });
-    props.onClose();
+    websocketeer.send("CREATE_ROOM", { name: roomNameInput, isPrivate: isPrivateCheckboxChecked });
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal getInstance={handleGetModalInstance} size="md" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>
@@ -98,11 +109,25 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
             </Alert>
             <div className="form-group">
               <Form getRef={handleGetFormRef} onSubmit={handleSubmitForm} validated={isFormValidated}>
-                <InputFloating type="text" invalidMessage="Room name is required!" placeholder="Room Name" required>
+                <InputFloating
+                  onChange={handleRoomNameInput}
+                  value={roomNameInput}
+                  type="text"
+                  invalidMessage="Room name is required!"
+                  placeholder="Room Name"
+                  required
+                >
                   Room Name
                 </InputFloating>
                 <div className="form-check mt-1">
-                  <input id={checkboxId} className="form-check-input" type="checkbox" value="" />
+                  <input
+                    id={checkboxId}
+                    onChange={handleIsPrivateCheckboxChange}
+                    checked={isPrivateCheckboxChecked}
+                    className="form-check-input"
+                    type="checkbox"
+                    value=""
+                  />
                   <label className="form-check-label" htmlFor={checkboxId}>
                     Private?
                   </label>
@@ -111,7 +136,7 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
             </div>
           </ModalBody>
           <ModalFooter>
-            <button onClick={handleClose} className="btn btn-danger" type="button" disabled={isCloseButtonDisabled}>
+            <button onClick={handleClose} className="btn btn-danger" type="button" disabled={isCreatingRoom}>
               Close
             </button>
             <ButtonLoading onClick={handleCreateRoom} isLoading={isCreatingRoom} className="btn btn-primary" type="submit">
