@@ -70,3 +70,8 @@ type WebSocketeerEventPayload<T extends WebSocketeerEventMap, K extends WebSocke
 type WebSocketeerEventHandlerMap<T extends WebSocketeerEventMap> = {
   [K in keyof T]?: ((payload: T[K]) => void)[];
 };
+
+type WebSocketeerParsedMessage<T> = {
+  type: keyof T;
+  payload: T[keyof T];
+};

@@ -10,8 +10,6 @@ import "../../styles/chat.css";
 
 document.title = "RTChat | Chat";
 
-const WS_URL = `${document.location.protocol.replace("http", "ws")}//${document.location.host}`;
-
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const CreateRoomModalMemo = memo(CreateRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
@@ -21,10 +19,8 @@ const RoomMemo = memo(Room);
 const MemberMemo = memo(Member);
 const MessageMemo = memo(Message);
 
-/**
- *
- * @returns
- */
+const WS_URL = `${document.location.protocol.replace("http", "ws")}//${document.location.host}`;
+
 export default function ChatPage(): React.JSX.Element {
   const chatDisplayRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +34,7 @@ export default function ChatPage(): React.JSX.Element {
   const [members, setMembers] = useState<RoomMember[] | null>(null);
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
-  const wsteer = useWebSocketeer<WebSocketEvents>(WS_URL);
+  const websocketeer = useWebSocketeer<WebSocketEvents>(WS_URL);
 
   // Scroll to bottom of chat display when we get messages
   useEffect(() => {
@@ -47,58 +43,59 @@ export default function ChatPage(): React.JSX.Element {
     }
   }, [messages]);
 
+  // Only connect and build handlers if websocketeer changes
   useEffect(() => {
-    wsteer.connect();
+    websocketeer.connect();
 
-    wsteer.on("RECEIVE_MESSAGE", ({ userId, userName, message }) => {
+    websocketeer.on("RECEIVE_MESSAGE", ({ userId, userName, message }) => {
       console.log("Got message", { userId, userName, message });
     });
 
-    wsteer.on("ENTERED_ROOM", ({ members, messages }) => {
+    websocketeer.on("ENTERED_ROOM", ({ members, messages }) => {
       setMembers(members);
       setMessages(messages);
     });
 
-    wsteer.on("LIST_ROOMS", ({ rooms }) => {
+    websocketeer.on("LIST_ROOMS", ({ rooms }) => {
       setRooms(rooms);
     });
 
-    wsteer.on("JOINED_ROOM", ({ rooms }) => {
+    websocketeer.on("JOINED_ROOM", ({ rooms }) => {
       setRooms(rooms);
     });
 
-    wsteer.on("UNJOINED_ROOM", ({ rooms }) => {
+    websocketeer.on("UNJOINED_ROOM", ({ rooms }) => {
       console.log({ from: "unjoined room", rooms });
     });
 
-    wsteer.on("CREATED_ROOM", ({ id, rooms }) => {
+    websocketeer.on("CREATED_ROOM", ({ id, rooms }) => {
       console.log({ from: "created room", id, rooms });
     });
 
-    wsteer.on("LIST_ROOM_MEMBERS", (/* why is payload unknown here? */) => {
+    websocketeer.on("LIST_ROOM_MEMBERS", (/* why is payload unknown here? */) => {
       console.log({ from: "list room members" });
     });
 
-    wsteer.on("MEMBER_ENTERED_ROOM", ({ id }) => {
+    websocketeer.on("MEMBER_ENTERED_ROOM", ({ id }) => {
       console.log({ from: "member entered room", id });
     });
 
-    wsteer.on("MEMBER_LEFT_ROOM", ({ id }) => {
+    websocketeer.on("MEMBER_LEFT_ROOM", ({ id }) => {
       console.log({ from: "member left room", id });
     });
 
-    wsteer.on("LIST_DIRECT_CONVERSATIONS", ({ directConversations }) => {
+    websocketeer.on("LIST_DIRECT_CONVERSATIONS", ({ directConversations }) => {
       console.log({ from: "list direct conversations", directConversations });
     });
 
-    wsteer.on("LIST_DIRECT_MESSAGES", ({ directMessages }) => {
+    websocketeer.on("LIST_DIRECT_MESSAGES", ({ directMessages }) => {
       console.log({ from: "list direct messages", directMessages });
     });
 
-    wsteer.on("LIST_INVITABLE_USERS", ({ users }) => {
+    websocketeer.on("LIST_INVITABLE_USERS", ({ users }) => {
       console.log({ from: "list invitable users", users });
     });
-  }, [wsteer]);
+  }, [websocketeer]);
 
   function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
@@ -138,10 +135,10 @@ export default function ChatPage(): React.JSX.Element {
       if (prev?.id === roomId) {
         return prev;
       }
-      wsteer.send("ENTER_ROOM", { id: roomId });
+      websocketeer.send("ENTER_ROOM", { id: roomId });
       return rooms?.find((r) => r.id === roomId) || null;
     });
-  }, [wsteer, rooms]);
+  }, [websocketeer, rooms]);
 
   // Store room click handlers to prevent unnecessary re-renders.
   const roomClickHandlers = useMemo(() => {
@@ -189,7 +186,7 @@ export default function ChatPage(): React.JSX.Element {
     <>
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} onLeave={handleOnLeaveRoom} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} onCreate={handleOnCreateRoom} />
-      <JoinRoomModalMemo websocketeer={wsteer} isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
+      <JoinRoomModalMemo websocketeer={websocketeer} isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
       <Topbar />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">

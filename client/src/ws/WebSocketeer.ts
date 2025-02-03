@@ -1,7 +1,6 @@
-import WebSocketeerMessage from "./WebSocketeerMessage";
-
 export default class WebSocketeer<T extends WebSocketeerEventMap> {
   private socket: WebSocket | null = null;
+
   private nativeSocketDefaultEventHandlers = {
     onOpen: (_e: Event): void => {},
     onClose: (_e: CloseEvent): void => {},
@@ -17,8 +16,9 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
   }
 
   // eslint-disable-next-line
-  private parseRawMessage(data: any): WebSocketeerMessage<T> {
-    return WebSocketeerMessage.from<T>(data);
+  private parseRawMessage(data: any): WebSocketeerParsedMessage<T> {
+    const { type, ...payload } = JSON.parse(data);
+    return { type, payload };
   }
 
   public connect(): void {
@@ -37,9 +37,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     });
 
     this.socket.addEventListener("message", (event: MessageEvent) => {
-      console.log({ on: "message", rawEvent: event });
       const { type, payload } = this.parseRawMessage(event.data);
-      console.log({ type, payload });
       if (!type) {
         throw new Error("Message missing type");
       }
@@ -65,7 +63,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     this.handlers[event].push(handler);
   }
 
-  public emit<E extends keyof T>(event: E, payload: T[E]): void {
+  public emit<K extends keyof T>(event: K, payload: T[K]): void {
     const handlers = this.handlers[event];
     if (handlers) {
       for (const handler of handlers) {

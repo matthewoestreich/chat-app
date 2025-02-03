@@ -10,6 +10,8 @@ interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 }
 
 export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX.Element {
+  const { isOpen, websocketeer, onClose } = props;
+
   const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
   const [searchText, setSearchText] = useState("");
   const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
@@ -19,22 +21,28 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
 
   useEffect(() => {
     if (modalInstance) {
-      if (props.isOpen === true) {
+      if (isOpen === true) {
         modalInstance.show();
-        props.websocketeer.send("GET_JOINABLE_ROOMS");
-      } else if (props.isOpen === false) {
+        websocketeer.send("GET_JOINABLE_ROOMS");
+      } else if (isOpen === false) {
         modalInstance.hide();
       }
     }
-  }, [props.isOpen, props.websocketeer, modalInstance]);
+  }, [isOpen, websocketeer, modalInstance]);
 
-  props.websocketeer.on("LIST_JOINABLE_ROOMS", ({ rooms }) => {
+  websocketeer.on("LIST_JOINABLE_ROOMS", ({ rooms }) => {
+    if (!isOpen) {
+      return;
+    }
     setRooms(rooms);
   });
 
-  props.websocketeer.on("JOINED_ROOM", () => {
+  websocketeer.on("JOINED_ROOM", () => {
+    if (!isOpen) {
+      return;
+    }
     if (selectedRoom) {
-      setRooms(rooms?.filter((room) => room.id !== selectedRoom.id));
+      setRooms((prevRooms) => prevRooms?.filter((room) => room.id !== selectedRoom.id));
     }
     setIsLoading(false);
     setSelectedRoom(null);
@@ -45,7 +53,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   }
 
   function handleCloseModal(): void {
-    props.onClose();
+    onClose();
   }
 
   function handleJoinRoom(): void {
@@ -53,7 +61,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
       return;
     }
     setIsLoading(true);
-    props.websocketeer.send("JOIN_ROOM", { id: selectedRoom.id });
+    websocketeer.send("JOIN_ROOM", { id: selectedRoom.id });
   }
 
   const renderRooms = useCallback(() => {
