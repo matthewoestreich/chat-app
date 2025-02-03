@@ -6,6 +6,7 @@
 inMemoryData.json
 database.json
 www
+www-pub
 # Logs
 logs
 *.log

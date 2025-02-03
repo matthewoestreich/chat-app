@@ -144,14 +144,12 @@ export default function ChatPage(): React.JSX.Element {
    *
    */
   const renderRooms = useCallback(() => {
-    if (rooms !== null) {
-      return rooms.map((room) => {
-        return (
-          <RoomMemo key={room.id} roomId={room.id} roomName={room.name} onClick={() => handleRoomClick(room)} isSelected={currentRoom === room} />
-        );
-      });
+    if (rooms === null) {
+      return <LoadingSpinnerMemo style={loadingSpinnerStyle} />;
     }
-    return <LoadingSpinnerMemo style={loadingSpinnerStyle} />;
+    return rooms.map((room) => (
+      <RoomMemo key={room.id} roomId={room.id} roomName={room.name} onClick={() => handleRoomClick(room)} isSelected={currentRoom === room} />
+    ));
   }, [rooms, handleRoomClick, loadingSpinnerStyle, currentRoom]);
 
   /**
