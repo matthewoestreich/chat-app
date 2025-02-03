@@ -174,13 +174,7 @@ export default function ChatPage(): React.JSX.Element {
     if (members === null) {
       return <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />;
     }
-    return (
-      <ul id="members-list" className="list-group list-group-flush">
-        {members.map((member) => (
-          <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
-        ))}
-      </ul>
-    );
+    return members.map((member) => <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />);
   }, [members, loadingSpinnerStyle]);
 
   return (
@@ -210,7 +204,9 @@ export default function ChatPage(): React.JSX.Element {
               ></button>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              {renderMembers()}
+              <ul id="members-list" className="list-group list-group-flush">
+                {renderMembers()}
+              </ul>
               <DirectMessagesDrawerMemo isShown={isDirectMessagesShown} onClose={handleCloseDirectMessagesDrawer} />
             </div>
             <div className="card-footer">
