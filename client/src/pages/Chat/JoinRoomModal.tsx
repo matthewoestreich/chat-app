@@ -1,18 +1,7 @@
 import React, { ChangeEvent, HTMLAttributes, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { WebSocketeer, WebSocketEvents } from "@client/ws";
-// prettier-ignore
-import { 
-  Alert, 
-  ButtonLoading, 
-  JoinableRoom, 
-  Modal,
-  ModalBody, 
-  ModalContent, 
-  ModalDialog, 
-  ModalFooter, 
-  ModalHeader 
-} from "@components";
+import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 
 const ModalMemo = memo(Modal);
 const ModalBodyMemo = memo(ModalBody);
