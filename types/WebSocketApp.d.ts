@@ -68,8 +68,7 @@ interface WebSocketAppEventRegistry {
   // The message sent back to the client after joining a room.
   // We send them an updated list of rooms.
   JOINED_ROOM: {
-    updatedJoinableRooms: IRoom[];
-    updatedRoomMembership: IRoom[];
+    rooms: IRoom[];
   };
   // The message a client sends us when they want to unjoin a room.
   // `id` is the id of the room they want to unjoin.

@@ -7,3 +7,5 @@ export { default as Topbar } from "./Topbar";
 export { default as LoadingSpinner } from "./LoadingSpinner";
 export { default as JoinableRoom } from "./JoinableRoom";
 export { default as Room } from "./Room";
+export { default as Member } from "./Member";
+export { default as Message } from "./Message";

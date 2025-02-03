@@ -147,8 +147,7 @@ wsapp.on("JOIN_ROOM", async (client, { id }) => {
     logInfo("Join room", { user: client.user, roomId: id });
     await wsapp.databaseProvider.rooms.addUserToRoom(client.user.id, id);
     const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
-    const joinableRooms = await wsapp.databaseProvider.rooms.selectUnjoinedRooms(client.user.id);
-    client.send("JOINED_ROOM", { updatedRoomMembership: rooms, updatedJoinableRooms: joinableRooms });
+    client.send("JOINED_ROOM", { rooms });
   } catch (e) {
     client.send("ERROR", { event: "JOIN_ROOM", error: e as Error });
   }

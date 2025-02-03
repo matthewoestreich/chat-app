@@ -1,13 +1,14 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LoadingSpinner, Topbar, Room } from "@components";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LoadingSpinner, Topbar, Room, Member, Message } from "@components";
 import { useAuth, useWebSocketeer } from "@hooks";
 import { WsEvents as WebSocketEvents } from "@client/ws/WsEvents";
 import LeaveRoomModal from "./LeaveRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
-import { RoomsState } from "./types";
 import "../../styles/chat.css";
+
+document.title = "RTChat | Chat";
 
 const WS_URL = `${document.location.protocol.replace("http", "ws")}//${document.location.host}`;
 
@@ -16,17 +17,34 @@ const CreateRoomModalMemo = memo(CreateRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
 const LoadingSpinnerMemo = memo(LoadingSpinner);
+const RoomMemo = memo(Room);
+const MemberMemo = memo(Member);
+const MessageMemo = memo(Message);
 
+/**
+ *
+ * @returns
+ */
 export default function ChatPage(): React.JSX.Element {
-  document.title = "RTChat | Chat";
+  const chatDisplayRef = useRef<HTMLDivElement>(null);
+
   const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
   const loadingSpinnerStyle = useMemo(() => ({ width: "5rem", height: "5rem" }), []);
   const { user } = useAuth();
 
-  const [rooms, setRooms] = useState<RoomsState>({ joined: [], unjoined: [] });
+  const [rooms, setRooms] = useState<IRoom[] | null>(null);
+  const [members, setMembers] = useState<RoomMember[] | null>(null);
+  const [messages, setMessages] = useState<Message[] | null>(null);
+  const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
   const wsteer = useWebSocketeer<WebSocketEvents>(WS_URL);
+
+  useEffect(() => {
+    if (chatDisplayRef.current && messages && messages.length > 0) {
+      chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   useEffect(() => {
     wsteer.connect();
@@ -36,23 +54,20 @@ export default function ChatPage(): React.JSX.Element {
     });
 
     wsteer.on("ENTERED_ROOM", ({ members, messages }) => {
-      console.log({ from: "entered_room", members, messages });
+      setMembers(members);
+      setMessages(messages);
     });
 
-    wsteer.on("LIST_ROOMS", ({ rooms: joinedRooms }) => {
-      setRooms((prev) => ({ ...prev, joined: joinedRooms }));
+    wsteer.on("LIST_ROOMS", ({ rooms }) => {
+      setRooms(rooms);
     });
 
-    wsteer.on("JOINED_ROOM", ({ updatedRoomMembership, updatedJoinableRooms }) => {
-      setRooms({ joined: updatedRoomMembership, unjoined: updatedJoinableRooms });
+    wsteer.on("JOINED_ROOM", ({ rooms }) => {
+      setRooms(rooms);
     });
 
     wsteer.on("UNJOINED_ROOM", ({ rooms }) => {
       console.log({ from: "unjoined room", rooms });
-    });
-
-    wsteer.on("LIST_JOINABLE_ROOMS", ({ rooms: unjoinedRooms }) => {
-      setRooms((prev) => ({ ...prev, unjoined: unjoinedRooms }));
     });
 
     wsteer.on("CREATED_ROOM", ({ id, rooms }) => {
@@ -86,8 +101,7 @@ export default function ChatPage(): React.JSX.Element {
 
   const handleOpenJoinRoomModal = useCallback(() => {
     setIsJoinRoomModalShown(true);
-    wsteer.send("GET_JOINABLE_ROOMS");
-  }, [wsteer]);
+  }, []);
 
   const handleOpenLeaveRoomModal = useCallback(() => {
     setIsLeaveRoomModalShown(true);
@@ -117,24 +131,62 @@ export default function ChatPage(): React.JSX.Element {
     throw new Error(`oncreateroomhandler not impl ${result}`);
   }, []);
 
-  const handleOnJoinRoom = useCallback(
-    (room: IRoom) => {
-      wsteer.send("JOIN_ROOM", { id: room.id });
-    },
-    [wsteer],
-  );
+  // prettier-ignore
+  const handleRoomClick = useCallback((room: IRoom) => {
+    if (currentRoom === room) {
+      return;
+    }
+    wsteer.send("ENTER_ROOM", { id: room.id });
+    setCurrentRoom(room);
+  }, [wsteer, currentRoom]);
+
+  /**
+   *
+   */
+  const renderRooms = useCallback(() => {
+    if (rooms !== null) {
+      return rooms.map((room) => {
+        return (
+          <RoomMemo key={room.id} roomId={room.id} roomName={room.name} onClick={() => handleRoomClick(room)} isSelected={currentRoom === room} />
+        );
+      });
+    }
+    return <LoadingSpinnerMemo style={loadingSpinnerStyle} />;
+  }, [rooms, handleRoomClick, loadingSpinnerStyle, currentRoom]);
+
+  /**
+   *
+   */
+  const renderMessages = useCallback(() => {
+    if (messages === null) {
+      return;
+    }
+    return messages.map((message) => (
+      <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || ""} />
+    ));
+  }, [messages]);
+
+  /**
+   *
+   */
+  const renderMembers = useCallback(() => {
+    if (members === null) {
+      return <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />;
+    }
+    return (
+      <ul id="members-list" className="list-group list-group-flush">
+        {members.map((member) => (
+          <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
+        ))}
+      </ul>
+    );
+  }, [members, loadingSpinnerStyle]);
 
   return (
     <>
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} onLeave={handleOnLeaveRoom} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} onCreate={handleOnCreateRoom} />
-      <JoinRoomModalMemo
-        isLoading={false}
-        rooms={rooms.unjoined}
-        isOpen={isJoinRoomModalShown}
-        onClose={handleCloseJoinRoomModal}
-        onJoin={handleOnJoinRoom}
-      />
+      <JoinRoomModalMemo websocketeer={wsteer} isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
       <Topbar />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
@@ -159,8 +211,7 @@ export default function ChatPage(): React.JSX.Element {
               </div>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />
-              <ul id="members-list" className="list-group list-group-flush"></ul>
+              {useMemo(() => renderMembers(), [renderMembers])}
               <DirectMessagesDrawerMemo isShown={false} />
             </div>
             <div className="card-footer">
@@ -176,10 +227,12 @@ export default function ChatPage(): React.JSX.Element {
           <div className="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
             <div className="card-header d-flex flex-row">
               <div id="chat-title" className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
-                Please join a room
+                {currentRoom === null ? "Please join a room" : currentRoom.name}
               </div>
             </div>
-            <div id="chat-display" className="card-body overf-y-scroll"></div>
+            <div ref={chatDisplayRef} id="chat-display" className="card-body overf-y-scroll">
+              {useMemo(() => renderMessages(), [renderMessages])}
+            </div>
             <div className="card-footer">
               <div className="input-group">
                 <textarea id="chat-text-input" className="form-control custom-control" rows={3} style={{ resize: "none" }}></textarea>
@@ -199,13 +252,9 @@ export default function ChatPage(): React.JSX.Element {
                 data-bs-target="#rooms-offcanvas"
               ></button>
             </div>
-            <div id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
-              {rooms !== null ? (
-                rooms.joined.map((room) => <Room key={room.id} roomId={room.id} name={room.name} />)
-              ) : (
-                <LoadingSpinnerMemo thickness=".5rem" style={loadingSpinnerStyle} />
-              )}
-            </div>
+            <ul id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
+              {useMemo(() => renderRooms(), [renderRooms])}
+            </ul>
             <div className="card-footer">
               <div className="row">
                 <div className="col-4 d-flex p-1">
@@ -226,7 +275,7 @@ export default function ChatPage(): React.JSX.Element {
                     className="btn btn-warning shadow flex-grow-1"
                     type="button"
                     title="Leave Current Room"
-                    disabled={true}
+                    disabled={currentRoom === null}
                   >
                     <i className="bi bi-box-arrow-down-left"></i>
                   </button>

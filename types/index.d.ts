@@ -9,6 +9,7 @@
 interface RoomMember {
   name: string;
   id: string;
+  userId: string;
   roomId: string; // Room ID
   isActive: boolean;
 }
@@ -20,7 +21,7 @@ interface IRoom {
 }
 
 interface Message {
-  id: string;
+  messageId: string;
   userId: string;
   userName?: string;
   roomId: string;
