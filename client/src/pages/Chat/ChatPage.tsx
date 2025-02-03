@@ -40,6 +40,7 @@ export default function ChatPage(): React.JSX.Element {
   const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
   const wsteer = useWebSocketeer<WebSocketEvents>(WS_URL);
 
+  // Scroll to bottom of chat display when we get messages
   useEffect(() => {
     if (chatDisplayRef.current && messages && messages.length > 0) {
       chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;

@@ -11,12 +11,11 @@ interface RoomProperties extends HTMLAttributes<HTMLLIElement> {
 export default function Room(props: RoomProperties): React.JSX.Element {
   const renderCount = useRenderCounter(`Room ${props.roomId}`);
   console.log(renderCount);
+
   const { className, isSelected, roomId, subText, roomName, ...restOfProps } = props;
+
   return (
-    <li
-      className={`list-group-item p-1 border-0 ${className !== undefined ? className : ""} ${isSelected !== undefined && isSelected === true ? "active-room" : ""}`}
-      {...restOfProps}
-    >
+    <li className={`list-group-item p-1 border-0 ${className ?? className} ${isSelected === true && "active-room"}`} {...restOfProps}>
       <div className="card" role="button">
         <div className="card-body">
           <h5 className="card-title">{roomName}</h5>

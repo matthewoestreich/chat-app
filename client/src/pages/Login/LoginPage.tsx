@@ -14,11 +14,11 @@ export default function LoginPage(): React.JSX.Element {
   const { login } = useAuth();
 
   function handleEmailInput(event: ChangeEvent<HTMLInputElement>): void {
-    setEmail(() => event.target.value);
+    setEmail(event.target.value);
   }
 
   function handlePasswordInput(event: ChangeEvent<HTMLInputElement>): void {
-    setPassword(() => event.target.value);
+    setPassword(event.target.value);
   }
 
   function handleCreateAccountResult(result: CreateAccountResult): void {
@@ -44,15 +44,13 @@ export default function LoginPage(): React.JSX.Element {
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-
     const form = event.currentTarget;
+    // checkValidity comes from Bootstrap
     const isFormValid = form.checkValidity();
     setIsFormValidated(true);
-
     if (!isFormValid) {
       return;
     }
-
     setIsLoggingIn(true);
     login(email, password);
     setIsLoggingIn(false);

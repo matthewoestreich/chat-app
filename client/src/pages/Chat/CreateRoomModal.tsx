@@ -60,24 +60,19 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   async function handleSubmitForm(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-
     if (!formRef.current) {
       return;
     }
-
     // `.checkValidity()` comes from Bootstrap
     const isFormValid = event.currentTarget.checkValidity();
     formRef.current.setIsValid(isFormValid);
     setIsFormValidated(true);
-
     if (!isFormValid) {
       return;
     }
-
     setIsCreatingRoom(true);
     setIsCloseButtonDisabled(true);
     setIsCreatingRoom(true);
-    //const result = await sendRegisterRequest(username, password, email);
     props.onCreate({ id: "", name: "" });
     props.onClose();
   }
