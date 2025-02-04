@@ -1,7 +1,7 @@
 import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import websocketeer from "../../ws/instance";
+import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;

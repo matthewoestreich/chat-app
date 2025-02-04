@@ -59,5 +59,10 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
     navigate("/");
   }
 
-  return <AuthContext.Provider value={{ validateSession, session, user, login, logout }}>{props.children}</AuthContext.Provider>;
+  // prettier-ignore
+  return (
+    <AuthContext.Provider value={{ validateSession, session, user, login, logout }}>
+      {props.children}
+    </AuthContext.Provider>
+  )
 }

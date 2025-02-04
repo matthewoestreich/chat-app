@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader, ModalTitle } from "@components";
-import websocketeer from "../../ws/instance";
+import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 
 interface JoinDirectConversationModalProperties {
   isOpen: boolean;

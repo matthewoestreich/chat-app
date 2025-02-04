@@ -1,11 +1,11 @@
 import React, { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Topbar, Message, Room, Member } from "@components";
 import { useAuth, useRenderCounter } from "@hooks";
+import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
-import websocketeer from "../../ws/instance";
 
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);

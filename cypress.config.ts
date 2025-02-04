@@ -9,7 +9,7 @@ export default defineConfig({
     baseUrl: `http://localhost:${process.env.EXPRESS_PORT}`,
     experimentalInteractiveRunEvents: true,
     setupNodeEvents(_on, config) {
-      // on("before:run", async () => {});
+      //_on("before:run", async () => {});
 
       return config;
     },

@@ -1,6 +1,6 @@
 import React, { CSSProperties, memo, useCallback, useEffect, useState } from "react";
 import { Member } from "@components";
-import websocketeer from "../../ws/instance";
+import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 import JoinDirectConversationModal from "./JoinDirectConversationModal";
 
 // TODO pull this out and make a standalone drawer component
