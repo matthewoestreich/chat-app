@@ -36,6 +36,13 @@ setDatabaseProvider(provider);
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
         break;
       }
+      case "render": {
+        await provider.restore();
+        keepAliveCronJob.start();
+        backupDatabaseCronJob(provider.backup).start();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        break;
+      }
       case "development": {
         await provider.initialize();
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
