@@ -14,7 +14,7 @@
     "jest:clearCache": "jest --clearCache",
     "lint": "eslint .",
     "postbuild": "tsc-alias -p tsconfig.json",
-    "prebuild": "rm -rf dist",
+    "prebuild": "rm -rf dist && npm install",
     "preview:frontend": "vite --config ./client/vite.config.ts preview",
     "start": "npm run build:frontend:dev && tsx index.ts",
     "start:frontend": "vite --config ./client/vite.config.ts serve",
