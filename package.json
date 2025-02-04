@@ -4,7 +4,7 @@
   "description": "Real time chat app built with websockets",
   "main": "index.ts",
   "scripts": {
-    "build": "npm install && npm run build:server && npm run build:frontend",
+    "build": "npm run build:server && npm run build:frontend",
     "build:server": "tsc -p tsconfig.json",
     "build:frontend": "vite --config ./client/vite.config.ts build",
     "build:frontend:dev": "NODE_ENV=development vite --config ./client/vite.config.ts build",
