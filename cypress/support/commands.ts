@@ -24,6 +24,43 @@ Cypress.Commands.add("getCurrentTheme", () => {
   cy.get("[data-bs-theme]");
 });
 
+Cypress.Commands.add("getOpenJoinRoomModalButton", () => {
+  cy.get(".offcanvas-end .card-footer button[title='Join Room']").should("exist").should("be.visible");
+});
+
+Cypress.Commands.add("getOpenCreateRoomModalButton", () => {
+  cy.get(".offcanvas-end .card-footer button[title='Create Room']").should("exist").should("be.visible");
+});
+
+Cypress.Commands.add("getOpenLeaveRoomModalButton", () => {
+  cy.get(".offcanvas-end .card-footer button[title='Leave Current Room']").should("exist").should("be.visible");
+});
+
+Cypress.Commands.add("getOpenDirectConversationsDrawerButton", () => {
+  cy.get(".offcanvas-start .card-footer button[title='Direct Messages']").should("exist").should("be.visible");
+});
+
+Cypress.Commands.add("getRoomsContainer", () => {
+  cy.get(".offcanvas-end ul").should("be.visible");
+});
+
+Cypress.Commands.add("getMembersContainer", () => {
+  cy.get(".offcanvas-start ul").should("be.visible");
+});
+
+Cypress.Commands.add("getChatInput", () => {
+  // should be only textarea
+  cy.get("textarea").should("exist");
+});
+
+Cypress.Commands.add("getSendChatMessageButton", () => {
+  cy.get("button").contains("Send").should("not.be.disabled");
+});
+
+Cypress.Commands.add("getChatDisplay", () => {
+  cy.get(".message").first().parent().should("be.visible");
+});
+
 Cypress.Commands.add("createAccount", (name: string, email: string, password: string) => {
   cy.visit("/");
   cy.get(".btn-outline-secondary").contains("Create Account").should("exist").should("be.visible").click();
@@ -51,7 +88,7 @@ Cypress.Commands.add("enterRoom", (roomName: string) => {
     if (!$url.includes("/chat")) {
       cy.visit("/chat");
     }
-    cy.get("#rooms-container").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName).should("exist").click();
+    cy.getRoomsContainer().children().contains("h5.card-title", roomName).should("exist").click();
   });
 });
 
@@ -60,11 +97,11 @@ Cypress.Commands.add("enterRoom", (roomName: string) => {
  */
 Cypress.Commands.add("roomHasMembers", (roomName: string) => {
   cy.enterRoom(roomName);
-  cy.get("#members-list").should("be.visible").children().should("have.length.greaterThan", 0);
+  cy.getMembersContainer().children().should("have.length.greaterThan", 0);
 });
 
 Cypress.Commands.add("isRoomMember", (roomName: string) => {
-  cy.get("#rooms-container").should("be.visible").children().first().contains("li > div.card > div.card-body > h5.card-title", roomName);
+  cy.getRoomsContainer().should("be.visible").children().contains(".card-title", roomName);
 });
 
 Cypress.Commands.add("getLocalStorageItem", (key: string) => {

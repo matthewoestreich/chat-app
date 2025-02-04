@@ -52,18 +52,25 @@ describe("Global", () => {
   });
 
   it("should list joinable rooms", () => {
-    cy.get("#loading-rooms-spinner").should("not.exist");
-    cy.get("#open-join-room-modal").click();
-    cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0);
-    cy.get('#cancel-join-room-btn[data-cy="join-room-modal"]').should("be.visible").click();
+    cy.getOpenJoinRoomModalButton().click();
+    // Get join room modal <ul> element
+    cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0);
+    // Find close button
+    cy.get(".modal.show .modal-footer button").should("be.visible").contains("button", "Close").should("exist").should("be.visible").wait(500).click();
   });
 
   it("should join the #general room", () => {
-    cy.get("#open-join-room-modal").click();
-    cy.get("#join-room-modal-rooms-container").should("be.visible").children().should("have.length.greaterThan", 0).get('li[name="#general"]').click();
-    cy.get("#join-room-btn").click();
-    cy.get("#join-room-alert-message").should("contain.text", "Successfully joined room!");
-    cy.get('#cancel-join-room-btn[data-cy="join-room-modal"]').should("be.visible").click();
+    cy.getOpenJoinRoomModalButton().click();
+    // Get join room modal <ul> element
+    cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0);
+    // Find #general room and click it
+    cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0).get("li").contains("#general").click();
+    // Find join room button and click it
+    cy.get(".modal.show .modal-footer button").contains("Join").should("exist").should("be.visible").click();
+    // Find alert message, verify it contiains success
+    cy.get(".modal-body").get("div").contains("Success").should("contain.text", "Success");
+    // Find close button
+    cy.get(".modal.show .modal-footer button").contains("Close").should("exist").should("be.visible").click();
     cy.isRoomMember("#general");
   });
 
@@ -74,34 +81,37 @@ describe("Global", () => {
   it("should send a message in the #general room", () => {
     const message = "Hello from Cypress!";
     cy.roomHasMembers("#general");
-    cy.get("#chat-text-input").should("exist").type(message);
-    cy.get("#send-chat-btn").should("not.be.disabled").click();
-    cy.get("#chat-display").then(($chatDisplayEl) => {
-      cy.wrap($chatDisplayEl).should("have.length.greaterThan", 0).last().children().last().should("contain.text", message);
-    });
+    cy.getChatInput().type(message);
+    cy.getSendChatMessageButton().click();
+    cy.getChatDisplay().children().should("have.length.greaterThan", 0).last().children().last().should("contain.text", message);
   });
 
   it("should create a new room", () => {
-    cy.get("#open-create-room-modal-btn").should("be.visible").click();
-    cy.get("#create-room-name-input").should("be.visible").type(NEW_ROOM_NAME);
-    cy.get("#create-room-btn").should("be.visible").click();
-    cy.get("#create-room-alert-message").should("be.visible").should("include.text", "Success");
-    cy.get("#cancel-create-room-btn").should("be.visible").click();
+    cy.getOpenCreateRoomModalButton().click();
+    // Get create new room text input
+    cy.get(".modal.show input[placeholder='Room Name']").should("be.visible").type(NEW_ROOM_NAME);
+    // Click join room button
+    cy.get(".modal.show .modal-footer button").contains("Create").should("be.visible").click();
+    // Verify alert contains success
+    cy.get(".modal.show .modal-body").get("div").contains("Success").should("contain.text", "Success");
+    // Close modal
+    cy.get(".modal.show .modal-footer button").contains("Close").should("be.visible").click();
     cy.isRoomMember(NEW_ROOM_NAME).should("exist");
   });
 
   it("should leave a room", () => {
-    cy.get("#open-leave-room-modal").should("be.visible").should("be.disabled");
+    cy.getOpenLeaveRoomModalButton().should("be.disabled");
     cy.enterRoom(NEW_ROOM_NAME);
-    cy.get("#open-leave-room-modal").should("be.enabled").click();
-    cy.get("#leave-room-confirmation-modal-confirmed-leave-btn[data-cy='unjoin']").should("be.visible").click();
-    cy.get("#leave-room-confirmation-modal").should("not.be.visible");
+    cy.getOpenLeaveRoomModalButton().should("be.enabled").click();
+    // Click leave room
+    cy.get(".modal.show .modal-footer button").contains("Leave").should("be.visible").wait(500).click();
+    cy.get(".modal.show").should("not.exist");
     cy.isRoomMember(NEW_ROOM_NAME).should("not.exist");
   });
 
   it("should open direct conversations", () => {
-    cy.get("#open-direct-messages").should("be.visible").click();
-    cy.get("#direct-messages-drawer").should("exist").should("be.visible");
+    cy.getOpenDirectConversationsDrawerButton().click();
+    cy.get(".card-header div").contains("Direct Messages").should("exist").should("be.visible");
   });
 });
 
