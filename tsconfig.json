@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "target": "ES2015",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "noImplicitAny": true,
     "sourceMap": true,
     "outDir": "./dist",
@@ -15,7 +15,6 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./types"],
     "esModuleInterop": true,
     "skipLibCheck": true,
