@@ -1,5 +1,20 @@
 declare namespace Cypress {
   export interface Chainable {
+    getLoginInputEmail(): Chainable<void>;
+    getLoginInputPassword(): Chainable<void>;
+    getLoginButton(): Chainable<void>;
+    getLogoutButton(): Chainable<void>;
+    getToggleThemeButton(): Chainable<void>;
+    getCurrentTheme(): Chainable<void>;
+    getOpenJoinRoomModalButton(): Chainable<void>;
+    getOpenCreateRoomModalButton(): Chainable<void>;
+    getOpenLeaveRoomModalButton(): Chainable<void>;
+    getRoomsContainer(): Chainable<void>;
+    getMembersContainer(): Chainable<void>;
+    getChatInput(): Chainable<void>;
+    getSendChatMessageButton(): Chainable<void>;
+    getChatDisplay(): Chainable<void>;
+    getOpenDirectConversationsDrawerButton(): Chainable<void>;
     /**
      * Custom command to log in.
      * @example cy.login('user@example.com', 'password123')

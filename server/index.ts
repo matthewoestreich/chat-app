@@ -5,22 +5,19 @@ import helmet, { HelmetOptions } from "helmet";
 import bcrypt from "bcrypt";
 import { generateSessionToken } from "@/server/generateTokens.js";
 import morgan from "morgan";
-import jsonwebtoken from "jsonwebtoken";
-import { useJwtSession, useHasValidSessionCookie, useCookieParser, useCspNonce, useErrorCatchall, attachDatabaseProvider } from "@/server/middleware";
+import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@/server/middleware";
+import clearAllCookies from "./clearAllCookies";
 
 const app = express();
 export const setDatabaseProvider = attachDatabaseProvider(app);
 export default app;
 
-const useJwt = useJwtSession({ onError: (_, res: Response) => res.redirect("/") });
 const helmetConfig: HelmetOptions = {
   // @ts-ignore
   contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`] } },
 };
 
-app.set("view engine", "pug");
-app.set("views", path.resolve(__dirname, "../www"));
-app.use("/public", express.static(path.resolve(__dirname, "../www/public")));
+app.use(express.static(path.resolve(__dirname, "../www")));
 app.use(express.json());
 app.use(useCookieParser);
 app.use(useCspNonce);
@@ -34,38 +31,25 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 /**
- * @route {GET} /
+ * @route {POST} /auth/validate
+ *
+ * Validates JWT and handles refresh.
  */
-app.get("/", [useHasValidSessionCookie], (_req: Request, res: Response) => {
-  res.render("index", { nonce: res.locals.cspNonce });
-});
-
-/**
- * @route {GET} /chat
- */
-app.get("/chat", [useJwt], (req: Request, res: Response) => {
-  const { name, email, id } = jsonwebtoken.decode(req.cookies.session) as JSONWebToken;
-  res.render("chat", { nonce: res.locals.cspNonce, name, email, id, websocketUrl: process.env.WSS_URL });
-});
-
-/**
- * @route {GET} /logout
- */
-app.get("/logout", async (req: Request, res: Response) => {
-  try {
-    const { session } = req.cookies.session;
-    await req.databaseProvider.sessions.delete(session);
-    req.cookies.session = "";
-    res.clearCookie("session");
-    return res.render("logout");
-  } catch (_e: unknown) {
-    res.clearCookie("session");
-    return res.render("logout");
+app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
+  if (!req.cookies.session || !req.user) {
+    // If nothing valid was found, clear all cookies.
+    clearAllCookies(req, res);
+    res.status(200).send({ ok: false });
+    return;
   }
+  const { name, id, email } = req.user;
+  console.log({ from: "server /auth/validate/", sendingCookie: req.cookies.session });
+  res.status(200).send({ ok: true, name, id, email, session: req.cookies.session });
 });
 
 /**
  * @route {POST} /auth/register
+ *
  * Content-Type: application/json
  * {
  *    u: string, // username
@@ -85,12 +69,13 @@ app.post("/auth/register", async (req: Request, res: Response) => {
     res.status(200).send({ ok: true, id: result.id, name: result.name, email: result.email });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
-    res.status(500).send({ ok: false });
+    res.status(200).send({ ok: false });
   }
 });
 
 /**
  * @route {POST} /auth/login
+ *
  * Content-Type: application/json
  * {
  *    e: string, // email
@@ -102,6 +87,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const { p: password, e: email } = req.body;
     if (!password || !email) {
       console.log(`[POST /login] missing either email or password from body!`, { email, password });
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
@@ -110,6 +96,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
       console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { foundUser, password, email });
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
@@ -117,27 +104,50 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
       console.log(`[POST /login][ERROR] incorrect password!`);
+      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
 
+    clearAllCookies(req, res);
     const { name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
-    res.status(200).send({ ok: true, session: jwt.signed });
+    res.status(200).send({ ok: true, session: jwt.signed, id, name, email });
   } catch (e) {
+    clearAllCookies(req, res);
     console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
   }
 });
 
 /**
- * 404 route
+ * Logs account out if they have req.cookies.session
+ *
+ * @route {POST} /logout
+ */
+app.post("/auth/logout", async (req: Request, res: Response) => {
+  try {
+    const { session } = req.cookies.session;
+    await req.databaseProvider.sessions.delete(session);
+    res.clearCookie("session");
+    res.status(200).send({ ok: true });
+  } catch (e) {
+    console.error("Error during logout", e);
+    res.clearCookie("session");
+    res.status(500).send({ ok: false });
+  }
+});
+
+/**
+ * Serve React to everything else
+ *
  * @route {GET} *
  */
-app.get("*", (_, res: Response) => {
-  res.send("<h1>404 Not Found</h1>");
+app.get("*", (req: Request, res: Response) => {
+  console.log("serving", req.url);
+  res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 
 /**

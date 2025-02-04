@@ -20,5 +20,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["dist/", "node_modules/**", "__tests__/**", "**/*.test.*", "*.config.*", ".env.example", "cypress/**/*", "cypress"]
+  "exclude": ["dist/", "client/**", "node_modules/**", "__tests__/**", "**/*.test.*", "*.config.*", ".env.example", "cypress/**/*", "cypress"]
 }

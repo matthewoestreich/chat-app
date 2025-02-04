@@ -8,7 +8,7 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     this.databasePool = dbpool;
   }
 
-  async selectUnjoinedRooms(userId: string): Promise<Room[]> {
+  async selectUnjoinedRooms(userId: string): Promise<IRoom[]> {
     const { db, release } = await this.databasePool.getConnection();
     const usersExistingRooms = (await db.selectManyWhere("chat", (chat) => chat.userId === userId)).map((e) => e.roomId);
     const output = await db.selectManyWhere("room", (r) => !usersExistingRooms.includes(r.id));
@@ -24,10 +24,10 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     return true;
   }
 
-  async selectByUserId(userId: string): Promise<Room[]> {
+  async selectByUserId(userId: string): Promise<IRoom[]> {
     const { db, release } = await this.databasePool.getConnection();
     const rooms = await db.selectTable("room");
-    const filtered: Room[] = [];
+    const filtered: IRoom[] = [];
     if (!rooms) {
       release();
       return filtered;
@@ -99,24 +99,24 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     return roomMembers;
   }
 
-  getAll(): Promise<Room[]> {
+  getAll(): Promise<IRoom[]> {
     throw new Error("Method not implemented.");
   }
 
-  getById(_id: string): Promise<Room> {
+  getById(_id: string): Promise<IRoom> {
     throw new Error("Method not implemented.");
   }
 
-  async create(name: string, isPrivate?: 0 | 1): Promise<Room> {
+  async create(name: string, isPrivate?: 0 | 1): Promise<IRoom> {
     const { db, release } = await this.databasePool.getConnection();
     const privateStatus = isPrivate === undefined ? 0 : isPrivate;
-    const entity: Room = { id: uuidV7(), name, isPrivate: privateStatus };
+    const entity: IRoom = { id: uuidV7(), name, isPrivate: privateStatus };
     await db.insert("room", entity);
     release();
     return entity;
   }
 
-  update(_id: string, _entity: Room): Promise<Room | null> {
+  update(_id: string, _entity: IRoom): Promise<IRoom | null> {
     throw new Error("Method not implemented.");
   }
 

@@ -29,14 +29,14 @@ setDatabaseProvider(provider);
 (async (): Promise<void> => {
   try {
     switch (process.env.NODE_ENV) {
-      case "prod": {
+      case "production": {
         await provider.restore();
         keepAliveCronJob.start();
         backupDatabaseCronJob(provider.backup).start();
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
         break;
       }
-      case "dev": {
+      case "development": {
         await provider.initialize();
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
         break;
@@ -47,7 +47,7 @@ setDatabaseProvider(provider);
         break;
       }
       default: {
-        console.error(`Environment variable "NODE_ENV" must be one of : ("prod" | "dev" | "test") : Got "${process.env.NODE_ENV}"`);
+        console.error(`Environment variable "NODE_ENV" must be one of : ("production" | "development" | "test") : Got "${process.env.NODE_ENV}"`);
       }
     }
   } catch (e) {

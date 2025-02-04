@@ -8,9 +8,9 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     this.databasePool = dbpool;
   }
 
-  async selectUnjoinedRooms(userId: string): Promise<Room[]> {
+  async selectUnjoinedRooms(userId: string): Promise<IRoom[]> {
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<Room>((data) => {
+    return db.getMany<IRoom>((data) => {
       const usersExistingRooms = data.chat.map((c) => {
         if (c.userId === userId) {
           return c.roomId;
@@ -36,9 +36,9 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     return returnValue;
   }
 
-  async selectByUserId(userId: string): Promise<Room[]> {
+  async selectByUserId(userId: string): Promise<IRoom[]> {
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<Room>((data) => {
+    return db.getMany<IRoom>((data) => {
       return data.room.filter((r) => {
         const foundIndex = data.chat.findIndex((c) => r.id === c.roomId && c.userId === userId);
         if (foundIndex === -1) {
@@ -116,18 +116,18 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     });
   }
 
-  getAll(): Promise<Room[]> {
+  getAll(): Promise<IRoom[]> {
     throw new Error("Method not implemented.");
   }
 
-  getById(_id: string): Promise<Room> {
+  getById(_id: string): Promise<IRoom> {
     throw new Error("Method not implemented.");
   }
 
-  async create(name: string, isPrivate?: 0 | 1): Promise<Room> {
+  async create(name: string, isPrivate?: 0 | 1): Promise<IRoom> {
     const { db } = await this.databasePool.getConnection();
     const privateStatus = isPrivate === undefined ? 0 : isPrivate;
-    const entity: Room = { id: uuidV7(), name, isPrivate: privateStatus };
+    const entity: IRoom = { id: uuidV7(), name, isPrivate: privateStatus };
     db.set((data) => {
       data.room.push(entity);
       return data;
@@ -135,7 +135,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     return entity;
   }
 
-  update(_id: string, _entity: Room): Promise<Room | null> {
+  update(_id: string, _entity: IRoom): Promise<IRoom | null> {
     throw new Error("Method not implemented.");
   }
 

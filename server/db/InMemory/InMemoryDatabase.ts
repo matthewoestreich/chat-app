@@ -11,7 +11,7 @@ export interface InMemoryDatabaseData {
   directConversations: DirectConversation[];
   directMessages: DirectMessage[];
   messages: Message[];
-  room: Room[];
+  room: IRoom[];
   session: Session[];
 }
 

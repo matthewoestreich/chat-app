@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "es6",
+    "module": "commonjs",
+    "lib": ["dom", "dom.iterable", "es6"],
+    "allowJs": true,
+    "jsx": "react",
+    "sourceMap": true,
+    "outDir": "./dist/",
+    "rootDir": ".",
+    "removeComments": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "paths": {
+      "@": ["../client/*"],
+      "@client/*": ["../client/src/*"],
+      "@components": ["./src/components/index.ts"],
+      "@pages": ["./src/pages/index.ts"],
+      "@hooks": ["./src/hooks/index.ts"],
+      "@styles/*": ["./src/styles/*"]
+    },
+    "typeRoots": ["./types", "../node_modules/@types", "../types/index.d.ts", "../types/WebSocketApp.d.ts"]
+  },
+  "include": ["src/index.tsx", "./src/**/*", "./types/**/*", "../types/index.d.ts", "../types/WebSocketApp.d.ts"],
+  "exclude": ["./build", "./dist"]
+}

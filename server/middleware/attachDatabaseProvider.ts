@@ -5,8 +5,8 @@
  *
  * Let me preface this by saying; this is very hacky.
  *
- * Our websocket implementation needs an http server passed to it. So we export our Express, app as well
- * as our websocket impl, into our main entry point file.
+ * Our websocket implementation needs an http server passed to it. So we import our Express app, as well
+ * as our websocket impl, into our main entry point file (~/index.ts);
  *
  * We attach a DatabaseProvider (database abstraction) to each `req` as `req.databaseProvider`. Selecting
  * said provider happens at runtime based upon env variables.

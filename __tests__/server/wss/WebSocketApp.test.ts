@@ -86,7 +86,7 @@ describe("WebSocketApp", () => {
       done();
     });
     // Simulate the message event
-    CLIENT.send("SEND_MESSAGE", { message: "hello" });
+    CLIENT.send("SEND_MESSAGE", { message: "hello", scope: "Room" });
   });
 
   it("should add client to cache", (done) => {
