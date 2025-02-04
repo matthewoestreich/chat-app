@@ -4,9 +4,12 @@ import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
 
 export default function LoginPage(): React.JSX.Element {
+  //useSetPageTitle("RTChat | Welcome!");
+  document.title = "RTChat | Welcome!";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
+  const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCreateAccountModalOpen, setIsCreateRoomModalOpen] = useState(false);
@@ -37,7 +40,7 @@ export default function LoginPage(): React.JSX.Element {
   }
 
   function handleCloseAlert(): void {
-    setAlert({ type: undefined, shown: false, message: "", icon: "" });
+    setAlert({ type: null, shown: false, message: "", icon: "" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {

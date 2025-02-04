@@ -8,7 +8,7 @@
  */
 interface RoomMember {
   name: string;
-  id: string;
+  //id: string;
   userId: string;
   roomId: string; // Room ID
   isActive: boolean;
@@ -23,10 +23,16 @@ interface IRoom {
 interface Message {
   messageId: string;
   userId: string;
-  userName?: string;
+  userName: string;
   roomId: string;
   message: string;
   timestamp: Date;
+}
+
+interface PublicMessage {
+  messageId: string;
+  userName: string;
+  message: string;
 }
 
 interface JSONWebToken {
@@ -48,7 +54,9 @@ interface Account {
   password: string;
 }
 
-type PublicAccount = Omit<Account, "password" | "email">;
+type PublicAccount = Omit<Account, "password" | "email"> & {
+  isActive: boolean;
+};
 
 interface AuthenticatedUser {
   name: string;
@@ -60,11 +68,6 @@ interface RoomWithMembers {
   id: string;
   name: string;
   members: RoomMember[];
-}
-
-interface IRoom {
-  id: string;
-  name: string;
 }
 
 // This is the schema of the database

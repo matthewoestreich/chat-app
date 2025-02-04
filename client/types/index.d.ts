@@ -4,10 +4,10 @@ interface BootstrapFormMethods {
 }
 
 interface AlertState {
-  type?: BootstrapContextualClasses;
+  type: BootstrapContextualClasses | null;
   shown: boolean;
   message?: string;
-  icon?: string;
+  icon: string | null;
 }
 
 interface AuthenticationResult {

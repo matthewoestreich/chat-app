@@ -1,7 +1,7 @@
 import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback, ChangeEvent } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { useWebSocketeer } from "@hooks";
+import websocketeer from "../../ws/instance";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -10,14 +10,13 @@ interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 
 export default function CreateRoomModal(props: CreateRoomModalProperties): React.JSX.Element {
   const checkboxId = useId();
-  const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
+  const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [roomNameInput, setRoomNameInput] = useState("");
   const [isPrivateCheckboxChecked, setIsPrivateCheckboxChecked] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const { websocketeer } = useWebSocketeer();
 
   const { isOpen, onClose } = props;
 
@@ -31,7 +30,10 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     }
   }, [isOpen, modalInstance]);
 
-  websocketeer.on("CREATED_ROOM", () => {
+  websocketeer.on("CREATED_ROOM", ({ error }) => {
+    if (error) {
+      return console.error(error);
+    }
     if (!isOpen) {
       return;
     }
@@ -40,7 +42,7 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   });
 
   function closeAlert(): void {
-    setAlert({ type: undefined, shown: false, message: "", icon: "" });
+    setAlert({ type: null, shown: false, message: "", icon: "" });
   }
 
   // prettier-ignore

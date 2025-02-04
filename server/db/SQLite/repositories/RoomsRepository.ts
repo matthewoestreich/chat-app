@@ -121,7 +121,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
               room = { id: row.roomId, name: row.roomName, members: [] };
               acc.push(room);
             }
-            room.members.push({ id: row.userId, roomId: row.roomId, name: row.userName, isActive: false });
+            room.members.push({ userId: row.userId, roomId: row.roomId, name: row.userName, isActive: false });
             return acc;
           }, [] as RoomWithMembers[]);
 
@@ -140,7 +140,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     return new Promise((resolve, reject) => {
       const query = `
       SELECT 
-          r.id AS id,
+          r.id AS roomId,
           u.name AS name,
           u.id AS userId
       FROM 
@@ -150,7 +150,8 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       JOIN 
           "user" u ON c1.userId = u.id
       WHERE 
-          r.id = ? AND u.id != ? ;
+          r.id = ? AND u.id != ?
+      ORDER BY u.name ASC;
     `;
 
       db.all(query, [roomId, excludingUserId], (err, rows: RoomMember[]) => {

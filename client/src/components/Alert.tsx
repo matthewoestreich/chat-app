@@ -4,11 +4,10 @@ interface AlertProperties {
   isOpen: boolean;
   onClose: () => void;
   // Uses bootstrap-icons classes
-  icon?: string;
-  type?: BootstrapContextualClasses;
+  icon: string | null;
+  type: BootstrapContextualClasses | null;
   rootClassName?: string;
   messageClassName?: string;
-  bootstrapIcon?: string;
   children?: string;
 }
 

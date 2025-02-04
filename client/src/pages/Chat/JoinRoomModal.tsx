@@ -1,7 +1,7 @@
 import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
-import { useWebSocketeer } from "@hooks";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
+import websocketeer from "../../ws/instance";
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -11,12 +11,10 @@ interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX.Element {
   const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [alert, setAlert] = useState<AlertState>({ type: undefined, shown: false });
+  const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [rooms, setRooms] = useState<IRoom[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
-
-  const { websocketeer } = useWebSocketeer();
 
   const { isOpen, onClose } = props;
 
@@ -29,16 +27,22 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
         modalInstance.hide();
       }
     }
-  }, [isOpen, websocketeer, modalInstance]);
+  }, [isOpen, modalInstance]);
 
-  websocketeer.on("LIST_JOINABLE_ROOMS", ({ rooms }) => {
+  websocketeer.on("LIST_JOINABLE_ROOMS", ({ rooms, error }) => {
+    if (error) {
+      return console.error(error);
+    }
     if (!isOpen) {
       return;
     }
     setRooms(rooms);
   });
 
-  websocketeer.on("JOINED_ROOM", () => {
+  websocketeer.on("JOINED_ROOM", ({ error }) => {
+    if (error) {
+      return console.error(error);
+    }
     if (!isOpen) {
       return;
     }
@@ -51,11 +55,11 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   });
 
   function handleCloseAlert(): void {
-    setAlert({ type: undefined, shown: false, icon: "", message: "" });
+    setAlert({ type: null, shown: false, icon: null, message: "" });
   }
 
   function handleCloseModal(): void {
-    setAlert({ type: undefined, icon: "", shown: false, message: "" });
+    setAlert({ type: null, icon: null, shown: false, message: "" });
     setSearchText("");
     setIsLoading(false);
     onClose();

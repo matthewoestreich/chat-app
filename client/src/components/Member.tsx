@@ -1,3 +1,4 @@
+import { useRenderCounter } from "@hooks";
 import React, { LiHTMLAttributes } from "react";
 
 interface MemberProperties extends LiHTMLAttributes<HTMLLIElement> {
@@ -10,6 +11,9 @@ interface MemberProperties extends LiHTMLAttributes<HTMLLIElement> {
 const INTENTIONAL_SPACE = " ";
 
 export default function Member(props: MemberProperties): React.JSX.Element {
+  const count = useRenderCounter(`Member ${props.memberName}`);
+  console.log(count);
+
   return (
     // prettier-ignore
     <li

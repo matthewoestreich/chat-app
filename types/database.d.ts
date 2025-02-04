@@ -60,7 +60,7 @@ interface RoomsMessagesRepository<DB> {
   databasePool: DatabasePool<DB>;
   getAll(): Promise<Message[]>;
   getById(id: string): Promise<Message>;
-  create(roomId: string, userId: string, message: string): Promise<Message>;
+  create(roomId: string, userId: string, userName: string, message: string): Promise<Message>;
   update(id: string, entity: Message): Promise<Message | null>;
   delete(id: string): Promise<boolean>;
   selectByRoomId(roomId: string): Promise<Message[]>;

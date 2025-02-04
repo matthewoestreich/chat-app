@@ -22,6 +22,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
   }
 
   public connect(): void {
+    console.log("[WebSocketeer] connect");
     this.socket = new WebSocket(this.url);
 
     this.socket.addEventListener("open", (e: Event) => {

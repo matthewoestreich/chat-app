@@ -1,4 +1,4 @@
-export { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "./Modal";
+export { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalTitle } from "./Modal";
 export { default as InputFloating } from "./InputFloating";
 export { default as Alert } from "./Alert";
 export { default as Form } from "./Form";
@@ -9,3 +9,4 @@ export { default as JoinableRoom } from "./JoinableRoom";
 export { default as Room } from "./Room";
 export { default as Member } from "./Member";
 export { default as Message } from "./Message";
+export { default as RenderAs } from "./RenderAs";

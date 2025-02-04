@@ -8,6 +8,7 @@ interface WebSocketeerProviderProperties {
 }
 
 export default function WebSocketeerProvider<T extends WebSocketeerEventMap>(props: WebSocketeerProviderProperties): React.JSX.Element {
+  console.log("websocketeer provider fired");
   const websocketeer = useMemo(() => {
     console.log({ from: "WebSocketeerProvider", action: "new WebSocketeer instance" });
     if (props.url === undefined) {

@@ -53,13 +53,13 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
     throw new Error("Method not implemented.");
   }
 
-  async create(roomId: string, userId: string, message: string): Promise<Message> {
+  async create(roomId: string, userId: string, userName: string, message: string): Promise<Message> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
-        const entity: Message = { id: uuidV7(), userId, roomId, message, timestamp: new Date() };
+        const entity: Message = { messageId: uuidV7(), userId, roomId, message, userName, timestamp: new Date() };
         const query = `INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
-        const params = [entity.id, entity.roomId, entity.userId, entity.message];
+        const params = [entity.messageId, entity.roomId, entity.userId, entity.message];
         db.run(query, params, function (err) {
           if (err) {
             release();

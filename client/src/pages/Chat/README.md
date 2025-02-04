@@ -1,0 +1,3 @@
+- `ChatPage` is the "entry point"
+  - It loads data from websockets and passes it to the main view for Chat
+- `ChatView` is the main view/display/content for chatting

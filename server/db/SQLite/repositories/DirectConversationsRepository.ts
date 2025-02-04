@@ -30,7 +30,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<Account[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
@@ -39,9 +39,10 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
           SELECT userA_Id FROM direct_conversation WHERE userB_Id = ?
           UNION
           SELECT userB_Id FROM direct_conversation WHERE userA_Id = ?
-      );
+      )
+      ORDER BY u.name ASC;
       `;
-      db.all(query, [userId, userId, userId], (err, rows: Account[]) => {
+      db.all(query, [userId, userId, userId], (err, rows: PublicAccount[]) => {
         if (err) {
           release();
           return reject(err);
