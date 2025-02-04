@@ -25,7 +25,7 @@ export default class RoomsMessagesRepositoryInMemory implements RoomsMessagesRep
 
   async create(roomId: string, userId: string, message: string): Promise<Message> {
     const { db } = await this.databasePool.getConnection();
-    const entity: Message = { id: uuidV7(), roomId, userId, message, timestamp: new Date() };
+    const entity: Message = { messageId: uuidV7(), roomId, userId, message, timestamp: new Date(), userName: "" };
     db.set((data) => {
       data.messages.push(entity);
       return data;

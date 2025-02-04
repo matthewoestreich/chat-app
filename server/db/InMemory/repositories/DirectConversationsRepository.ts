@@ -51,7 +51,7 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
         .filter((user) => user.id !== userId && !union.includes(userId))
         .map((u) => {
           const { password, email, ...rest } = u;
-          return rest;
+          return { ...rest, isActive: false };
         });
     });
   }

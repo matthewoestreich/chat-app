@@ -64,7 +64,7 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
       for (const cRoom of chatRoom) {
         const user = await db.selectOne("users", "id", cRoom.userId);
         if (user) {
-          roomWithMembers.members.push({ id: user!.id, name: user!.name, roomId: room!.id, isActive: false });
+          roomWithMembers.members.push({ userId: user!.id, name: user!.name, roomId: room!.id, isActive: false });
         }
       }
 
@@ -81,7 +81,7 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     const roomMembers: RoomMember[] = [];
     for (const member of existingMembers) {
       const found = await db.selectOne("users", "id", member.userId);
-      roomMembers.push({ name: found!.name, roomId, id: found!.id, isActive: false });
+      roomMembers.push({ name: found!.name, roomId, userId: found!.id, isActive: false });
     }
     release();
     return roomMembers;
@@ -93,7 +93,7 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     const roomMembers: RoomMember[] = [];
     for (const member of existingMembers) {
       const found = await db.selectOne("users", "id", member.userId);
-      roomMembers.push({ name: found!.name, roomId, id: found!.id, isActive: false });
+      roomMembers.push({ name: found!.name, roomId, userId: found!.id, isActive: false });
     }
     release();
     return roomMembers;

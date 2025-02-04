@@ -31,7 +31,7 @@ export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesR
 
   async create(roomId: string, userId: string, message: string): Promise<Message> {
     const { db, release } = await this.databasePool.getConnection();
-    const entity: Message = { id: uuidV7(), roomId, userId, message, timestamp: new Date() };
+    const entity: Message = { messageId: uuidV7(), roomId, userId, message, timestamp: new Date(), userName: "" };
     const result = await db.insert("messages", entity);
     release();
     return result!;

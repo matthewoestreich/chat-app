@@ -79,7 +79,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
         chatRoom.forEach((cr) => {
           const user = data.users.find((u) => cr.userId === u.id);
           if (user) {
-            roomWithMembers.members.push({ id: user!.id, name: user!.name, roomId: room!.id, isActive: false });
+            roomWithMembers.members.push({ userId: user!.id, name: user!.name, roomId: room!.id, isActive: false });
           }
         });
 
@@ -97,7 +97,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
       const roomMembers: RoomMember[] = [];
       existingMembers.forEach((member) => {
         const found = data.users.find((u) => u.id === member.userId);
-        roomMembers.push({ name: found!.name, roomId: roomId, id: found!.id, isActive: false });
+        roomMembers.push({ name: found!.name, roomId: roomId, userId: found!.id, isActive: false });
       });
       return roomMembers;
     });
@@ -110,7 +110,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
       const roomMembers: RoomMember[] = [];
       existingMembers.forEach((member) => {
         const found = data.users.find((u) => u.id === member.userId);
-        roomMembers.push({ name: found!.name, roomId, id: found!.id, isActive: false });
+        roomMembers.push({ name: found!.name, roomId, userId: found!.id, isActive: false });
       });
       return roomMembers;
     });

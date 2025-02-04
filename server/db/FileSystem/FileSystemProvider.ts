@@ -120,10 +120,11 @@ export default class FileSystemProvider implements DatabaseProvider {
 
       // Add room messages
       jsonData.messages = fakeData.chatRoomMessages.map((message) => ({
-        id: message.id,
+        messageId: message.id,
         userId: message.user.id,
         roomId: message.room.id,
         message: message.message,
+        userName: message.user.username,
         timestamp: new Date(),
       }));
 

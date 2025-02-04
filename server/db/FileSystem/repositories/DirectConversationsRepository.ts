@@ -59,7 +59,7 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
       const found = await db.selectManyWhere("users", (user) => user.id !== userId && !union.includes(userId));
       const sorted = found.map((u) => {
         const { password, email, ...rest } = u;
-        return rest;
+        return { ...rest, isActive: false };
       });
       release();
       return sorted;
