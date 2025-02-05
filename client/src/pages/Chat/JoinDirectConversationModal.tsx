@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader, ModalTitle } from "@components";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import sortMembers from "./sortMembers";
 
 interface JoinDirectConversationModalProperties {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
     if (error) {
       return console.error(error);
     }
+    sortMembers(users);
     setUsers(users);
   });
 

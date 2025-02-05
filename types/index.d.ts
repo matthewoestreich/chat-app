@@ -8,7 +8,6 @@
  */
 interface RoomMember {
   name: string;
-  //id: string;
   userId: string;
   roomId: string; // Room ID
   isActive: boolean;

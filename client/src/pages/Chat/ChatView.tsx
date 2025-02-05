@@ -8,6 +8,7 @@ import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
 import chatReducer from "./chatReducer";
+import sortMembers from "./sortMembers";
 
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
@@ -58,7 +59,24 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
     if (error) {
       return console.error(error);
     }
-    dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: { type: "Room", id: room.id, name: room.name } } });
+    // Sorts in place
+    sortMembers(members);
+    const scope: ChatScope = { type: "Room", id: room.id, name: room.name };
+    dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
+  });
+
+  websocketeer.on("MEMBER_ENTERED_ROOM", ({ id, error }) => {
+    if (error) {
+      return console.error(error);
+    }
+    dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: true } });
+  });
+
+  websocketeer.on("MEMBER_LEFT_ROOM", ({ id, error }) => {
+    if (error) {
+      return console.error(error);
+    }
+    dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: false } });
   });
 
   websocketeer.on("LIST_ROOMS", ({ rooms, error }) => {
@@ -180,7 +198,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
         <div className="row g-0 flex-fill justify-content-center min-h-0">
           <div
             id="members-offcanvas"
-            className="card col-xl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start"
+            className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start"
           >
             <div className="card-header d-flex flex-row display-6 text-center">
               <div className="flex-fill text-center">Members</div>
@@ -218,7 +236,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
               </div>
             </div>
           </div>
-          <div className="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
+          <div className="card col-lg-6 offset-lg-0 col-md-12 offset-md-0 h-90pct overf-hide d-flex">
             <div className="card-header d-flex flex-row">
               <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
                 {state.chatScope !== null && state.chatScope.name}
@@ -253,7 +271,10 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
               </div>
             </div>
           </div>
-          <div id="rooms-offcanvas" className="card col-xl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end">
+          <div
+            id="rooms-offcanvas"
+            className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end"
+          >
             <div className="card-header d-flex flex-row display-6 text-center">
               <div className="flex-fill text-center">Rooms</div>
               <button

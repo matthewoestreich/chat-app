@@ -1,3 +1,5 @@
+import sortMembers from "./sortMembers";
+
 interface ChatState {
   rooms: IRoom[] | null;
   members: RoomMember[] | null;
@@ -15,6 +17,7 @@ type ChatStateAction =
   | { type: "SET_MESSAGE_TEXT"; payload: string }
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
+  | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
   | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: RoomMember[] | null; chatScope: ChatScope } };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
@@ -31,6 +34,19 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return { ...state, messageText: action.payload };
     case "SET_IS_ENTERING_ROOM":
       return { ...state, isEnteringRoom: action.payload };
+    case "SET_MEMBER_ACTIVE_STATUS": {
+      if (!state.members) {
+        return state;
+      }
+      const memberIndex = state.members.findIndex((m) => m.userId === action.payload.userId);
+      if (memberIndex === -1) {
+        return { ...state };
+      }
+      const membersCopy = [...state.members];
+      membersCopy[memberIndex].isActive = action.payload.isActive;
+      sortMembers(membersCopy);
+      return { ...state, members: membersCopy };
+    }
     case "SENT_MESSAGE":
       return {
         ...state,
