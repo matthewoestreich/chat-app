@@ -23,11 +23,11 @@ A real-time chat app with support for multiple rooms, direct messaging, and dark
 **Backend**
 
 <p>
-  <a href="https://www.typescriptlang.org/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
-  </a>
   <a href="https://expressjs.com/">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/express.png" alt="Express" title="Express">
+  </a>
+    <a href="https://www.typescriptlang.org/">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
   </a>
   <a href="https://github.com/websockets/ws">
 	  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/websocket.png" alt="websocket" title="websocket"/>
