@@ -31,6 +31,8 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
   const [isDirectMessagesShown, setIsDirectMessagesShown] = useState(false);
+  const chatDisplayRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const [state, dispatch] = useReducer(chatReducer, {
     rooms: props.rooms,
@@ -41,9 +43,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
     isEnteringRoom: false,
   });
 
-  const chatDisplayRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
-
+  // Scroll to bottom of chat display when we send/receive a message
   useEffect(() => {
     if (chatDisplayRef.current && state.messages && state.messages.length > 0) {
       chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;
