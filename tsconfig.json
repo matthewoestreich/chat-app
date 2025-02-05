@@ -15,6 +15,7 @@
     "paths": {
       "@/*": ["./*"]
     },
+    "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types", "./types"],
     "esModuleInterop": true,
     "skipLibCheck": true,

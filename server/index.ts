@@ -43,7 +43,6 @@ app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
     return;
   }
   const { name, id, email } = req.user;
-  console.log({ from: "server /auth/validate/", sendingCookie: req.cookies.session });
   res.status(200).send({ ok: true, name, id, email, session: req.cookies.session });
 });
 

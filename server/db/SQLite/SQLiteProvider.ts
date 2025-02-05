@@ -128,6 +128,7 @@ export default class SQLiteProvider implements DatabaseProvider {
   }
 
   async backup(): Promise<void> {
+    console.log({ from: "SQLiteProvider", task: "Starting backup..." });
     return new Promise(async (resolve, reject) => {
       if (!process.env.GH_GISTS_API_KEY) {
         return reject(new Error("[SQLiteProvider.backup()] gists api key not found (via process.env.GH_GISTS_API_KEY)."));

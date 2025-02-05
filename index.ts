@@ -29,13 +29,7 @@ setDatabaseProvider(provider);
 (async (): Promise<void> => {
   try {
     switch (process.env.NODE_ENV) {
-      case "production": {
-        await provider.restore();
-        keepAliveCronJob.start();
-        backupDatabaseCronJob(provider.backup).start();
-        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
-        break;
-      }
+      case "production":
       case "render": {
         await provider.restore();
         keepAliveCronJob.start();

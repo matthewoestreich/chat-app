@@ -5,7 +5,7 @@ export const backupDatabaseCronJob = backupDatabase;
 
 function keepAlive(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   return new CronJob(
-    "*/3 * * * *", // Every 3 minutes..
+    "*/3 * * * *", // Every third minute
     function () {
       fetch(host)
         .then((resp) => resp.text())
