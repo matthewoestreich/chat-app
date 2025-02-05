@@ -1,9 +1,9 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage, ChatPage } from "@pages";
-import { ProtectedRoutes, AutoLoginRoutes } from "./auth/GuardedRoutes";
 import AuthProvider from "@client/auth/AuthProvider";
 import ThemeProvider from "@client/theme/ThemeProvider";
+import { ProtectedRoutes, AutoLoginRoutes } from "./auth/GuardedRoutes";
 
 import "./app.css";
 import "bootstrap/dist/css/bootstrap.min.css";

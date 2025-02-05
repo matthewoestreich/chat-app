@@ -1,7 +1,8 @@
 import React, { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Topbar, Message, Room, Member, LoadingSpinner } from "@components";
+import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useRenderCounter } from "@hooks";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import Topbar from "../Topbar";
 import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
@@ -11,12 +12,12 @@ import chatReducer from "./chatReducer";
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
 const MemberMemo = memo(Member);
-const TopbarMemo = memo(Topbar);
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const CreateRoomModalMemo = memo(CreateRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
 const LoadingSpinnerMemo = memo(LoadingSpinner);
+const TopbarMemo = memo(Topbar);
 
 interface ChatViewProperties {
   rooms: IRoom[] | null;

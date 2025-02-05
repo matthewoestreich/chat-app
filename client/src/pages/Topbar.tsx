@@ -1,19 +1,10 @@
-import { useAuth, useTheme } from "@hooks";
 import React, { DetailedHTMLProps, HTMLAttributes, useEffect, useState } from "react";
+import { DarkThemeIcon, LightThemeIcon } from "@components";
+import { useAuth, useTheme } from "@hooks";
 
-interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {
-  showLogoutButton?: boolean;
-}
+interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {}
 
-function LightThemeIcon(): React.JSX.Element {
-  return <i id="light-theme-icon" className="bi bi-sun-fill"></i>;
-}
-
-function DarkThemeIcon(): React.JSX.Element {
-  return <i id="dark-theme-icon" className="bi bi-moon-fill"></i>;
-}
-
-export default function Topbar(props: TopbarProperties): React.JSX.Element {
+export default function Topbar(_props: TopbarProperties): React.JSX.Element {
   const [themeIcon, setThemeIcon] = useState<React.JSX.Element>(<></>);
   const { theme, toggleTheme } = useTheme();
   const { logout, session } = useAuth();
@@ -57,17 +48,16 @@ export default function Topbar(props: TopbarProperties): React.JSX.Element {
           <a onClick={() => toggleTheme()} className="navbar-icon" title="Toggle theme">
             <button className="btn btn-light shadow">{themeIcon}</button>
           </a>
-          {props.showLogoutButton === true ||
-            (props.showLogoutButton === undefined && (
-              <>
-                {" " /* THIS SPACE IS INTENTIONAL */}
-                <a className="navbar-icon" onClick={handleLogout}>
-                  <button className="btn btn-light flex-fill shadow" type="button" title="Logout">
-                    <i className="bi bi-power"></i>
-                  </button>
-                </a>
-              </>
-            ))}
+          {session !== null && (
+            <>
+              {" " /* THIS SPACE IS INTENTIONAL */}
+              <a className="navbar-icon" onClick={handleLogout}>
+                <button className="btn btn-light flex-fill shadow" type="button" title="Logout">
+                  <i className="bi bi-power"></i>
+                </button>
+              </a>
+            </>
+          )}
         </div>
       </nav>
     </header>

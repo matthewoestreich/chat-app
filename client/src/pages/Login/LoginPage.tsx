@@ -1,7 +1,10 @@
-import React, { ChangeEvent, useState, FormEvent } from "react";
-import { InputFloating, Alert, Form, ButtonLoading, Topbar } from "@components";
+import React, { ChangeEvent, useState, FormEvent, memo } from "react";
+import { InputFloating, Alert, Form, ButtonLoading } from "@components";
 import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
+import Topbar from "../Topbar";
+
+const TopbarMemo = memo(Topbar);
 
 export default function LoginPage(): React.JSX.Element {
   //useSetPageTitle("RTChat | Welcome!");
@@ -69,7 +72,7 @@ export default function LoginPage(): React.JSX.Element {
         onCreate={handleCreateAccountResult}
         onClose={handleCloseCreateAccountModal}
       />
-      <Topbar showLogoutButton={false} />
+      <TopbarMemo />
       <div className="row">
         <div className="text-center mb-3">
           <h1 className="display-5">Welcome to RTChat!</h1>
