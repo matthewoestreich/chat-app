@@ -1,27 +1,31 @@
-import React, { DetailedHTMLProps, HTMLAttributes, useEffect, useState } from "react";
+import React, { DetailedHTMLProps, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { DarkThemeIcon, LightThemeIcon } from "@components";
 import { useAuth, useTheme } from "@hooks";
 
 interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {}
 
 export default function Topbar(_props: TopbarProperties): React.JSX.Element {
-  const [themeIcon, setThemeIcon] = useState<React.JSX.Element>(<></>);
+  const [themeIcon, setThemeIcon] = useState<React.JSX.Element | null>(null);
   const { theme, toggleTheme } = useTheme();
   const { logout, session } = useAuth();
 
   useEffect(() => {
     if (theme === "dark") {
-      setThemeIcon(<LightThemeIcon />);
-    } else if (theme === "light") {
-      setThemeIcon(<DarkThemeIcon />);
-    } else {
-      setThemeIcon(<></>);
+      return setThemeIcon(<LightThemeIcon />);
     }
+    if (theme === "light") {
+      return setThemeIcon(<DarkThemeIcon />);
+    }
+    setThemeIcon(null);
   }, [theme]);
 
-  function handleLogout(): void {
+  const handleToggleTheme = useCallback(() => {
+    toggleTheme();
+  }, [toggleTheme]);
+
+  const handleLogout = useCallback(() => {
     logout();
-  }
+  }, [logout]);
 
   return (
     <header className="navbar navbar-expand-lg fixed-top bg-secondary-subtle">
@@ -45,7 +49,7 @@ export default function Topbar(_props: TopbarProperties): React.JSX.Element {
           </div>
         )}
         <div className="ms-auto g-1">
-          <a onClick={() => toggleTheme()} className="navbar-icon" title="Toggle theme">
+          <a onClick={handleToggleTheme} className="navbar-icon" title="Toggle theme">
             <button className="btn btn-light shadow">{themeIcon}</button>
           </a>
           {session !== null && (
