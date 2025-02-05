@@ -1,4 +1,4 @@
-import React, { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Topbar, Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useRenderCounter } from "@hooks";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
@@ -6,6 +6,7 @@ import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
+import chatReducer from "./chatReducer";
 
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
@@ -30,64 +31,61 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
   const [isDirectMessagesShown, setIsDirectMessagesShown] = useState(false);
 
-  const [rooms, setRooms] = useState<IRoom[] | null>(props.rooms);
-  const [members, setMembers] = useState<RoomMember[] | null>(null);
-  const [messages, setMessages] = useState<PublicMessage[] | null>(null);
-  const [chatScope, setChatScope] = useState<ChatScope | null>(null);
-  const [messageText, setMessageText] = useState("");
-  // So we can display a loading spinner while we gather members and messages..
-  const [isEnteringRoom, setIsEnteringRoom] = useState(false);
+  const [state, dispatch] = useReducer(chatReducer, {
+    rooms: props.rooms,
+    members: null,
+    messages: null,
+    chatScope: null,
+    messageText: "",
+    isEnteringRoom: false,
+  });
 
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (chatDisplayRef.current && messages && messages.length > 0) {
+    if (chatDisplayRef.current && state.messages && state.messages.length > 0) {
       chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [state.messages]);
 
   websocketeer.on("SENT_MESSAGE", ({ message }) => {
-    setMessages([...(messages || []), message]);
-    setMessageText("");
+    dispatch({ type: "SENT_MESSAGE", payload: message });
   });
 
   websocketeer.on("ENTERED_ROOM", ({ members, messages, room, error }) => {
     if (error) {
       return console.error(error);
     }
-    setMembers(members);
-    setMessages(messages);
-    setChatScope({ type: "Room", id: room.id, name: room.name });
-    setIsEnteringRoom(false);
+    dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: { type: "Room", id: room.id, name: room.name } } });
   });
 
   websocketeer.on("LIST_ROOMS", ({ rooms, error }) => {
     if (error) {
       return console.error(error);
     }
-    setRooms(rooms);
+    dispatch({ type: "SET_ROOMS", payload: rooms });
   });
 
   websocketeer.on("JOINED_ROOM", ({ rooms, error }) => {
     if (error) {
       return console.error(error);
     }
-    setRooms(rooms);
+    dispatch({ type: "SET_ROOMS", payload: rooms });
   });
 
   websocketeer.on("UNJOINED_ROOM", ({ rooms, error }) => {
     if (error) {
       return console.error(error);
     }
-    setRooms(rooms);
+    dispatch({ type: "SET_ROOMS", payload: rooms });
   });
 
   websocketeer.on("CREATED_ROOM", ({ rooms, error }) => {
     if (error) {
       return console.error(error);
     }
-    setRooms(rooms);
+    dispatch({ type: "SET_ROOMS", payload: rooms });
   });
 
   function handleOpenJoinRoomModal(): void {
@@ -103,25 +101,25 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   }
 
   function handleMessageInputChange(e: ChangeEvent<HTMLTextAreaElement>): void {
-    setMessageText(e.target.value);
+    dispatch({ type: "SET_MESSAGE_TEXT", payload: e.target.value });
   }
 
   function handleMessageInputKeyDown(e: KeyboardEvent<HTMLTextAreaElement>): void {
     if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
-      if (messageText === "" || !chatScope) {
+      if (state.messageText === "" || !state.chatScope) {
         return;
       }
-      websocketeer.send("SEND_MESSAGE", { message: messageText, scope: chatScope.type });
+      websocketeer.send("SEND_MESSAGE", { message: state.messageText, scope: state.chatScope.type });
     }
   }
 
   function handleSendMessage(): void {
-    if (messageText === "" || !chatScope) {
+    if (state.messageText === "" || !state.chatScope) {
       return;
     }
-    websocketeer.send("SEND_MESSAGE", { message: messageText, scope: chatScope.type });
+    websocketeer.send("SEND_MESSAGE", { message: state.messageText, scope: state.chatScope.type });
   }
 
   function handleOpenDirectMessagesDrawer(): void {
@@ -145,24 +143,30 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   }, []);
 
   const handleRoomClick = useCallback((roomId: string) => {
-    setIsEnteringRoom(true);
+    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
     websocketeer.send("ENTER_ROOM", { id: roomId });
   }, []);
 
   // If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
   const roomClickHandlers = useMemo(() => {
-    return new Map(rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
-  }, [rooms, handleRoomClick]);
+    return new Map(state.rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
+  }, [state.rooms, handleRoomClick]);
 
   const renderRooms = useCallback(() => {
-    return rooms?.map((room) => (
-      <RoomMemo key={room.id} roomId={room.id} roomName={room.name} onClick={roomClickHandlers.get(room.id)} isSelected={chatScope?.id === room.id} />
+    return state.rooms?.map((room) => (
+      <RoomMemo
+        key={room.id}
+        roomId={room.id}
+        roomName={room.name}
+        onClick={roomClickHandlers.get(room.id)}
+        isSelected={state.chatScope?.id === room.id}
+      />
     ));
-  }, [rooms, chatScope?.id, roomClickHandlers]);
+  }, [state.rooms, state.chatScope?.id, roomClickHandlers]);
 
   return (
     <>
-      <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={chatScope} />
+      <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
       <TopbarMemo />
@@ -187,11 +191,11 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
               ></button>
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              <ul id="members-list" className="list-group list-group-flush">
-                {isEnteringRoom ? (
+              <ul className="list-group list-group-flush">
+                {state.isEnteringRoom ? (
                   <LoadingSpinnerMemo />
                 ) : (
-                  members?.map((member) => (
+                  state.members?.map((member) => (
                     <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
                   ))
                 )}
@@ -203,7 +207,6 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
                 <div className="col-12 d-flex p-1">
                   <button
                     onClick={handleOpenDirectMessagesDrawer}
-                    id="open-direct-messages"
                     className="btn btn-primary flex-grow-1 shadow"
                     type="button"
                     title="Direct Messages"
@@ -216,15 +219,15 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
           </div>
           <div className="card col-lg-6 offset-lg-0 col-md-10 offset-md-0 h-90pct overf-hide d-flex">
             <div className="card-header d-flex flex-row">
-              <div id="chat-title" className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
-                {chatScope !== null && chatScope.name}
+              <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
+                {state.chatScope !== null && state.chatScope.name}
               </div>
             </div>
-            <div ref={chatDisplayRef} id="chat-display" className="card-body overf-y-scroll">
-              {isEnteringRoom ? (
+            <div ref={chatDisplayRef} className="card-body overf-y-scroll">
+              {state.isEnteringRoom ? (
                 <LoadingSpinnerMemo />
               ) : (
-                messages?.map((message) => (
+                state.messages?.map((message) => (
                   <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || "-"} />
                 ))
               )}
@@ -234,14 +237,14 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
                 <textarea
                   onChange={handleMessageInputChange}
                   onKeyDown={handleMessageInputKeyDown}
-                  value={messageText}
+                  value={state.messageText}
                   className="form-control custom-control"
                   rows={3}
                   style={{ resize: "none" }}
                 ></textarea>
                 <button
                   onClick={handleSendMessage}
-                  disabled={messageText === "" || chatScope === null}
+                  disabled={state.messageText === "" || state.chatScope === null}
                   className="input-group-addon btn btn-lg btn-primary"
                 >
                   Send
@@ -282,19 +285,13 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
                     className="btn btn-warning shadow flex-grow-1"
                     type="button"
                     title="Leave Current Room"
-                    disabled={chatScope === null}
+                    disabled={state.chatScope === null}
                   >
                     <i className="bi bi-box-arrow-down-left"></i>
                   </button>
                 </div>
                 <div className="col-4 d-flex p-1">
-                  <button
-                    onClick={handleOpenCreateRoomModal}
-                    id="open-create-room-modal-btn"
-                    className="btn btn-primary shadow flex-grow-1"
-                    type="button"
-                    title="Create Room"
-                  >
+                  <button onClick={handleOpenCreateRoomModal} className="btn btn-primary shadow flex-grow-1" type="button" title="Create Room">
                     <i className="bi bi-folder-plus"></i>
                   </button>
                 </div>

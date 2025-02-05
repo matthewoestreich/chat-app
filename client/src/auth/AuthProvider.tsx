@@ -19,16 +19,17 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    * @param {string} emailAddress
    * @param {string} password
    */
-  async function login(emailAddress: string, password: string): Promise<void> {
+  async function login(emailAddress: string, password: string): Promise<boolean> {
     const { ok, name, id, email, session: sessionToken } = await sendLoginRequest(emailAddress, password);
     if (ok && name && id && email && sessionToken) {
       setUser({ name, id, email });
       setSession(sessionToken);
       setCookie("session", sessionToken, 1);
       navigate("/chat");
-      return;
+      return ok;
     }
     navigate("/");
+    return ok;
   }
 
   /**

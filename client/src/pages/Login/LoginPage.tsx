@@ -54,7 +54,10 @@ export default function LoginPage(): React.JSX.Element {
       return;
     }
     setIsLoggingIn(true);
-    login(email, password);
+    const result = await login(email, password);
+    if (result === false) {
+      setAlert({ type: "danger", shown: true, message: "Something went wrong!", icon: "bi-exclamation-square-fill" });
+    }
     setIsLoggingIn(false);
   }
 

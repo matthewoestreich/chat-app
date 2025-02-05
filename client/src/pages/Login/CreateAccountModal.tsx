@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, HTMLAttributes, useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, FormEvent, HTMLAttributes, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 // prettier-ignore
 import { 
@@ -72,22 +72,27 @@ export default function CreateAccountModal(props: CreateAccountModalProperties):
     formRef.current?.requestSubmit();
   }
 
+  function handleInputKeydown(e: KeyboardEvent<HTMLInputElement>): void {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      // Submit form
+      handleSubmitClick();
+    }
+  }
+
   async function handleSubmitForm(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-
     if (!formRef) {
       return;
     }
-
     // `.checkValidity()` comes from Bootstrap
     const isFormValid = event.currentTarget.checkValidity();
     setIsFormValidated(true);
-
     if (!isFormValid) {
       return;
     }
-
     setIsCloseButtonDisabled(true);
     setIsCreatingAccount(true);
     const result = await sendRegisterRequest(username, password, email);
@@ -109,40 +114,46 @@ export default function CreateAccountModal(props: CreateAccountModalProperties):
         <ModalContent>
           <ModalHeader>
             <h1 className="modal-title fs-5">{props.title}</h1>
-            <button onClick={handleClose} className="btn btn-close" type="button"></button>
+            <button tabIndex={-1} onClick={handleClose} className="btn btn-close" type="button"></button>
           </ModalHeader>
           <ModalBody>
             <div className="form-group">
               <Form getRef={handleGetFormRef} onSubmit={handleSubmitForm} validated={isFormValidated}>
                 <InputFloating
+                  tabIndex={1}
                   className="mb-3"
                   type="text"
                   placeholder="Username"
                   required={true}
                   invalidMessage="Username is required!"
+                  onKeyDown={handleInputKeydown}
                   onChange={handleUsernameInput}
                   value={username}
                 >
                   Username
                 </InputFloating>
                 <InputFloating
+                  tabIndex={2}
                   className="mb-3"
                   type="email"
                   placeholder="Email"
                   required={true}
                   invalidMessage="Email is required!"
                   extraText="Use a fake one if you'd like!"
+                  onKeyDown={handleInputKeydown}
                   onChange={handleEmailInput}
                   value={email}
                 >
                   Email
                 </InputFloating>
                 <InputFloating
+                  tabIndex={3}
                   className="mb-3"
                   type="password"
                   placeholder="Password"
                   required={true}
                   invalidMessage="Password is required!"
+                  onKeyDown={handleInputKeydown}
                   onChange={handlePasswordInput}
                   value={password}
                 >

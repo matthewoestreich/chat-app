@@ -52,7 +52,7 @@ export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.J
             <h1 className="modal-title fs-5">Confirmation</h1>
             <button onClick={handleModalClose} className="btn-close" type="button"></button>
           </ModalHeader>
-          <ModalBody id="leave-room-confirmation-modal-body">Are you sure you want to leave?</ModalBody>
+          <ModalBody>Are you sure you want to leave?</ModalBody>
           <ModalFooter>
             <button onClick={handleModalClose} className="btn btn-secondary" type="button">
               Close

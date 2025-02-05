@@ -35,7 +35,7 @@ interface AuthContextValue {
   user: UserData | null;
   session: string | null;
   validateSession: () => void;
-  login: (email: string, password: string) => void;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
