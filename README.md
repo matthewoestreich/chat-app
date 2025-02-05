@@ -1,24 +1,32 @@
 # RTChat
 
-A responsive, multi-user, multi-room, real time chat application that supports dark mode!
+A real-time chat app with support for multiple rooms, direct messaging, and dark mode
 
 ## [Start chatting now! (beta)](https://rtchat-a7ul.onrender.com)
 
-Features:
+### Features:
  - Session Based Authentication & Authorization [*](#user-content-jwt)
  - WebSocket Authentication
  - Dark Mode
  - Responsive
+ - Abstract database access level
+   - This means we can use nearly any medium for storage, even an API!
+ - We have custom wrappers around WebSockets!
+   - [WebSocketeer](client/src/ws/WebSocketeer.ts) for client side
+   - [WebSocketApp](server/wss/WebSocketApp.ts) for server side
+   - Makes writing WebSocket code feel like you're writing Express routes
+   - Each "route" is a message type, which makes sending and/or parsing messages a breeze!
 
-Backend Technologies:
+### Technologies Used
+
+#### Backend
  - [Express](https://expressjs.com/)
  - [TypeScript](https://www.typescriptlang.org/)
- - [WebSockets](https://en.wikipedia.org/wiki/WebSocket)
- - [SQLite3](https://www.sqlite.org/)
- - [Pug](https://pugjs.org/)
+ - [WebSockets](https://en.wikipedia.org/wiki/WebSocket) (specifically [ws](https://github.com/websockets/ws))
+ - [SQLite3](https://www.sqlite.org/) (mostly)
 
-Frontend Technologies:
- - [Vanilla JS](http://vanilla-js.com/)
+#### Frontend
+ - [ReactJS](http://react.dev/)
  - [Bootstrap 5](https://getbootstrap.com/)
 
 <sub><a name="jwt">*</a>Pseudo-sessions via JWT. I was testing various auth strategies, got sick of testing different strats, and settled with using a JWT as a session-like token. I plan on migrating to full on sessions soon.</sub>
@@ -26,6 +34,8 @@ Frontend Technologies:
 ---
 
 # Look & Feel
+
+****Subject to change, may look different now***
 
 ## Default Look
 
