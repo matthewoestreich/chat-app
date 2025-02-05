@@ -33,7 +33,7 @@ setDatabaseProvider(provider);
       case "render": {
         await provider.restore();
         keepAliveCronJob.start();
-        backupDatabaseCronJob(provider.backup).start();
+        backupDatabaseCronJob(provider).start();
         startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
         break;
       }
