@@ -15,6 +15,7 @@ const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const CreateRoomModalMemo = memo(CreateRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
+const LoadingSpinnerMemo = memo(LoadingSpinner);
 
 interface ChatViewProperties {
   rooms: IRoom[] | null;
@@ -188,7 +189,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
               <ul id="members-list" className="list-group list-group-flush">
                 {isEnteringRoom ? (
-                  <LoadingSpinner />
+                  <LoadingSpinnerMemo />
                 ) : (
                   members?.map((member) => (
                     <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
@@ -221,7 +222,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
             </div>
             <div ref={chatDisplayRef} id="chat-display" className="card-body overf-y-scroll">
               {isEnteringRoom ? (
-                <LoadingSpinner />
+                <LoadingSpinnerMemo />
               ) : (
                 messages?.map((message) => (
                   <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || "-"} />
