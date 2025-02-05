@@ -1,5 +1,5 @@
 import React, { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Topbar, Message, Room, Member } from "@components";
+import { Topbar, Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useRenderCounter } from "@hooks";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 import LeaveRoomModal from "./LeaveRoomModal";
@@ -34,6 +34,8 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   const [messages, setMessages] = useState<PublicMessage[] | null>(null);
   const [chatScope, setChatScope] = useState<ChatScope | null>(null);
   const [messageText, setMessageText] = useState("");
+  // So we can display a loading spinner while we gather members and messages..
+  const [isEnteringRoom, setIsEnteringRoom] = useState(false);
 
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -56,6 +58,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
     setMembers(members);
     setMessages(messages);
     setChatScope({ type: "Room", id: room.id, name: room.name });
+    setIsEnteringRoom(false);
   });
 
   websocketeer.on("LIST_ROOMS", ({ rooms, error }) => {
@@ -141,6 +144,7 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
   }, []);
 
   const handleRoomClick = useCallback((roomId: string) => {
+    setIsEnteringRoom(true);
     websocketeer.send("ENTER_ROOM", { id: roomId });
   }, []);
 
@@ -183,9 +187,13 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
               <ul id="members-list" className="list-group list-group-flush">
-                {members?.map((member) => (
-                  <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
-                ))}
+                {isEnteringRoom ? (
+                  <LoadingSpinner />
+                ) : (
+                  members?.map((member) => (
+                    <MemberMemo memberId={member.userId} key={member.userId} memberName={member.name} isOnline={member.isActive} />
+                  ))
+                )}
               </ul>
               <DirectMessagesDrawerMemo isShown={isDirectMessagesShown} onClose={handleCloseDirectMessagesDrawer} />
             </div>
@@ -212,9 +220,13 @@ export default function ChatView(props: ChatViewProperties): React.JSX.Element {
               </div>
             </div>
             <div ref={chatDisplayRef} id="chat-display" className="card-body overf-y-scroll">
-              {messages?.map((message) => (
-                <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || "-"} />
-              ))}
+              {isEnteringRoom ? (
+                <LoadingSpinner />
+              ) : (
+                messages?.map((message) => (
+                  <MessageMemo messageId={message.messageId} key={message.messageId} message={message.message} from={message.userName || "-"} />
+                ))
+              )}
             </div>
             <div className="card-footer">
               <div className="input-group">
