@@ -1,8 +1,3 @@
-interface BootstrapFormMethods {
-  submitForm: () => void;
-  setIsValid: (isValid: boolean) => void;
-}
-
 interface AlertState {
   type: BootstrapContextualClasses | null;
   shown: boolean;
@@ -23,11 +18,6 @@ interface CreateAccountResult {
   id?: string;
   name?: string;
   email?: string;
-}
-
-interface CreateRoomResult {
-  name: string; // ?? not sure what all i need yet
-  id: string;
 }
 
 interface LogoutResult {
@@ -57,23 +47,6 @@ interface ThemeContextValue {
   theme: ThemeMode;
   setTheme: (mode: ThemeMode) => void;
   toggleTheme: () => void;
-}
-
-declare class WebSocketeer<T extends WebSocketeerEventMap> {
-  constructor(url: string);
-  url: string;
-  connect(): void;
-  onOpen(handler: (e: Event) => void): void;
-  onClose(handler: (e: CloseEvent) => void): void;
-  onError(handler: (e: Event) => void): void;
-  on<K extends WebSocketeerEventType<T>>(event: K, handler: (payload: WebSocketeerEventPayload<T, K>) => void): void;
-  emit<K extends keyof T>(event: K, payload: T[K]): void;
-  // eslint-disable-next-line
-  send<K extends WebSocketeerEventType<T>>(event: K, ...payload: T[K] extends Record<string, any> ? [T[K]] : []): void;
-}
-
-interface WebSocketeerContextValue<T extends WebSocketeerEventMap> {
-  websocketeer: WebSocketeer<T>;
 }
 
 interface WebSocketeerEventMap {
