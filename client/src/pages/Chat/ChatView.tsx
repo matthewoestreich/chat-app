@@ -16,13 +16,20 @@ import sortMembers from "./sortMembers";
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
 const MemberMemo = memo(Member);
+const CreateRoomModalMemo = memo(CreateRoomModal);
+const JoinDirectConversationModalMemo = memo(JoinDirectConversationModal);
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
-const CreateRoomModalMemo = memo(CreateRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
 const LoadingSpinnerMemo = memo(LoadingSpinner);
 const TopbarMemo = memo(Topbar);
 
+/**
+ *
+ * ChatView is conditionally rendered via ChatPage (which is the entry point for the /chat route)
+ * ChatView is the 'workhorse' for our `/chat` route. It does a lot of the heavy lifting.
+ *
+ */
 export default function ChatView(): React.JSX.Element {
   const renderCount = useRenderCounter(`ChatPage`);
   console.log(renderCount);
@@ -230,7 +237,7 @@ export default function ChatView(): React.JSX.Element {
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
-      <JoinDirectConversationModal isOpen={state.isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
+      <JoinDirectConversationModalMemo isOpen={state.isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
       <TopbarMemo />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
