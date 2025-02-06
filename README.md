@@ -6,32 +6,32 @@
     <h4><a href="https://rtchat-a7ul.onrender.com">Start Chatting Now!</a></h4>
 </div>
 <br />
-<div align="center">
-	    <a href="https://www.typescriptlang.org/" style="text-decoration:none;">
+<div align="center" style="text-decoration: none;">
+	    <a href="https://www.typescriptlang.org/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
   </a>
-  <a href="https://expressjs.com/" style="text-decoration:none;">
+  <a href="https://expressjs.com/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/express.png" alt="Express" title="Express">
   </a>
-  <a href="https://github.com/websockets/ws" style="text-decoration:none;">
-	  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/websocket.png" alt="websocket" title="websocket"/>
+  <a href="https://github.com/websockets/ws" style="text-decoration: none;">
+	  <img width="50" src="./.github/icons/websockets-icon.svg" alt="websocket" title="websocket"/>
 	</a>
-  <a href="https://www.sqlite.org/" style="text-decoration:none;">
+  <a href="https://www.sqlite.org/" style="text-decoration: none;">
   <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/sqlite.png" alt="SQLite" title="SQLite"/>
   </a>
-  <a href="http://react.dev/" style="text-decoration:none;">
+  <a href="http://react.dev/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/react.png" alt="React" title="React"/>
   </a>
-  <a href="https://getbootstrap.com/" style="text-decoration:none;">
+  <a href="https://getbootstrap.com/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/bootstrap.png" alt="Bootstrap" title="Bootstrap"/>
   </a>
-  <a href="https://vite.dev/" style="text-decoration:none;">
+  <a href="https://vite.dev/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/vite.png" alt="Vite" title="Vite"/>
   </a>
-   <a href="https://jestjs.io/" style="text-decoration:none;">
+   <a href="https://jestjs.io/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/jest.png" alt="Jest" title="Jest"/>
   </a>
-  <a href="https://www.cypress.io/" style="text-decoration:none;">
+  <a href="https://www.cypress.io/" style="text-decoration: none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/cypress.png" alt="Cypress" title="Cypress"/>
   </a>
 </div>
