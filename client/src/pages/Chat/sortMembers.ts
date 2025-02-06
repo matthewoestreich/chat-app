@@ -24,7 +24,3 @@ export default function sortMembers(members: RoomMember[] | PublicAccount[]): vo
     return 1;
   });
 }
-
-// Like aliases hah
-export const sortAccounts = sortMembers;
-export const sortUsers = sortMembers;

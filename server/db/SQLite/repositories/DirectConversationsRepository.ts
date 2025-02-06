@@ -1,5 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
+import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
+import { DatabasePool, DirectConversationsRepository } from "@/server/types";
 
 export default class DirectConversationsRepositorySQLite implements DirectConversationsRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -8,7 +10,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<DirectConversationByUserId[]> {
+  async selectByUserId(userId: string): Promise<PublicDirectConversation[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
@@ -19,7 +21,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
       WHERE ? IN (dc.userA_Id, dc.userB_Id)
       ORDER BY userName ASC;
       `;
-      db.all(query, [userId, userId], (err, rows: DirectConversationByUserId[]) => {
+      db.all(query, [userId, userId], (err, rows: PublicDirectConversation[]) => {
         if (err) {
           release();
           return reject(err);
@@ -30,7 +32,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
@@ -42,7 +44,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
       )
       ORDER BY u.name ASC;
       `;
-      db.all(query, [userId, userId, userId], (err, rows: PublicAccount[]) => {
+      db.all(query, [userId, userId, userId], (err, rows: PublicUser[]) => {
         if (err) {
           release();
           return reject(err);

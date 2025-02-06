@@ -1,5 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
+import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
+import { DatabasePool, DirectConversationsRepository } from "@/server/types";
 
 export default class DirectConversationsRepositoryFileSystem implements DirectConversationsRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -8,9 +10,9 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<DirectConversationByUserId[]> {
+  async selectByUserId(userId: string): Promise<PublicDirectConversation[]> {
     const { db, release } = await this.databasePool.getConnection();
-    const directConversations: DirectConversationByUserId[] = [];
+    const directConversations: PublicDirectConversation[] = [];
     const otherUsers: { convoId: string; otherUserId: string }[] = [];
 
     const dcs = await db.selectTable("directConversations");
@@ -31,7 +33,7 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
         directConversations.push({
           id: otherUser.convoId,
           userId: otherUser.otherUserId,
-          userName: foundOtherUser.name,
+          userName: foundOtherUser.userName,
         });
       }
     }
@@ -40,7 +42,7 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
     return directConversations;
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
     const { db, release } = await this.databasePool.getConnection();
 
     try {

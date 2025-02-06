@@ -1,6 +1,8 @@
 import { WebSocket } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
 import WebSocketApp from "./WebSocketApp";
+import { User } from "@/types.shared";
+import { CachedContainer, Container, EventPayload, EventTypes } from "../types";
 
 export default class WebSocketClient {
   private _socket: WebSocket;
@@ -8,11 +10,11 @@ export default class WebSocketClient {
     return this._socket;
   }
 
-  private _user: Account;
-  get user(): Account {
+  private _user: User;
+  get user(): User {
     return this._user;
   }
-  set user(account: Account) {
+  set user(account: User) {
     this._user = account;
   }
 

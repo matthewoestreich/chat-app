@@ -4,6 +4,7 @@ import WebSocketApp from "@/server/wss/WebSocketApp";
 import { generateFakeData } from "@/server/fakerService";
 import FileSystemDatabase, { FileSystemDatabaseData } from "./FileSystemDatabase";
 import FileSystemDatabasePool from "./pool/FileSystemDatabasePool";
+import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@/server/types";
 // prettier-ignore
 import { 
   AccountsRepositoryFileSystem,
@@ -97,7 +98,7 @@ export default class FileSystemProvider implements DatabaseProvider {
         const pw = await bcrypt.hash(user.password, salt);
         jsonData.users.push({
           id: user.id,
-          name: user.username,
+          userName: user.username,
           email: user.email,
           password: pw,
         });
@@ -120,9 +121,9 @@ export default class FileSystemProvider implements DatabaseProvider {
 
       // Add room messages
       jsonData.messages = fakeData.chatRoomMessages.map((message) => ({
-        messageId: message.id,
+        id: message.id,
         userId: message.user.id,
-        roomId: message.room.id,
+        scopeId: message.room.id,
         message: message.message,
         userName: message.user.username,
         timestamp: new Date(),
@@ -138,7 +139,7 @@ export default class FileSystemProvider implements DatabaseProvider {
       // Add direct messages to direct conversations
       jsonData.directMessages = fakeData.directMessages.map((dm) => ({
         id: dm.id,
-        directConversationId: dm.directConversation.id,
+        scopeId: dm.directConversation.id,
         fromUserId: dm.from.id,
         fromUserName: dm.from.username,
         toUserId: dm.to.id,

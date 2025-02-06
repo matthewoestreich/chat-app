@@ -1,3 +1,5 @@
+import { DatabasePool, SessionsRepository } from "@/server/types";
+import { Session } from "@/types.shared";
 import sqlite3 from "sqlite3";
 
 export default class SessionsRepositorySQLite implements SessionsRepository<sqlite3.Database> {

@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
-import { useEffectOnce } from "@hooks";
+import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";
 
 export default function ChatPage(): React.JSX.Element {
-  const [rooms, setRooms] = useState<IRoom[] | null>(null);
   document.title = "RTChat | Chat";
+
+  const { state, dispatch } = useChat();
 
   useEffectOnce(() => {
     websocketeer.connect();
@@ -16,11 +17,11 @@ export default function ChatPage(): React.JSX.Element {
     if (error) {
       return console.error(error);
     }
-    setRooms(rooms);
+    dispatch({ type: "SET_ROOMS", payload: rooms });
   });
 
-  if (rooms === null) {
+  if (state.rooms === null) {
     return <LoadingSpinner />;
   }
-  return <ChatView rooms={rooms} />;
+  return <ChatView />;
 }

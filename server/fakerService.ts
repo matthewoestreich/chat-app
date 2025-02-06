@@ -3,6 +3,7 @@
  */
 import { faker } from "@faker-js/faker";
 import { v7 as uuidV7 } from "uuid";
+import { GenerateFakeDataParams, FakeChatRoom, FakeChatRoomMessage, FakeChatRoomWithMembers, FakeData, FakeDataFrequency, FakeDirectConversation, FakeDirectMessage, FakeUser } from "./types";
 
 /**
  * Generate all needed fake data.

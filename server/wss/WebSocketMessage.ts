@@ -1,4 +1,5 @@
 import { RawData } from "ws";
+import { EventPayload, EventTypes } from "../types";
 
 export default class WebSocketMessage<K extends EventTypes> {
   type: K;

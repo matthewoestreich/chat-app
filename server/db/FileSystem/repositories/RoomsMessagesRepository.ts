@@ -1,5 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
+import { DatabasePool, RoomsMessagesRepository } from "@/server/types";
+import { Message } from "@/types.shared";
 
 export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -8,18 +10,19 @@ export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesR
     this.databasePool = dbpool;
   }
 
-  async selectByRoomId(roomId: string): Promise<Message[]> {
-    const { db, release } = await this.databasePool.getConnection();
-    const messages = await db.selectManyWhere("messages", (msg) => msg.roomId === roomId);
-    const output: Message[] = [];
-
-    for (const msg of messages) {
-      const foundUser = (await db.selectOne("users", "id", msg.userId))?.name || "NAME_NOT_FOUND";
-      output.push({ ...msg, userName: foundUser });
-    }
-
-    release();
-    return output;
+  async selectByRoomId(_roomId: string): Promise<Message[]> {
+    throw new Error("Method not impl");
+    //const { db, release } = await this.databasePool.getConnection();
+    //const messages = await db.selectManyWhere("messages", (msg) => msg.scopeId === roomId);
+    //const output: Message[] = [];
+    //
+    //for (const msg of messages) {
+    //  const foundUser = (await db.selectOne("users", "id", msg.userId))?.userName || "NAME_NOT_FOUND";
+    //  output.push({ ...msg, userName: foundUser });
+    //}
+    //
+    //release();
+    //return output;
   }
 
   getAll(): Promise<Message[]> {
@@ -31,7 +34,7 @@ export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesR
 
   async create(roomId: string, userId: string, message: string): Promise<Message> {
     const { db, release } = await this.databasePool.getConnection();
-    const entity: Message = { messageId: uuidV7(), roomId, userId, message, timestamp: new Date(), userName: "" };
+    const entity: Message = { id: uuidV7(), scopeId: roomId, userId, message, timestamp: new Date() };
     const result = await db.insert("messages", entity);
     release();
     return result!;

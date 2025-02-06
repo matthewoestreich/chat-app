@@ -4,10 +4,12 @@ import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
+import { DatabaseProvider } from "../types";
+import { PublicMessage, User } from "@/types.shared";
 
 const wsapp = new WebSocketApp();
 
-export default async function startWebSocketApp(options: ServerOptions, databaseProvider: DatabaseProvider): Promise<void> {
+export default async function startWebSocketApp<T>(options: ServerOptions, databaseProvider: DatabaseProvider<T>): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       wsapp.databaseProvider = databaseProvider;
@@ -39,7 +41,7 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
     return client.socket.close(code, definition);
   }
 
-  client.user = jsonwebtoken.decode(cookies.session) as Account;
+  client.user = jsonwebtoken.decode(cookies.session) as User;
   const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
   client.send("LIST_ROOMS", { rooms });
   rooms.forEach((room) => wsapp.addContainerToCache(room.id));
@@ -71,18 +73,50 @@ wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
  * Someone is sending a chat message to a room.
  *
  */
-wsapp.on("SEND_MESSAGE", async (client, { message }) => {
-  client.broadcast("RECEIVE_MESSAGE", {
-    userId: client.user.id,
-    userName: client.user.name,
-    message,
-  });
+wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
+  if (scope.type === "Room") {
+    client.broadcast("RECEIVE_MESSAGE", {
+      userId: client.user.id,
+      userName: client.user.userName,
+      message,
+    });
 
-  try {
-    const { messageId, userName, message: newMessage } = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, client.user.name, message);
-    client.send("SENT_MESSAGE", { message: { messageId, message: newMessage, userName } });
-  } catch (e) {
-    console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
+    try {
+      const msg = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, client.user.userName, message);
+      client.send("SENT_MESSAGE", {
+        message: {
+          scopeId: msg.scopeId,
+          userId: msg.userId,
+          timestamp: msg.timestamp,
+          message: msg.message,
+          id: msg.id,
+          // TODO Need to fix this!
+          userName: msg.userId,
+        },
+      });
+    } catch (e) {
+      console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
+      client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
+    }
+  }
+  if (scope.type === "DirectConversation") {
+    try {
+      const dm = await wsapp.databaseProvider.directMessages.create(scope.id, client.user.id, scope.userId, message);
+      client.send("SENT_MESSAGE", {
+        message: {
+          message: dm.message,
+          id: dm.id,
+          scopeId: dm.scopeId,
+          timestamp: dm.timestamp,
+          userId: dm.fromUserId,
+          // NEED TO FIX THIS
+          userName: dm.fromUserId,
+        },
+      });
+    } catch (e) {
+      console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
+      client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
+    }
   }
 });
 
@@ -125,7 +159,13 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
     client.send("ENTERED_ROOM", {
       messages,
       // Add `isActive` property for each user in this room based upon if they're cached in this room.
-      members: members.map((m) => ({ ...m, isActive: wsapp.getCachedContainer(id)!.has(m.userId) })),
+      members: members.map((m) => ({
+        ...m,
+        userId: m.id,
+        userName: m.userName,
+        roomId: room.id,
+        isActive: wsapp.getCachedContainer(id)!.has(m.id),
+      })),
       room,
     });
   } catch (e) {
@@ -235,6 +275,26 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
 
 /**
  *
+ * @event {JOIN_DIRECT_CONVERSATION}
+ *
+ * Create a new direct conversation with someone
+ *
+ */
+wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
+  try {
+    const newDirectConvo = await wsapp.databaseProvider.directConversations.create(client.user.id, withUserId);
+    const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
+    client.send("JOINED_DIRECT_CONVERSATION", {
+      directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) })),
+      directConversationId: newDirectConvo.id,
+    });
+  } catch (e) {
+    client.send("JOINED_DIRECT_CONVERSATION", { error: e as Error, directConversationId: "", directConversations: [] });
+  }
+});
+
+/**
+ *
  * @event {GET_DIRECT_MESSAGES}
  *
  * Gets all messages in a direct conversation.
@@ -244,7 +304,7 @@ wsapp.on("GET_DIRECT_MESSAGES", async (client, { id }) => {
   try {
     const messages = await wsapp.databaseProvider.directMessages.selectByDirectConversationId(id);
 
-    if (client.user.id !== messages[0].fromUserId && client.user.id !== messages[0].toUserId) {
+    if (messages && messages.length && client.user.id !== messages[0].fromUserId && client.user.id !== messages[0].toUserId) {
       const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
       const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: client.socket };
       return console.log(errMsg, errData);
@@ -252,6 +312,7 @@ wsapp.on("GET_DIRECT_MESSAGES", async (client, { id }) => {
 
     client.send("LIST_DIRECT_MESSAGES", { directMessages: messages });
   } catch (e) {
+    console.log(e);
     client.send("LIST_DIRECT_MESSAGES", { error: e as Error, directMessages: [] });
   }
 });

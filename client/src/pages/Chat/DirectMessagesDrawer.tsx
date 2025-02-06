@@ -1,7 +1,8 @@
-import React, { CSSProperties, memo, useCallback, useEffect, useState } from "react";
+import React, { CSSProperties, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Member } from "@components";
 import { SingletonWebSocketeer as websocketeer } from "@client/ws";
 import JoinDirectConversationModal from "./JoinDirectConversationModal";
+import { useChat } from "@hooks";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -51,7 +52,7 @@ interface DirectMessagesDrawerProperties {
 export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperties): React.JSX.Element {
   const { isShown, onClose } = props;
   const [isJoinDirectConversationModalOpen, setIsDirectConversationModalOpen] = useState(false);
-  const [conversations, setConversations] = useState<DirectConversationByUserId[] | null>(null);
+  const { state, dispatch } = useChat();
 
   useEffect(() => {
     if (isShown) {
@@ -63,7 +64,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     if (error) {
       return console.error(error);
     }
-    setConversations(directConversations);
+    dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
   });
 
   function handleOpenJoinDirectConversationModal(): void {
@@ -78,12 +79,40 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     setIsDirectConversationModalOpen(false);
   }, []);
 
+  const handleDirectConversationClick = useCallback(
+    (directConvo: PublicDirectConversation) => {
+      // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well
+      // as rendering the messages.
+      const chatScope: ChatScope = {
+        conversationId: directConvo.id,
+        userId: directConvo.userId,
+        name: directConvo.userName,
+        type: "DirectConversation",
+      };
+      dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.id });
+    },
+    [dispatch],
+  );
+
+  const directConversationClickHandlers = useMemo(() => {
+    return new Map(state.directConversations?.map((dc) => [dc.id, (): void => handleDirectConversationClick(dc)]));
+  }, [state.directConversations, handleDirectConversationClick]);
+
   const renderConversations = useCallback(() => {
-    if (!conversations) {
+    if (!state.directConversations) {
       return;
     }
-    return conversations.map((convo) => <MemberMemo key={convo.id} isButton={true} memberName={convo.userName} isOnline={convo.isActive || false} />);
-  }, [conversations]);
+    return state.directConversations.map((convo) => (
+      <MemberMemo
+        key={convo.id}
+        isButton={true}
+        onClick={directConversationClickHandlers.get(convo.id)}
+        memberName={convo.userName}
+        isOnline={convo.isActive || false}
+      />
+    ));
+  }, [state.directConversations, directConversationClickHandlers]);
 
   return (
     <>

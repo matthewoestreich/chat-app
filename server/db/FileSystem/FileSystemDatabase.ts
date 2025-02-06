@@ -1,6 +1,7 @@
 import nodePath from "node:path";
 import nodeFs from "node:fs";
 import Mutex from "@/server/Mutex";
+import { DirectConversation, DirectMessage, Message, Room, Session, User } from "@/types.shared";
 
 export interface FileSystemDatabaseChatTable {
   userId: string;
@@ -8,12 +9,12 @@ export interface FileSystemDatabaseChatTable {
 }
 
 export interface FileSystemDatabaseData {
-  users: Account[];
+  users: User[];
   chat: FileSystemDatabaseChatTable[];
   directConversations: DirectConversation[];
   directMessages: DirectMessage[];
   messages: Message[];
-  room: IRoom[];
+  room: Room[];
   session: Session[];
 }
 

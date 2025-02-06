@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import { generateSessionToken } from "@/server/generateTokens.js";
+import { JSONWebToken, User } from "@/types.shared";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -13,9 +14,9 @@ export default async function useJwt(req: Request, res: Response, next: NextFunc
       return next();
     }
 
-    const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as Account | null;
+    const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as User | null;
     if (decodedToken) {
-      req.user = { name: decodedToken.name, email: decodedToken.email, id: decodedToken.id };
+      req.user = { name: decodedToken.userName, email: decodedToken.email, id: decodedToken.id };
       return next();
     }
 

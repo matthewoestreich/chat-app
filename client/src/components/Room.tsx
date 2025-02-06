@@ -1,4 +1,4 @@
-import { useRenderCounter } from "@hooks";
+//import { useRenderCounter } from "@hooks";
 import React, { HTMLAttributes } from "react";
 
 interface RoomProperties extends HTMLAttributes<HTMLLIElement> {
@@ -9,8 +9,8 @@ interface RoomProperties extends HTMLAttributes<HTMLLIElement> {
 }
 
 export default function Room(props: RoomProperties): React.JSX.Element {
-  const renderCount = useRenderCounter(`Room ${props.roomName}`);
-  console.log(renderCount);
+  //const renderCount = useRenderCounter(`Room ${props.roomName}`);
+  //console.log(renderCount);
   const { className, isSelected, roomId, subText, roomName, ...restOfProps } = props;
 
   return (

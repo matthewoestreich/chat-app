@@ -1,3 +1,4 @@
+import { UseCookie, Cookie, Cookies } from "../../types";
 /**
  * Sets document.cookie
  * @param name

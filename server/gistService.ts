@@ -3,6 +3,7 @@
  */
 import nodePath from "node:path";
 import nodeFs from "node:fs";
+import { Gist, GistFile, FilesObject } from "./types";
 
 /**
  * Creates a new gist.

@@ -22,7 +22,7 @@ export default defineConfig({
       "@": nodePath.resolve(__dirname),
       "@client": nodePath.resolve(__dirname, "../client/src"),
       "@components": nodePath.resolve(__dirname, "./src/components/index.ts"),
-      "@pages": nodePath.resolve(__dirname, "./src/pages/index.ts"),
+      "@pages": nodePath.resolve(__dirname, "./src/pages/"),
       "@hooks": nodePath.resolve(__dirname, "./src/hooks/index.ts"),
       "@styles": nodePath.resolve(__dirname, "./src/styles"),
     },

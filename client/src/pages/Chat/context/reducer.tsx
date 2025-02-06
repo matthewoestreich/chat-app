@@ -1,40 +1,64 @@
-import sortMembers from "./sortMembers";
+import sortMembers from "../sortMembers";
 
-interface ChatState {
+export interface ChatState {
   rooms: IRoom[] | null;
+  directConversations: PublicDirectConversation[] | null;
+  directMessages: DirectMessage[] | null;
   members: RoomMember[] | null;
   messages: PublicMessage[] | null;
   chatScope: ChatScope | null;
-  messageText: string;
   isEnteringRoom: boolean;
+  messageText: string;
 }
 
-type ChatStateAction =
+export type ChatStateAction =
   | { type: "SET_ROOMS"; payload: IRoom[] | null }
   | { type: "SET_MEMBERS"; payload: RoomMember[] | null }
   | { type: "SET_MESSAGES"; payload: PublicMessage[] | null }
+  | { type: "SET_DIRECT_CONVERSATIONS"; payload: PublicDirectConversation[] | null }
+  | { type: "SET_DIRECT_MESSAGES"; payload: DirectMessage[] | null }
   | { type: "SET_CHAT_SCOPE"; payload: ChatScope | null }
   | { type: "SET_MESSAGE_TEXT"; payload: string }
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
   | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
-  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: RoomMember[] | null; chatScope: ChatScope } };
+  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: RoomMember[] | null; chatScope: ChatScope | null } };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
-    case "SET_ROOMS":
+    case "SET_ROOMS": {
+      console.log("setRooms");
       return { ...state, rooms: action.payload };
-    case "SET_MEMBERS":
+    }
+    case "SET_MEMBERS": {
+      console.log("setMembers");
       return { ...state, members: action.payload };
-    case "SET_MESSAGES":
+    }
+    case "SET_MESSAGES": {
+      console.log("setMessages");
       return { ...state, messages: action.payload };
-    case "SET_CHAT_SCOPE":
+    }
+    case "SET_CHAT_SCOPE": {
+      console.log("setchatScope");
       return { ...state, chatScope: action.payload };
-    case "SET_MESSAGE_TEXT":
+    }
+    case "SET_DIRECT_CONVERSATIONS": {
+      console.log("setDirctConvos");
+      return { ...state, directConversations: action.payload };
+    }
+    case "SET_MESSAGE_TEXT": {
       return { ...state, messageText: action.payload };
-    case "SET_IS_ENTERING_ROOM":
+    }
+    case "SET_DIRECT_MESSAGES": {
+      console.log("setDirectMEssages");
+      return { ...state, directMessages: action.payload, messages: null };
+    }
+    case "SET_IS_ENTERING_ROOM": {
+      console.log("isenteringroom");
       return { ...state, isEnteringRoom: action.payload };
+    }
     case "SET_MEMBER_ACTIVE_STATUS": {
+      console.log("setmemberactiveStatus");
       if (!state.members) {
         return state;
       }
@@ -47,13 +71,14 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       sortMembers(membersCopy);
       return { ...state, members: membersCopy };
     }
-    case "SENT_MESSAGE":
+    case "SENT_MESSAGE": {
       return {
         ...state,
-        messages: [...(state.messages || []), action.payload],
-        messageText: "",
+        messages: [...(state.messages ?? []), action.payload],
       };
-    case "ENTERED_ROOM":
+    }
+    case "ENTERED_ROOM": {
+      console.log("enteredRoom");
       return {
         ...state,
         messages: action.payload.messages,
@@ -61,7 +86,10 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
         chatScope: action.payload.chatScope,
         isEnteringRoom: false,
       };
-    default:
+    }
+    default: {
+      console.log("default");
       return state;
+    }
   }
 }

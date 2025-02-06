@@ -1,3 +1,11 @@
+export interface IRTChatErrorOptions {
+  message: string;
+  internalErrorCode?: number;
+  httpErrorCode?: number;
+  // eslint-disable-next-line
+  data?: { [key: string]: any };
+}
+
 export default class RTChatError extends Error {
   internalErrorCode?: number;
   httpErrorCode?: number;

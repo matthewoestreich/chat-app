@@ -1,5 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
+import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
+import { DatabasePool, DirectConversationsRepository } from "@/server/types";
 
 export default class DirectConversationsRepositoryInMemory implements DirectConversationsRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;
@@ -8,10 +10,10 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
     this.databasePool = dbpool;
   }
 
-  async selectByUserId(userId: string): Promise<DirectConversationByUserId[]> {
+  async selectByUserId(userId: string): Promise<PublicDirectConversation[]> {
     const { db } = await this.databasePool.getConnection();
-    const directConversations: DirectConversationByUserId[] = [];
-    return db.getMany<DirectConversationByUserId>((data) => {
+    const directConversations: PublicDirectConversation[] = [];
+    return db.getMany<PublicDirectConversation>((data) => {
       const otherUsers: { convoId: string; otherUserId: string }[] = [];
       data.directConversations.forEach((dc) => {
         if (dc.userA_id === userId) {
@@ -26,7 +28,7 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
           directConversations.push({
             id: foundOtherUser.convoId,
             userId: foundOtherUser.otherUserId,
-            userName: u.name,
+            userName: u.userName,
           });
         }
       });
@@ -34,10 +36,10 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicAccount[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
     // Find people 'userId' isn't already in a direct convo with
     const { db } = await this.databasePool.getConnection();
-    return db.getMany<PublicAccount>((data) => {
+    return db.getMany<PublicUser>((data) => {
       const union: string[] = [];
       data.directConversations.forEach((dc) => {
         if (dc.userB_id === userId) {

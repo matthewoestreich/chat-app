@@ -1,49 +1,118 @@
-declare class WebSocketClient {
-  get socket(): WebSocket.WebSocket;
-  get user(): Account;
-  get activeIn(): CachedContainer;
-  set user(account: Account);
-  setActiveIn(id: string, container: Container);
-  send<K extends EventTypes>(type: K, payload: EventPayload<K>);
-  broadcast<K extends EventTypes>(type: K, payload: EventPayload<K>);
+import type { IncomingMessage } from "node:http";
+
+export interface Cookie {
+  name: string;
+  value: string;
 }
 
-type IWebSocketMessage = {
-  type: EventTypes;
-  [key: string]: unknown;
+export type Cookies = {
+  [K: string]: string;
 };
 
-type WebSocketAppCatchHandler = (error: Error, socket: WebSocket.WebSocket) => void;
-
-type WebSocketAppCache = Map<string, Container>;
-
-type Container = Map<string, WebSocketClient>;
-
-/**
- * CachedContainer is different from Container bc a CachedContainer has an ID.
- */
-type CachedContainer = {
+export interface JSONWebToken {
   id: string;
-  container?: Container;
-};
+  name: string;
+  email: string;
+  signed: string;
+}
 
-type ChatScopeType = "Room" | "DirectConversation";
+export type ChatScopeType = "Room" | "DirectConversation";
 
 // ChatScope represents a chat room, a direct message, etc..
-interface ChatScope {
+export interface ChatScope {
   id: string;
+  userId: string;
   type: ChatScopeType;
-  name: string;
+  userName: string;
 }
 
-type EventTypes = keyof WebSocketAppEventRegistry;
-type EventPayload<K extends EventTypes> = WebSocketAppEventRegistry[K];
+export interface DirectConversation {
+  id: string;
+  userA_id: string;
+  userB_id: string;
+}
+
+export interface User {
+  userName: string;
+  id: string;
+  email: string;
+  password: string;
+}
+
+export type PublicUser = Omit<User, "email" | "password">;
+
+export interface Room {
+  id: string;
+  name: string;
+  isPrivate: 0 | 1;
+}
+
+export interface Message {
+  id: string;
+  userId: string;
+  scopeId: string; // roomId/directConvoId,etc..
+  message: string;
+  timestamp: Date;
+}
+
+export type PublicMessage = Message & {
+  userName: string;
+};
+
+export type DirectMessage = Pick<Message, "id" | "message" | "timestamp" | "scopeId"> & {
+  fromUserId: string;
+  toUserId: string;
+};
+
+export interface Session {
+  token: string;
+  userId: string;
+}
+
+export interface RoomMembership {
+  roomId: string;
+  userId: string;
+}
+
+export interface RoomMember {
+  userName: string;
+  userId: string;
+  roomId: string;
+  isActive: boolean;
+}
+
+export interface RoomWithMembers {
+  id: string;
+  name: string;
+  members: RoomMember[];
+}
+
+/*
+type PublicAccount = Omit<User, "password" | "email"> & {
+  isActive: boolean;
+};
+*/
+
+/*
+export interface AuthenticatedUser {
+  name: string;
+  email: string;
+  id: string;
+}
+*/
+
+export interface PublicDirectConversation {
+  id: string; // convo id
+  userId: string; // other participant id in DM
+  userName: string; // other participant name in DM
+  isActive?: boolean; // is other participant currently online
+}
 
 /**
  * Generally, if an event starts with "GET" it's coming from the client.
  * If an event starts with "LIST", it's typically in response to a "GET" and is sent from the server.
  */
-interface WebSocketAppEventRegistry {
+export interface WebSocketAppEventRegistry {
   CONNECTION_ESTABLISHED: {
     request: IncomingMessage;
     error?: Error;
@@ -68,11 +137,14 @@ interface WebSocketAppEventRegistry {
   };
   // Client sends a message.
   SEND_MESSAGE: {
-    scope: ChatScopeType;
     message: string;
+    scope: ChatScope;
   };
   // Client tells server they have entered a room.
   ENTER_ROOM: {
+    id: string;
+  };
+  ENTER_DIRECT_CONVERSATION: {
     id: string;
   };
   // Client tells server they want to join a room.
@@ -83,6 +155,9 @@ interface WebSocketAppEventRegistry {
   // Client tells server they want to leave (or unjoin) a room.
   UNJOIN_ROOM: {
     id: string;
+  };
+  JOIN_DIRECT_CONVERSATION: {
+    withUserId: string;
   };
   // Client want to create a new room.
   CREATE_ROOM: {
@@ -110,38 +185,45 @@ interface WebSocketAppEventRegistry {
   ENTERED_ROOM: {
     members: RoomMember[];
     messages: PublicMessage[];
-    room: IRoom;
+    room: Room;
     error?: Error;
   };
   // Server informs client of join room result, and provides the client with a list of updated rooms.
   JOINED_ROOM: {
-    rooms: IRoom[];
+    rooms: Room[];
+    error?: Error;
+  };
+  // Server informs client of create direct convo result, and provides client with updated list of
+  // direct convos, and the convoId they just created.
+  JOINED_DIRECT_CONVERSATION: {
+    directConversations: PublicDirectConversation[];
+    directConversationId: string;
     error?: Error;
   };
   // Server reports results of unjoin.
   UNJOINED_ROOM: {
-    rooms: IRoom[];
+    rooms: Room[];
     error?: Error;
   };
   // Server reports create room result + newly created room id + list of updated rooms.
   CREATED_ROOM: {
     id: string;
-    rooms: IRoom[];
+    rooms: Room[];
     error?: Error;
   };
   // Server sends clients a list of rooms they aren't already a member of (or any conditon, like room is public, etc..)
   LIST_JOINABLE_ROOMS: {
-    rooms: IRoom[];
+    rooms: Room[];
     error?: Error;
   };
   // Server sends client a list of rooms they are a member of.
   LIST_ROOMS: {
-    rooms: IRoom[];
+    rooms: Room[];
     error?: Error;
   };
   // Server sends clients all direct convos they're in.
   LIST_DIRECT_CONVERSATIONS: {
-    directConversations: DirectConversationByUserId[];
+    directConversations: PublicDirectConversation[];
     error?: Error;
   };
   // Server sends client a list of messages for a particular direct convo.
@@ -151,7 +233,7 @@ interface WebSocketAppEventRegistry {
   };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)
   LIST_INVITABLE_USERS: {
-    users: PublicAccount[];
+    users: PublicUser[];
     error?: Error;
   };
   // Server sends client the results of a create room request.

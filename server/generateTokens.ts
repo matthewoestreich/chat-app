@@ -1,3 +1,4 @@
+import { JSONWebToken } from "@/types.shared";
 import jsonwebtoken from "jsonwebtoken";
 
 const EXPIRATION_TIMES = {

@@ -8,7 +8,7 @@
     "jsx": "react",
     "sourceMap": true,
     "outDir": "./dist/",
-    "rootDir": ".",
+    "rootDir": "../",
     "removeComments": true,
     "strict": true,
     "moduleResolution": "node",
@@ -19,12 +19,12 @@
       "@": ["../client/*"],
       "@client/*": ["../client/src/*"],
       "@components": ["./src/components/index.ts"],
-      "@pages": ["./src/pages/index.ts"],
+      "@pages/*": ["./src/pages/*"],
       "@hooks": ["./src/hooks/index.ts"],
       "@styles/*": ["./src/styles/*"]
-    },
-    "typeRoots": ["./types", "../node_modules/@types", "../types/index.d.ts", "../types/WebSocketApp.d.ts"]
+    }
+    //"typeRoots": ["./types", "../node_modules/@types", "../types/index.d.ts", "../types/WebSocketApp.d.ts"]
   },
-  "include": ["src/index.tsx", "./src/**/*", "./types/**/*", "../types/index.d.ts", "../types/WebSocketApp.d.ts"],
+  "include": ["./*.ts", "src/index.tsx", "./src/**/*", "./types/**/*"],
   "exclude": ["./build", "./dist"]
 }

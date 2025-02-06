@@ -1,6 +1,7 @@
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
 import SQLitePool from "./SQLitePool";
+import { DatabasePoolConnection } from "@/server/types";
 
 export default class SQLitePoolConnection implements DatabasePoolConnection<sqlite3.Database> {
   id: string;

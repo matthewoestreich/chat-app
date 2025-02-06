@@ -1,6 +1,8 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
+import { User } from "@/types.shared";
+import { AccountsRepository, DatabasePool } from "@/server/types";
 
 export default class AccountsRepositorySQLite implements AccountsRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -9,7 +11,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
     this.databasePool = dbpool;
   }
 
-  async selectByEmail(email: string): Promise<Account> {
+  async selectByEmail(email: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM "user" WHERE email = ?`, [email], (err, row) => {
@@ -18,16 +20,16 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
           return reject(err);
         }
         release();
-        return resolve(row as Account);
+        return resolve(row as User);
       });
     });
   }
 
-  getAll(): Promise<Account[]> {
+  getAll(): Promise<User[]> {
     throw new Error("Method not implemented.");
   }
 
-  async getById(id: string): Promise<Account> {
+  async getById(id: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM "user" WHERE id = ?`, [id], (err, row) => {
@@ -36,21 +38,21 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
           return reject(err);
         }
         release();
-        return resolve(row as Account);
+        return resolve(row as User);
       });
     });
   }
 
-  async create(name: string, passwd: string, email: string): Promise<Account> {
+  async create(name: string, passwd: string, email: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise(async (resolve, reject) => {
       try {
         const salt = await bcrypt.genSalt(10);
         const hashedPw = await bcrypt.hash(passwd, salt);
-        const entity: Account = { id: uuidV7(), name, password: hashedPw, email };
+        const entity: User = { id: uuidV7(), userName: name, password: hashedPw, email };
 
         const query = `INSERT INTO "user" (id, name, password, email) VALUES (?, ?, ?, ?)`;
-        db.run(query, [entity.id, entity.name, hashedPw, entity.email], (err) => {
+        db.run(query, [entity.id, entity.userName, hashedPw, entity.email], (err) => {
           if (err) {
             release();
             return reject(err);
@@ -65,7 +67,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
     });
   }
 
-  update(_id: string, _entity: Account): Promise<Account | null> {
+  update(_id: string, _entity: User): Promise<User | null> {
     throw new Error("Method not implemented.");
   }
 
