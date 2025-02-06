@@ -21,7 +21,7 @@
     "start:nodemon": "NODE_ENV=development nodemon --verbose",
     "test:cy:open": "NODE_ENV=test start-server-and-test 'npm start' http://localhost:3000 'npm run cy:open'",
     "test:cy:run": "NODE_ENV=test start-server-and-test 'npm start' http://localhost:3000 'npm run cy:run'",
-    "test:jest": "jest"
+    "test:jest": "tsc && jest"
   },
   "keywords": [],
   "author": "Matt Oestreich",
