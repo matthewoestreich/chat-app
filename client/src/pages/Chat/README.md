@@ -1,3 +1,4 @@
 - `ChatPage` is the "entry point"
-  - It loads data from websockets and passes it to the main view for Chat
+  - It ensures we are connected to websocket server before rendering `ChatView`
+  - Otherwise `ChatView` ("heavy" component) would rerender unnecessarily
 - `ChatView` is the main view/display/content for chatting
