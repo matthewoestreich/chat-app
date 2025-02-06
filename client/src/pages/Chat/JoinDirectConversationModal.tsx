@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader, ModalTitle } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import { SingletonWebSocketeer as websocketeer } from "@src/ws";
 import sortMembers from "./sortMembers";
+import { PublicMember } from "../../../../types.shared";
+import { AlertState } from "../../../types";
 
 interface JoinDirectConversationModalProperties {
   isOpen: boolean;
@@ -12,7 +14,7 @@ interface JoinDirectConversationModalProperties {
 export default function JoinDirectConversationModal(props: JoinDirectConversationModalProperties): React.JSX.Element {
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
-  const [users, setUsers] = useState<PublicAccount[] | null>(null);
+  const [users, setUsers] = useState<PublicMember[] | null>(null);
 
   const { isOpen, onClose } = props;
 
@@ -65,7 +67,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
             <input className="form-control" placeholder="Search People" type="text" />
             <div className="border mt-3">
               <ul className="list-group" style={{ maxHeight: "35vh", overflowY: "scroll" }}>
-                {users?.map((user) => <Member isButton={true} memberName={user.name} memberId={user.id} isOnline={user.isActive} />)}
+                {users?.map((user) => <Member isButton={true} memberName={user.userName} memberId={user.userName} isOnline={false} />)}
               </ul>
             </div>
           </ModalBody>

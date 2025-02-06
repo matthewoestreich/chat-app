@@ -1,3 +1,4 @@
+import { DatabasePoolConnection } from "@server/types";
 import InMemoryDatabase from "../InMemoryDatabase";
 import InMemoryPool from "./InMemoryPool";
 

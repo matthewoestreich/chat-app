@@ -1,3 +1,5 @@
+import { AuthenticationResult, CreateAccountResult, LogoutResult } from "../../types";
+
 /**
  * Sends login request to backend.
  *
@@ -21,7 +23,7 @@ export async function sendLoginRequest(email: string, password: string): Promise
   if (response.status !== 200 || !result.ok) {
     return { ok: false };
   }
-  return { ok: true, session: result.session, name: result.name, id: result.id, email: result.email };
+  return { ok: true, session: result.session, userName: result.userName, id: result.id, email: result.email };
 }
 
 /**
@@ -46,10 +48,11 @@ export async function sendRegisterRequest(name: string, password: string, email:
     }),
   });
   const result = await response.json();
+  console.log({ result });
   if (response.status !== 200 || !result.ok) {
     return { ok: false };
   }
-  return { ok: true, id: result.id, name: result.name, email: result.email };
+  return { ok: true, id: result.id, userName: result.userName, email: result.email };
 }
 
 /**
@@ -62,7 +65,7 @@ export async function sendValidateRequest(): Promise<AuthenticationResult> {
   const response = await fetch(URL_PATH, { method: "POST" });
   const result = await response.json();
   if (response.status === 200 && result.ok) {
-    return { ok: true, session: result.session, name: result.name, id: result.id, email: result.email };
+    return { ok: true, session: result.session, userName: result.userName, id: result.id, email: result.email };
   }
   return { ok: false };
 }

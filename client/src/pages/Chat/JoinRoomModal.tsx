@@ -1,7 +1,9 @@
 import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import { SingletonWebSocketeer as websocketeer } from "@src/ws";
+import { Room } from "../../../../types.shared";
+import { AlertState } from "../../../types";
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -9,11 +11,11 @@ interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 }
 
 export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX.Element {
-  const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [searchText, setSearchText] = useState("");
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
-  const [rooms, setRooms] = useState<IRoom[] | undefined>(undefined);
+  const [rooms, setRooms] = useState<Room[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
   const { isOpen, onClose } = props;

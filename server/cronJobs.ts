@@ -1,4 +1,5 @@
 import { CronJob } from "cron";
+import { DatabaseProvider } from "@server/types";
 
 export const keepAliveCronJob = keepAlive();
 export const backupDatabaseCronJob = backupDatabase;
@@ -15,7 +16,7 @@ function keepAlive(host = `https://rtchat-a7ul.onrender.com`): CronJob {
   );
 }
 
-function backupDatabase(provider: DatabaseProvider): CronJob {
+function backupDatabase<T>(provider: DatabaseProvider<T>): CronJob {
   return new CronJob(
     "0 * * * *", // Every hour
     async function () {

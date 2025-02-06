@@ -15,6 +15,7 @@ describe("WebSocketApp", () => {
   let INCOMING_MESSAGE: IncomingMessage;
 
   const USER = {
+    userName: "Foo",
     name: "Foo",
     id: "1",
     email: "foo@foo.com",
@@ -86,7 +87,7 @@ describe("WebSocketApp", () => {
       done();
     });
     // Simulate the message event
-    CLIENT.send("SEND_MESSAGE", { message: "hello", scope: "Room" });
+    CLIENT.send("SEND_MESSAGE", { message: "hello", scope: { type: "Room", userName: USER.name, userId: USER.id, id: "1", scopeName: "room1" } });
   });
 
   it("should add client to cache", (done) => {

@@ -1,4 +1,5 @@
 import React from "react";
+import { BootstrapContextualClasses } from "../../types";
 
 interface AlertProperties {
   isOpen: boolean;

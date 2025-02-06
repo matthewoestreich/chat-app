@@ -1,9 +1,10 @@
 import nodeFs from "node:fs";
 import nodePath from "node:path";
 import sqlite3 from "sqlite3";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData } from "@/server/fakerService";
-import { getGistFiles, updateGist } from "@/server/gistService";
+import { DatabasePool, DatabaseProvider, RoomsRepository, RoomsMessagesRepository, AccountsRepository, DirectConversationsRepository, DirectMessagesRepository, SessionsRepository } from "@server/types";
+import WebSocketApp from "@server/wss/WebSocketApp";
+import { generateFakeData } from "@server/fakerService";
+import { getGistFiles, updateGist } from "@server/gistService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
 // prettier-ignore
@@ -15,8 +16,9 @@ import {
   RoomsRepositorySQLite, 
   SessionsRepositorySQLite
 } from "./repositories/index";
+sqlite3.verbose();
 
-export default class SQLiteProvider implements DatabaseProvider {
+export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database> {
   private parseBackupFileDelimiter: string = "~~__~~";
   private backupSQLFilePath: string;
   private databaseFilePath: string;
@@ -366,6 +368,12 @@ export default class SQLiteProvider implements DatabaseProvider {
               id TEXT PRIMARY KEY,
               userA_Id TEXT NOT NULL,
               userB_Id TEXT NOT NULL
+            );`);
+          db.run(`
+            CREATE UNIQUE INDEX IF NOT EXISTS unique_userA_Id_userB_Id_pair
+            ON direct_conversation (
+                CASE WHEN userA_Id < userB_Id THEN userA_Id ELSE userB_Id END,
+                CASE WHEN userA_Id < userB_Id THEN userB_Id ELSE userA_Id END
             );`);
           db.run(`
             CREATE TABLE IF NOT EXISTS direct_messages (

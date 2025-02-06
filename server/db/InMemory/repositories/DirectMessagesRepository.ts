@@ -1,4 +1,6 @@
+import { DirectMessage } from "@/types.shared";
 import InMemoryDatabase from "../InMemoryDatabase";
+import { DatabasePool, DirectMessagesRepository } from "@server/types";
 
 export default class DirectMessagesRepositoryInMemory implements DirectMessagesRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;
@@ -7,7 +9,9 @@ export default class DirectMessagesRepositoryInMemory implements DirectMessagesR
     this.databasePool = dbpool;
   }
 
-  async selectByDirectConversationId(directConversationId: string): Promise<DirectMessage[]> {
+  async selectByDirectConversationId(_directConversationId: string): Promise<DirectMessage[]> {
+    throw new Error("Method not implemented");
+    /*
     const { db } = await this.databasePool.getConnection();
     const directMessages: DirectMessage[] = [];
     return db.getMany<DirectMessage>((data) => {
@@ -20,6 +24,7 @@ export default class DirectMessagesRepositoryInMemory implements DirectMessagesR
       });
       return directMessages;
     });
+    */
   }
 
   getAll(): Promise<DirectMessage[]> {
@@ -28,7 +33,7 @@ export default class DirectMessagesRepositoryInMemory implements DirectMessagesR
   getById(_id: string): Promise<DirectMessage> {
     throw new Error("Method not implemented.");
   }
-  create(_entity: DirectMessage): Promise<DirectMessage> {
+  create(_directConversationId: string, _fromUserId: string, _toUserId: string, _message: string): Promise<DirectMessage> {
     throw new Error("Method not implemented.");
   }
   update(_id: string, _entity: DirectMessage): Promise<DirectMessage | null> {

@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
-import { generateSessionToken } from "@/server/generateTokens.js";
+import { generateSessionToken } from "@server/generateTokens.js";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-//export default function useJwtSession({ onError = (_req: Request, _res: Response, _next: NextFunction): void => {} } = {}) {}
+function formatUser(user: AuthenticatedUser): { id: string; userName: string; email: string } {
+  return { id: user.id, userName: user.userName, email: user.email };
+}
 
 export default async function useJwt(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -13,9 +15,9 @@ export default async function useJwt(req: Request, res: Response, next: NextFunc
       return next();
     }
 
-    const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as Account | null;
+    const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as AuthenticatedUser | null;
     if (decodedToken) {
-      req.user = { name: decodedToken.name, email: decodedToken.email, id: decodedToken.id };
+      req.user = formatUser(decodedToken);
       return next();
     }
 
@@ -45,8 +47,8 @@ async function verifyJwtAsync(token: string, secret: string): Promise<string | j
 
 async function handleSessionRefresh(receivedSessionToken: string, req: Request, res: Response): Promise<boolean> {
   try {
-    const decodedToken = jsonwebtoken.decode(receivedSessionToken) as JSONWebToken;
-    if (!decodedToken.id) {
+    const decodedToken = jsonwebtoken.decode(receivedSessionToken) as AuthenticatedUser | null;
+    if (!decodedToken || !decodedToken.id) {
       return false;
     }
 
@@ -58,13 +60,12 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     }
 
     // Now we have the "OK" to generate a new token..
-    const sessionToken = generateSessionToken(decodedToken.name, decodedToken.id, decodedToken.email);
+    const sessionToken = generateSessionToken(decodedToken.userName, decodedToken.id, decodedToken.email);
     // Update refresh token in db to newly generated refresh token.
     await req.databaseProvider.sessions.upsert(decodedToken.id, sessionToken.signed);
     // Update request object
-    req.user = { name: decodedToken.name, id: decodedToken.id, email: decodedToken.email };
+    req.user = formatUser(decodedToken);
     // Update client side cookie
-    console.log({ from: "useJwt", action: "Setting session cookie", cookie: sessionToken.signed });
     res.cookie("session", sessionToken.signed, { maxAge: ONE_DAY });
     return true;
   } catch (_e) {

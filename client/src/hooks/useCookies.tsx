@@ -1,3 +1,5 @@
+import { UseCookie } from "../../types";
+import { Cookie, Cookies } from "../../../types.shared";
 /**
  * Sets document.cookie
  * @param name

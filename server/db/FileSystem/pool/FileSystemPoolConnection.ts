@@ -1,5 +1,6 @@
 import FileSystemPool from "./FileSystemDatabasePool";
 import FileSystemDatabase from "../FileSystemDatabase";
+import { DatabasePoolConnection } from "@server/types";
 
 export default class FileSystemPoolConnection implements DatabasePoolConnection<FileSystemDatabase> {
   db: FileSystemDatabase;

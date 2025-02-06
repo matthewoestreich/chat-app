@@ -1,10 +1,11 @@
 import "dotenv/config";
 import { ServerOptions } from "ws";
 import { Express } from "express";
-import expressApp, { setDatabaseProvider } from "@/server";
-import startWebSocketApp from "@/server/wss";
-import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
-import { DatabaseProviderFactory, DatabaseConfigLoader } from "@/server/db";
+import expressApp, { setDatabaseProvider } from "@server/index";
+import startWebSocketApp from "@server/wss";
+import { backupDatabaseCronJob, keepAliveCronJob } from "@server/cronJobs";
+import { DatabaseProvider } from "./server/types";
+import DatabaseProviderFactory from "./server/db/DatabaseProviderFactory";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
 process.env.WSS_URL = process.env.WSS_URL || undefined;
@@ -20,10 +21,10 @@ if (process.env.WSS_URL === undefined) {
   throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
-const databaseConfig = DatabaseConfigLoader.loadConfig(process.env.DATABASE_PROVIDER || "");
-console.log(`Using DatabaseProvider : ${databaseConfig.type}`);
-const provider = DatabaseProviderFactory.createProvider(databaseConfig);
-
+const provider = DatabaseProviderFactory.create("sqlite");
+if (!provider) {
+  throw new Error("Provider not recognized!");
+}
 setDatabaseProvider(provider);
 
 (async (): Promise<void> => {
@@ -60,9 +61,9 @@ setDatabaseProvider(provider);
  * Start Express app and WebSocketApp Helpers
  */
 
-export type WebSocketAppStartupFunction = (options: ServerOptions, databaseProvider: DatabaseProvider) => Promise<void>;
+export type WebSocketAppStartupFunction<T> = (options: ServerOptions, databaseProvider: DatabaseProvider<T>) => Promise<void>;
 
-async function startExpressAndWebSocketApps(expressApp: Express, startWebSocketAppFn: WebSocketAppStartupFunction, provider: DatabaseProvider): Promise<void> {
+async function startExpressAndWebSocketApps<T>(expressApp: Express, startWebSocketAppFn: WebSocketAppStartupFunction<T>, provider: DatabaseProvider<T>): Promise<void> {
   try {
     const server = await expressApp.listenAsync(process.env.EXPRESS_PORT);
     console.log(`Express server listening on '${JSON.stringify(server.address(), null, 2)}'`);

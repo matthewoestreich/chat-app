@@ -1,4 +1,6 @@
+import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
+import { DirectMessage } from "@/types.shared";
 
 export default class DirectMessagesRepositoryFileSystem implements DirectMessagesRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -7,18 +9,19 @@ export default class DirectMessagesRepositoryFileSystem implements DirectMessage
     this.databasePool = dbpool;
   }
 
-  async selectByDirectConversationId(directConversationId: string): Promise<DirectMessage[]> {
-    const { db, release } = await this.databasePool.getConnection();
-    const directMessages: DirectMessage[] = [];
-    const dms = await db.selectManyWhere("directMessages", (dm) => dm.directConversationId === directConversationId);
-    for (const dm of dms) {
-      const foundUser = await db.selectOne("users", "id", dm.fromUserId);
-      if (foundUser) {
-        directMessages.push({ ...dm, fromUserName: foundUser.name });
-      }
-    }
-    release();
-    return directMessages;
+  async selectByDirectConversationId(_directConversationId: string): Promise<DirectMessage[]> {
+    throw new Error("Method not impl");
+    //const { db, release } = await this.databasePool.getConnection();
+    //const directMessages: DirectMessage[] = [];
+    //const dms = await db.selectManyWhere("directMessages", (dm) => dm.directConversationId === directConversationId);
+    //for (const dm of dms) {
+    //  const foundUser = await db.selectOne("users", "id", dm.fromUserId);
+    //  if (foundUser) {
+    //    directMessages.push({ ...dm, fromUserName: foundUser.name });
+    //  }
+    //}
+    //release();
+    //return directMessages;
   }
 
   getAll(): Promise<DirectMessage[]> {
@@ -27,7 +30,7 @@ export default class DirectMessagesRepositoryFileSystem implements DirectMessage
   getById(_id: string): Promise<DirectMessage> {
     throw new Error("Method not implemented.");
   }
-  create(_entity: DirectMessage): Promise<DirectMessage> {
+  create(): Promise<DirectMessage> {
     throw new Error("Method not implemented.");
   }
   update(_id: string, _entity: DirectMessage): Promise<DirectMessage | null> {

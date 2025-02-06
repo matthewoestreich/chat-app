@@ -9,7 +9,7 @@ interface AuthProviderProperties {
 }
 
 export default function AuthProvider(props: AuthProviderProperties): React.JSX.Element {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [session, setSession] = useState<string | null>(null);
   const { setCookie, clearAllCookies } = useCookies();
   const navigate = useNavigate();
@@ -20,9 +20,9 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    * @param {string} password
    */
   async function login(emailAddress: string, password: string): Promise<boolean> {
-    const { ok, name, id, email, session: sessionToken } = await sendLoginRequest(emailAddress, password);
-    if (ok && name && id && email && sessionToken) {
-      setUser({ name, id, email });
+    const { ok, userName, id, email, session: sessionToken } = await sendLoginRequest(emailAddress, password);
+    if (ok && userName && id && email && sessionToken) {
+      setUser({ userName, id, email });
       setSession(sessionToken);
       setCookie("session", sessionToken, 1);
       navigate("/chat");
@@ -36,13 +36,14 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    * Validate existing cookie.
    */
   async function validateSession(): Promise<void> {
+    console.log("validating");
     if (session) {
       // Already validated.
       return;
     }
-    const { ok, name, id, email, session: sessionToken } = await sendValidateRequest();
-    if (ok && name && id && email && sessionToken) {
-      setUser({ name, id, email });
+    const { ok, userName, id, email, session: sessionToken } = await sendValidateRequest();
+    if (ok && userName && id && email && sessionToken) {
+      setUser({ userName, id, email });
       setSession(sessionToken);
       return;
     }

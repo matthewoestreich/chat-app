@@ -25,6 +25,7 @@
  */
 
 import { Express, Request, Response, NextFunction } from "express";
+import { DatabaseProvider } from "../types";
 
 export type SetDatabaseProviderFunction = (provider: DatabaseProvider) => void;
 

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket, ServerOptions, RawData } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
 import { EventTypeMissingError } from "../errors";
 import WebSocketClient from "./WebSocketClient";
+import { Container, DatabaseProvider, EventPayload, EventTypes, WebSocketAppCache, WebSocketAppCatchHandler } from "../types";
 
 /**
  * Wrapper around WebSocketServer that emits events based on WebSocket message(s).
@@ -39,7 +40,7 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   // TODO : come up with a better way to pass DatabaseProvider...
-  public databaseProvider: DatabaseProvider;
+  public databaseProvider: DatabaseProvider<unknown>;
 
   constructor() {
     super();

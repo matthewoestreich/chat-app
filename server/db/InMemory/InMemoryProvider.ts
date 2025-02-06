@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData } from "@/server/fakerService";
+import WebSocketApp from "@server/wss/WebSocketApp";
+import { generateFakeData } from "@server/fakerService";
 import InMemoryDatabase, { InMemoryDatabaseData } from "./InMemoryDatabase";
 import InMemoryPool from "./pool/InMemoryPool";
 // prettier-ignore
@@ -12,6 +12,7 @@ import {
   RoomsRepositoryInMemory,
   SessionsRepositoryInMemory
 } from "./repositories";
+import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@server/types";
 
 export default class InMemoryProvider implements DatabaseProvider {
   databasePool: DatabasePool<InMemoryDatabase>;
@@ -100,7 +101,7 @@ export default class InMemoryProvider implements DatabaseProvider {
         const pw = await bcrypt.hash(user.password, salt);
         inMemoryData.users.push({
           id: user.id,
-          name: user.username,
+          userName: user.username,
           email: user.email,
           password: pw,
         });
@@ -123,9 +124,9 @@ export default class InMemoryProvider implements DatabaseProvider {
 
       // Add room messages
       inMemoryData.messages = fakeData.chatRoomMessages.map((message) => ({
-        messageId: message.id,
+        id: message.id,
         userId: message.user.id,
-        roomId: message.room.id,
+        scopeId: message.room.id,
         message: message.message,
         userName: message.user.username,
         timestamp: new Date(),
@@ -141,12 +142,11 @@ export default class InMemoryProvider implements DatabaseProvider {
       // Add direct messages to direct conversations
       inMemoryData.directMessages = fakeData.directMessages.map((dm) => ({
         id: dm.id,
-        directConversationId: dm.directConversation.id,
+        scopeId: dm.directConversation.id,
         fromUserId: dm.from.id,
         fromUserName: dm.from.username,
         toUserId: dm.to.id,
         timestamp: new Date(),
-        isRead: dm.isRead,
         message: dm.message,
       }));
 

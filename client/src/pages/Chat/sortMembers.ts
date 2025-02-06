@@ -1,20 +1,22 @@
+import { PublicMember } from "../../../../types.shared";
+
 /**
  *  SORTS MEMBERS/ACCOUNTS IN PLACE!
  * Sorts members/accounts based on (in order):
  *  - Online status
  *  - Alphabetical
- * @param {RoomMember[] | PublicAccount} members : members you want to sort
+ * @param {PublicMember[]} members : members you want to sort
  * @returns
  */
-export default function sortMembers(members: RoomMember[] | PublicAccount[]): void {
+export default function sortMembers(members: PublicMember[]): void {
   members.sort((a, b) => {
     // If both are active just sort alphabetically
     if (a.isActive && b.isActive) {
-      return a.name.localeCompare(b.name);
+      return a.userId.localeCompare(b.userName);
     }
     // If both are inactive, sort alphabetically
     if (!a.isActive && !b.isActive) {
-      return a.name.localeCompare(b.name);
+      return a.userName.localeCompare(b.userName);
     }
     // Here, if 'a' is active, 'b' has to be inactive.
     if (a.isActive) {
@@ -24,7 +26,3 @@ export default function sortMembers(members: RoomMember[] | PublicAccount[]): vo
     return 1;
   });
 }
-
-// Like aliases hah
-export const sortAccounts = sortMembers;
-export const sortUsers = sortMembers;

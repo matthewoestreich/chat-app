@@ -1,4 +1,5 @@
-import Mutex from "@/server/Mutex";
+import Mutex from "@server/Mutex";
+import { DirectConversation, DirectMessage, Message, Room, Session, User } from "@/types.shared";
 
 export interface InMemoryChatTable {
   userId: string;
@@ -6,12 +7,12 @@ export interface InMemoryChatTable {
 }
 
 export interface InMemoryDatabaseData {
-  users: Account[];
+  users: User[];
   chat: InMemoryChatTable[];
   directConversations: DirectConversation[];
   directMessages: DirectMessage[];
   messages: Message[];
-  room: IRoom[];
+  room: Room[];
   session: Session[];
 }
 

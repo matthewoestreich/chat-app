@@ -1,3 +1,11 @@
+import {
+  WebSocketeerEventHandlerMapArray,
+  WebSocketeerEventMap,
+  WebSocketeerEventPayload,
+  WebSocketeerEventType,
+  WebSocketeerParsedMessage,
+} from "../../types";
+
 export default class WebSocketeer<T extends WebSocketeerEventMap> {
   private socket: WebSocket | null = null;
 
@@ -7,7 +15,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     onError: (_e: Event): void => {},
   };
 
-  private handlers: WebSocketeerEventHandlerMap<T> = {};
+  private handlers: WebSocketeerEventHandlerMapArray<T> = {};
 
   public url: string;
 
@@ -61,6 +69,17 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
       this.handlers[event] = [];
     }
     this.handlers[event].push(handler);
+  }
+
+  public off<K extends WebSocketeerEventType<T>>(event: K, handler: (payload: WebSocketeerEventPayload<T, K>) => void): void {
+    const handlers = this.handlers[event];
+    if (!handlers) {
+      return;
+    }
+    const idx = handlers.findIndex((h) => h === handler);
+    if (idx !== -1) {
+      handlers.splice(idx, 1);
+    }
   }
 
   public emit<K extends keyof T>(event: K, payload: T[K]): void {
