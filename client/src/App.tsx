@@ -1,8 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage, ChatPage } from "@pages/index";
-import AuthProvider from "@client/auth/AuthProvider";
-import ThemeProvider from "@client/theme/ThemeProvider";
+import AuthProvider from "@src/auth/AuthProvider";
+import ThemeProvider from "@src/theme/ThemeProvider";
 import { ChatProvider } from "@pages/Chat/context";
 import { ProtectedRoutes, AutoLoginRoutes } from "./auth/GuardedRoutes";
 

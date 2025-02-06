@@ -1,5 +1,5 @@
-import { DatabasePool, RoomsMessagesRepository } from "@/server/types";
-import { Message } from "@/types.shared";
+import { DatabasePool, RoomsMessagesRepository } from "@server/types";
+import { Message, PublicMessage } from "@root/types.shared";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
 
@@ -10,14 +10,14 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
     this.databasePool = dbpool;
   }
 
-  async selectByRoomId(roomId: string): Promise<Message[]> {
+  async selectByRoomId(roomId: string): Promise<PublicMessage[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
         const query = `
         SELECT
-          messages.id AS messageId,
-          messages.roomId,
+          messages.id AS id,
+          messages.roomId AS scopeId,
           user.id AS userId,
           user.name AS userName,
           messages.message,
@@ -30,10 +30,9 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
           messages.userId = user.id
         WHERE
           messages.roomId = ?
-        ORDER BY
-          messages.timestamp ASC;`;
+        ORDER BY messages.timestamp DESC;`;
 
-        db.all(query, [roomId], (err, rows: Message[]) => {
+        db.all(query, [roomId], (err, rows: PublicMessage[]) => {
           if (err) {
             release();
             return reject(err);
@@ -55,20 +54,31 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
     throw new Error("Method not implemented.");
   }
 
+  /**
+   *
+   * FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
+   *
+   * @param roomId
+   * @param userId
+   * @param message
+   * @returns
+   */
   async create(roomId: string, userId: string, message: string): Promise<Message> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
-        const entity: Message = { id: uuidV7(), userId, scopeId: roomId, message, timestamp: new Date() };
+        const messageId = uuidV7();
+        // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
         const query = `INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
-        const params = [entity.id, entity.scopeId, entity.userId, entity.message];
+        const params = [messageId, roomId, userId, message];
         db.run(query, params, function (err) {
           if (err) {
             release();
             return reject(err);
           }
           release();
-          return resolve(entity);
+          // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
+          return resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
         });
       } catch (e) {
         release();

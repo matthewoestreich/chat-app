@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
 import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
-import { DatabasePool, DirectConversationsRepository } from "@/server/types";
+import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositoryInMemory implements DirectConversationsRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;

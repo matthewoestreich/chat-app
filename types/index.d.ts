@@ -15,3 +15,9 @@ declare namespace Express {
     sessionToken: string;
   }
 }
+
+interface AuthenticatedUser {
+  userName: string;
+  email: string;
+  id: string;
+}

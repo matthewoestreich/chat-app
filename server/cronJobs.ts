@@ -1,5 +1,5 @@
 import { CronJob } from "cron";
-import { DatabaseProvider } from "@/server/types";
+import { DatabaseProvider } from "@server/types";
 
 export const keepAliveCronJob = keepAlive();
 export const backupDatabaseCronJob = backupDatabase;

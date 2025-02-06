@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
 import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
-import { DatabasePool, DirectConversationsRepository } from "@/server/types";
+import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositoryFileSystem implements DirectConversationsRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;

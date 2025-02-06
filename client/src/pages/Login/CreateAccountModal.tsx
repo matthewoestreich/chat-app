@@ -12,7 +12,7 @@ import {
   ModalBody,
   ModalFooter
 } from "@components";
-import { sendRegisterRequest } from "@client/auth/authService";
+import { sendRegisterRequest } from "@src/auth/authService";
 
 interface CreateAccountModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;

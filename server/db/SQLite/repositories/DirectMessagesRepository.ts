@@ -1,4 +1,4 @@
-import { DatabasePool, DirectMessagesRepository } from "@/server/types";
+import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import { DirectMessage } from "@/types.shared";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";

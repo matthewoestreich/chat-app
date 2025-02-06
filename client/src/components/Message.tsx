@@ -1,4 +1,4 @@
-import { useRenderCounter } from "@hooks";
+//import { useRenderCounter } from "@hooks";
 import React, { HTMLAttributes, useMemo } from "react";
 
 interface MessageProperties extends HTMLAttributes<HTMLDivElement> {
@@ -10,7 +10,7 @@ interface MessageProperties extends HTMLAttributes<HTMLDivElement> {
 }
 
 export default function Message(props: MessageProperties): React.JSX.Element {
-  const renderCount = useRenderCounter(`'Message ${props.messageId}'`);
+  //const renderCount = useRenderCounter(`'Message ${props.messageId}'`);
   //console.log(renderCount);
 
   const messageStyle = useMemo(() => ({ marginTop: "0.67rem" }), []);
@@ -23,7 +23,7 @@ export default function Message(props: MessageProperties): React.JSX.Element {
         {from}
       </span>
       <div className="message-body" {...messageProps}>
-        {message} {renderCount}
+        {message}
       </div>
     </div>
   );

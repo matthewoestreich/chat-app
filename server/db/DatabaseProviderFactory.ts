@@ -1,4 +1,4 @@
-import appRootPath from "@/appRootPath";
+import appRootPath from "@root/appRootPath";
 import { DatabaseProvider } from "../types";
 import SQLiteProvider from "./SQLite/SQLiteProvider";
 import InMemoryProvider from "./InMemory/InMemoryProvider";

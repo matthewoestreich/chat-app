@@ -5,7 +5,7 @@ import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
-import { PublicMessage, User } from "@/types.shared";
+import { PublicMessage, Room } from "@root/types.shared";
 
 const wsapp = new WebSocketApp();
 
@@ -41,7 +41,7 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
     return client.socket.close(code, definition);
   }
 
-  client.user = jsonwebtoken.decode(cookies.session) as User;
+  client.user = jsonwebtoken.decode(cookies.session) as AuthenticatedUser;
   const rooms = await wsapp.databaseProvider.rooms.selectByUserId(client.user.id);
   client.send("LIST_ROOMS", { rooms });
   rooms.forEach((room) => wsapp.addContainerToCache(room.id));
@@ -80,20 +80,17 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
       userName: client.user.userName,
       message,
     });
-
     try {
-      const msg = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, client.user.userName, message);
-      client.send("SENT_MESSAGE", {
-        message: {
-          scopeId: msg.scopeId,
-          userId: msg.userId,
-          timestamp: msg.timestamp,
-          message: msg.message,
-          id: msg.id,
-          // TODO Need to fix this!
-          userName: msg.userId,
-        },
-      });
+      const sentMessage = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, message);
+      const formattedMessage = {
+        scopeId: sentMessage.scopeId,
+        userId: client.user.id,
+        timestamp: sentMessage.timestamp,
+        message: sentMessage.message,
+        id: sentMessage.id,
+        userName: client.user.userName,
+      };
+      client.send("SENT_MESSAGE", { message: formattedMessage });
     } catch (e) {
       console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
       client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
@@ -155,21 +152,22 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
   try {
     const room = await wsapp.databaseProvider.rooms.getById(id);
     const members = await wsapp.databaseProvider.rooms.selectRoomMembersExcludingUser(id, client.user.id);
-    const messages = (await wsapp.databaseProvider.roomMessages.selectByRoomId(id)) as PublicMessage[];
+    const messages = await wsapp.databaseProvider.roomMessages.selectByRoomId(id);
+
     client.send("ENTERED_ROOM", {
+      room,
       messages,
       // Add `isActive` property for each user in this room based upon if they're cached in this room.
       members: members.map((m) => ({
-        ...m,
-        userId: m.id,
         userName: m.userName,
-        roomId: room.id,
-        isActive: wsapp.getCachedContainer(id)!.has(m.id),
+        userId: m.userId,
+        scopeId: m.scopeId,
+        isActive: wsapp.getCachedContainer(id)!.has(m.userId),
       })),
-      room,
     });
   } catch (e) {
     console.error(`[ERROR] TODO : handle this error better! From ENTER_ROOM :`, e);
+    client.send("ENTERED_ROOM", { error: e as Error, members: [], messages: [], room: {} as Room });
   }
 });
 
@@ -330,7 +328,7 @@ wsapp.on("GET_INVITABLE_USERS", async (client) => {
 
     client.send("LIST_INVITABLE_USERS", {
       // Add `isActive` field for each user
-      users: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.id) })),
+      users: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
     });
   } catch (e) {
     client.send("LIST_INVITABLE_USERS", { error: e as Error, users: [] });

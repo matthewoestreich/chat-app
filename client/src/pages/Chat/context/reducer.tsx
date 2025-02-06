@@ -1,28 +1,27 @@
+import { ChatScope, DirectMessage, PublicDirectConversation, PublicMessage, Room, PublicMember } from "../../../../../types.shared";
 import sortMembers from "../sortMembers";
 
 export interface ChatState {
-  rooms: IRoom[] | null;
+  rooms: Room[] | null;
   directConversations: PublicDirectConversation[] | null;
   directMessages: DirectMessage[] | null;
-  members: RoomMember[] | null;
+  members: PublicMember[] | null;
   messages: PublicMessage[] | null;
   chatScope: ChatScope | null;
   isEnteringRoom: boolean;
-  messageText: string;
 }
 
 export type ChatStateAction =
-  | { type: "SET_ROOMS"; payload: IRoom[] | null }
-  | { type: "SET_MEMBERS"; payload: RoomMember[] | null }
+  | { type: "SET_ROOMS"; payload: Room[] | null }
+  | { type: "SET_MEMBERS"; payload: PublicMember[] | null }
   | { type: "SET_MESSAGES"; payload: PublicMessage[] | null }
   | { type: "SET_DIRECT_CONVERSATIONS"; payload: PublicDirectConversation[] | null }
   | { type: "SET_DIRECT_MESSAGES"; payload: DirectMessage[] | null }
   | { type: "SET_CHAT_SCOPE"; payload: ChatScope | null }
-  | { type: "SET_MESSAGE_TEXT"; payload: string }
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
   | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
-  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: RoomMember[] | null; chatScope: ChatScope | null } };
+  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: PublicMember[] | null; chatScope: ChatScope | null } };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
@@ -45,9 +44,6 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
     case "SET_DIRECT_CONVERSATIONS": {
       console.log("setDirctConvos");
       return { ...state, directConversations: action.payload };
-    }
-    case "SET_MESSAGE_TEXT": {
-      return { ...state, messageText: action.payload };
     }
     case "SET_DIRECT_MESSAGES": {
       console.log("setDirectMEssages");

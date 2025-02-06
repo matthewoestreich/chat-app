@@ -1,10 +1,10 @@
 import nodeFs from "node:fs";
 import nodePath from "node:path";
 import sqlite3 from "sqlite3";
-import { DatabasePool, DatabaseProvider, RoomsRepository, RoomsMessagesRepository, AccountsRepository, DirectConversationsRepository, DirectMessagesRepository, SessionsRepository } from "@/server/types";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData } from "@/server/fakerService";
-import { getGistFiles, updateGist } from "@/server/gistService";
+import { DatabasePool, DatabaseProvider, RoomsRepository, RoomsMessagesRepository, AccountsRepository, DirectConversationsRepository, DirectMessagesRepository, SessionsRepository } from "@server/types";
+import WebSocketApp from "@server/wss/WebSocketApp";
+import { generateFakeData } from "@server/fakerService";
+import { getGistFiles, updateGist } from "@server/gistService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
 // prettier-ignore

@@ -1,11 +1,11 @@
-import { DirectConversation, DirectMessage, Message, PublicDirectConversation, PublicUser, Room, RoomWithMembers, Session, User, WebSocketAppEventRegistry } from "@/types.shared";
+import { DirectConversation, DirectMessage, Message, PublicDirectConversation, PublicMessage, PublicUser, Room, ChatScopeWithMembers, Session, User, WebSocketAppEventRegistry, PublicMember } from "@root/types.shared";
 import type { WebSocket } from "ws";
 
 declare class WebSocketClient {
   get socket(): WebSocket;
-  get user(): User;
+  get user(): AuthenticatedUser | User;
   get activeIn(): CachedContainer;
-  set user(account: User);
+  set user(account: AuthenticatedUser | User);
   setActiveIn(id: string, container: Container): void;
   send<K extends EventTypes>(type: K, payload: EventPayload<K>): void;
   broadcast<K extends EventTypes>(type: K, payload: EventPayload<K>): void;
@@ -53,8 +53,8 @@ export interface RoomsRepository<DB> {
   addUserToRoom(userId: string, roomId: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<Room[]>;
   removeUserFromRoom(userId: string, roomId: string): Promise<boolean>;
-  selectRoomsWithMembersByUserId(userId: string): Promise<RoomWithMembers[]>;
-  selectRoomMembersExcludingUser(roomId: string, excludingUserId: string): Promise<PublicUser[]>;
+  selectRoomsWithMembersByUserId(userId: string): Promise<ChatScopeWithMembers[]>;
+  selectRoomMembersExcludingUser(roomId: string, excludingUserId: string): Promise<PublicMember[]>;
   selectRoomMembersByRoomId(roomId: string): Promise<PublicUser[]>;
 }
 
@@ -76,7 +76,7 @@ export interface DirectConversationsRepository<DB> {
   update(id: string, entity: DirectConversation): Promise<DirectConversation | null>;
   delete(id: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<PublicDirectConversation[]>;
-  selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]>;
+  selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]>;
 }
 
 export interface DirectMessagesRepository<DB> {
@@ -93,10 +93,10 @@ export interface RoomsMessagesRepository<T> {
   databasePool: DatabasePool<T>;
   getAll(): Promise<Message[]>;
   getById(id: string): Promise<Message>;
-  create(roomId: string, userId: string, userName: string, message: string): Promise<Message>;
+  create(roomId: string, userId: string, message: string): Promise<Message>;
   update(id: string, entity: Message): Promise<Message | null>;
   delete(id: string): Promise<boolean>;
-  selectByRoomId(roomId: string): Promise<Message[]>;
+  selectByRoomId(roomId: string): Promise<PublicMessage[]>;
 }
 
 export interface SessionsRepository<T> {

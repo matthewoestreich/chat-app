@@ -1,4 +1,4 @@
-import { DatabasePool, SessionsRepository } from "@/server/types";
+import { DatabasePool, SessionsRepository } from "@server/types";
 import { Session } from "@/types.shared";
 import sqlite3 from "sqlite3";
 

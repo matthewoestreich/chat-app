@@ -11,7 +11,7 @@ export type Cookies = {
 
 export interface JSONWebToken {
   id: string;
-  name: string;
+  userName: string;
   email: string;
   signed: string;
 }
@@ -21,6 +21,7 @@ export type ChatScopeType = "Room" | "DirectConversation";
 // ChatScope represents a chat room, a direct message, etc..
 export interface ChatScope {
   id: string;
+  scopeName: string;
   userId: string;
   type: ChatScopeType;
   userName: string;
@@ -47,13 +48,13 @@ export interface Room {
   isPrivate: 0 | 1;
 }
 
-export interface Message {
+export type Message = {
   id: string;
   userId: string;
   scopeId: string; // roomId/directConvoId,etc..
   message: string;
   timestamp: Date;
-}
+};
 
 export type PublicMessage = Message & {
   userName: string;
@@ -74,32 +75,16 @@ export interface RoomMembership {
   userId: string;
 }
 
-export interface RoomMember {
+export interface PublicMember {
   userName: string;
   userId: string;
-  roomId: string;
+  scopeId: string;
   isActive: boolean;
 }
 
-export interface RoomWithMembers {
-  id: string;
-  name: string;
-  members: RoomMember[];
-}
-
-/*
-type PublicAccount = Omit<User, "password" | "email"> & {
-  isActive: boolean;
+export type ChatScopeWithMembers = Omit<ChatScope, "userName"> & {
+  members: PublicMember[];
 };
-*/
-
-/*
-export interface AuthenticatedUser {
-  name: string;
-  email: string;
-  id: string;
-}
-*/
 
 export interface PublicDirectConversation {
   id: string; // convo id
@@ -108,10 +93,8 @@ export interface PublicDirectConversation {
   isActive?: boolean; // is other participant currently online
 }
 
-/**
- * Generally, if an event starts with "GET" it's coming from the client.
- * If an event starts with "LIST", it's typically in response to a "GET" and is sent from the server.
- */
+/** Generally, if an event starts with "GET" it's coming from the client.
+ * If an event starts with "LIST", it's typically in response to a "GET" and is sent from the server. */
 export interface WebSocketAppEventRegistry {
   CONNECTION_ESTABLISHED: {
     request: IncomingMessage;
@@ -123,9 +106,7 @@ export interface WebSocketAppEventRegistry {
     error?: Error;
   };
 
-  /**
-   * Client side events.
-   */
+  /** * Client side events. */
 
   // Since "GET_x" messages are usual a request for data, they usually require no payload, but most def don't require an `error?` field.
   GET_ROOMS: unknown;
@@ -165,9 +146,7 @@ export interface WebSocketAppEventRegistry {
     isPrivate?: boolean;
   };
 
-  /**
-   * Server side events
-   */
+  /** * Server side events */
 
   // Report back to client the message was sent.
   SENT_MESSAGE: {
@@ -183,7 +162,7 @@ export interface WebSocketAppEventRegistry {
   };
   // Server informs client of enter room results.
   ENTERED_ROOM: {
-    members: RoomMember[];
+    members: PublicMember[];
     messages: PublicMessage[];
     room: Room;
     error?: Error;
@@ -233,7 +212,7 @@ export interface WebSocketAppEventRegistry {
   };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)
   LIST_INVITABLE_USERS: {
-    users: PublicUser[];
+    users: PublicMember[];
     error?: Error;
   };
   // Server sends client the results of a create room request.

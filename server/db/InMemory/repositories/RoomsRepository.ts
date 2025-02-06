@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
-import { PublicUser, Room, RoomWithMembers } from "@/types.shared";
-import { DatabasePool, RoomsRepository } from "@/server/types";
+import { PublicUser, Room, ChatScopeWithMembers } from "@/types.shared";
+import { DatabasePool, RoomsRepository } from "@server/types";
 
 export default class RoomsRepositoryInMemory implements RoomsRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;
@@ -66,7 +66,7 @@ export default class RoomsRepositoryInMemory implements RoomsRepository<InMemory
     return returnValue;
   }
 
-  async selectRoomsWithMembersByUserId(_userId: string): Promise<RoomWithMembers[]> {
+  async selectRoomsWithMembersByUserId(_userId: string): Promise<ChatScopeWithMembers[]> {
     throw new Error("Method not implemented");
     /*
     const { db } = await this.databasePool.getConnection();

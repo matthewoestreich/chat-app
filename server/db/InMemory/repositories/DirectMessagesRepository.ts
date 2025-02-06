@@ -1,6 +1,6 @@
 import { DirectMessage } from "@/types.shared";
 import InMemoryDatabase from "../InMemoryDatabase";
-import { DatabasePool, DirectMessagesRepository } from "@/server/types";
+import { DatabasePool, DirectMessagesRepository } from "@server/types";
 
 export default class DirectMessagesRepositoryInMemory implements DirectMessagesRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;

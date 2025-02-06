@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
-import { DatabasePool, RoomsRepository } from "@/server/types";
-import { PublicUser, Room, RoomWithMembers } from "@/types.shared";
+import { DatabasePool, RoomsRepository } from "@server/types";
+import { PublicUser, Room, PublicMember, ChatScopeWithMembers } from "@root/types.shared";
 
 export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -76,7 +76,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     });
   }
 
-  async selectRoomsWithMembersByUserId(userId: string): Promise<RoomWithMembers[]> {
+  async selectRoomsWithMembersByUserId(userId: string): Promise<ChatScopeWithMembers[]> {
     interface Row {
       // Shape of returned row for the specific query below...
       roomId: string;
@@ -117,15 +117,15 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
             return reject(err);
           }
 
-          const result = rows.reduce((acc: RoomWithMembers[], row: Row) => {
+          const result = rows.reduce((acc: ChatScopeWithMembers[], row: Row) => {
             let room = acc.find((r) => r.id === row.roomId);
             if (!room) {
-              room = { id: row.roomId, name: row.roomName, members: [] };
+              room = { id: row.roomId, userId: row.userId, type: "Room", members: [] };
               acc.push(room);
             }
-            room.members.push({ userId: row.userId, roomId: row.roomId, userName: row.userName, isActive: false });
+            room.members.push({ userId: row.userId, scopeId: row.roomId, userName: row.userName, isActive: false });
             return acc;
-          }, [] as RoomWithMembers[]);
+          }, [] as ChatScopeWithMembers[]);
 
           release();
           return resolve(result);
@@ -137,13 +137,13 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     });
   }
 
-  async selectRoomMembersExcludingUser(roomId: string, excludingUserId: string): Promise<PublicUser[]> {
+  async selectRoomMembersExcludingUser(roomId: string, excludingUserId: string): Promise<PublicMember[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
       SELECT 
           r.id AS roomId,
-          u.name AS name,
+          u.name AS userName,
           u.id AS userId
       FROM 
           chat c1
@@ -156,7 +156,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       ORDER BY u.name ASC;
     `;
 
-      db.all(query, [roomId, excludingUserId], (err, rows: PublicUser[]) => {
+      db.all(query, [roomId, excludingUserId], (err, rows: PublicMember[]) => {
         if (err) {
           release();
           return reject(err);

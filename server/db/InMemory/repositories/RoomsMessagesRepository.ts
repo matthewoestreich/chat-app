@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
 import { Message } from "@/types.shared";
-import { DatabasePool, RoomsMessagesRepository } from "@/server/types";
+import { DatabasePool, RoomsMessagesRepository } from "@server/types";
 
 export default class RoomsMessagesRepositoryInMemory implements RoomsMessagesRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;

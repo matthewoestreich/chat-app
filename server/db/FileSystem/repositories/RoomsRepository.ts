@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { DatabasePool, RoomsRepository } from "@/server/types";
-import { PublicUser, Room, RoomWithMembers } from "@/types.shared";
+import { DatabasePool, RoomsRepository } from "@server/types";
+import { PublicUser, Room, ChatScopeWithMembers } from "@/types.shared";
 
 export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -52,16 +52,16 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     return result;
   }
 
-  async selectRoomsWithMembersByUserId(userId: string): Promise<RoomWithMembers[]> {
+  async selectRoomsWithMembersByUserId(userId: string): Promise<ChatScopeWithMembers[]> {
     const { db, release } = await this.databasePool.getConnection();
-    const roomsWithMembers: RoomWithMembers[] = [];
+    const roomsWithMembers: ChatScopeWithMembers[] = [];
 
     const roomMembership = await db.selectManyWhere("chat", (c) => c.userId === userId);
 
     for (const membership of roomMembership) {
       const room = await db.selectOneWhere("room", (r) => r.id === membership.roomId);
       const chatRoom = await db.selectManyWhere("chat", (c) => c.roomId === membership.roomId);
-      const roomWithMembers: RoomWithMembers = { id: room!.id, name: room!.name, members: [] };
+      const roomWithMembers: ChatScopeWithMembers = { id: room!.id, name: room!.name, members: [] };
 
       for (const cRoom of chatRoom) {
         const user = await db.selectOne("users", "id", cRoom.userId);

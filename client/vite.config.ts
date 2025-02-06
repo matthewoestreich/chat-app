@@ -19,12 +19,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": nodePath.resolve(__dirname),
-      "@client": nodePath.resolve(__dirname, "../client/src"),
+      "@src": nodePath.resolve(__dirname, "../client/src"),
+      "@client": nodePath.resolve(__dirname, "../client/"),
+      "@server": nodePath.resolve(__dirname, "../server/"),
       "@components": nodePath.resolve(__dirname, "./src/components/index.ts"),
       "@pages": nodePath.resolve(__dirname, "./src/pages/"),
       "@hooks": nodePath.resolve(__dirname, "./src/hooks/index.ts"),
       "@styles": nodePath.resolve(__dirname, "./src/styles"),
+      "@root": nodePath.resolve(__dirname, "../"),
     },
   },
   server: {

@@ -1,10 +1,10 @@
 import nodeFs from "node:fs";
 import bcrypt from "bcrypt";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData } from "@/server/fakerService";
+import WebSocketApp from "@server/wss/WebSocketApp";
+import { generateFakeData } from "@server/fakerService";
 import FileSystemDatabase, { FileSystemDatabaseData } from "./FileSystemDatabase";
 import FileSystemDatabasePool from "./pool/FileSystemDatabasePool";
-import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@/server/types";
+import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@server/types";
 // prettier-ignore
 import { 
   AccountsRepositoryFileSystem,

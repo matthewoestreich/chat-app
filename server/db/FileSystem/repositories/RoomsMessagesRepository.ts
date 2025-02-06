@@ -1,6 +1,6 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { DatabasePool, RoomsMessagesRepository } from "@/server/types";
+import { DatabasePool, RoomsMessagesRepository } from "@server/types";
 import { Message } from "@/types.shared";
 
 export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesRepository<FileSystemDatabase> {

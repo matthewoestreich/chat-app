@@ -14,7 +14,9 @@
     "baseUrl": "./",
     "rootDir": "./",
     "paths": {
-      "@/*": ["./*"]
+      "@root/*": ["./*"],
+      "@client/*": ["./client/*"],
+      "@server/*": ["./server/*"]
     },
     "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types", "./types"],

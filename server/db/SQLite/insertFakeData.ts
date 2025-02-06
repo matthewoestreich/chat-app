@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
-import { FakeData, FakeUser, FakeChatRoom, FakeDirectMessage, FakeChatRoomMessage, FakeChatRoomWithMembers, FakeDirectConversation } from "@/server/types";
+import { FakeData, FakeUser, FakeChatRoom, FakeDirectMessage, FakeChatRoomMessage, FakeChatRoomWithMembers, FakeDirectConversation } from "@server/types";
 
 /**
  * =================================

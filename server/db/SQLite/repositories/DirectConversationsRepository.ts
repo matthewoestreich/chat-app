@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
-import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
-import { DatabasePool, DirectConversationsRepository } from "@/server/types";
+import { DirectConversation, PublicDirectConversation, PublicMember } from "@root/types.shared";
+import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositorySQLite implements DirectConversationsRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -32,7 +32,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
+  async selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
@@ -44,7 +44,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
       )
       ORDER BY u.name ASC;
       `;
-      db.all(query, [userId, userId, userId], (err, rows: PublicUser[]) => {
+      db.all(query, [userId, userId, userId], (err, rows: PublicMember[]) => {
         if (err) {
           release();
           return reject(err);

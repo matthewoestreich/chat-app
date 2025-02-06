@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import bcrypt from "bcrypt";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { AccountsRepository, DatabasePool } from "@/server/types";
+import { AccountsRepository, DatabasePool } from "@server/types";
 import { User } from "@/types.shared";
 
 export default class AccountsRepositoryFileSystem implements AccountsRepository<FileSystemDatabase> {

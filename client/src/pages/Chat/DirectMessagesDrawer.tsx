@@ -1,8 +1,9 @@
 import React, { CSSProperties, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Member } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import { SingletonWebSocketeer as websocketeer } from "@src/ws";
 import JoinDirectConversationModal from "./JoinDirectConversationModal";
 import { useChat } from "@hooks";
+import { ChatScope, PublicDirectConversation } from "../../../../types.shared";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -84,9 +85,9 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well
       // as rendering the messages.
       const chatScope: ChatScope = {
-        conversationId: directConvo.id,
+        id: directConvo.id,
         userId: directConvo.userId,
-        name: directConvo.userName,
+        userName: directConvo.userName,
         type: "DirectConversation",
       };
       dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });

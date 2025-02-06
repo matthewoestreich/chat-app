@@ -1,8 +1,8 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
-import { User } from "@/types.shared";
-import { AccountsRepository, DatabasePool } from "@/server/types";
+import { User } from "@root/types.shared";
+import { AccountsRepository, DatabasePool } from "@server/types";
 
 export default class AccountsRepositorySQLite implements AccountsRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;

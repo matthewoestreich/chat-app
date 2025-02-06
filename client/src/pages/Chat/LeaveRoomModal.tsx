@@ -1,7 +1,8 @@
 import React, { HTMLAttributes, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@client/ws";
+import { SingletonWebSocketeer as websocketeer } from "@src/ws";
+import { ChatScope } from "../../../../types.shared";
 
 interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;

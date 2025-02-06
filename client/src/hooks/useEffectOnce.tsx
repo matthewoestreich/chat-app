@@ -1,12 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, EffectCallback } from "react";
 
-export default function useEffectOnce(fn: () => void): void {
-  const hasExecuted = useRef(0);
+export default function useEffectOnce(effect: EffectCallback): void {
+  const hasExecuted = useRef(false);
 
   useEffect(() => {
-    if (hasExecuted.current === 0) {
-      hasExecuted.current = 1;
-      fn();
+    if (hasExecuted.current === false) {
+      hasExecuted.current = true;
+      const cleanup = effect();
+      return cleanup;
     }
-  }, [fn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

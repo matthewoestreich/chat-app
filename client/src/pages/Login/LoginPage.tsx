@@ -3,6 +3,7 @@ import { InputFloating, Alert, Form, ButtonLoading } from "@components";
 import { useAuth } from "@hooks";
 import CreateAccountModal from "./CreateAccountModal";
 import Topbar from "../Topbar";
+import { AlertState, CreateAccountResult } from "../../../types";
 
 const TopbarMemo = memo(Topbar);
 

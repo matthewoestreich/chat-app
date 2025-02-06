@@ -1,7 +1,7 @@
 import sqlite3 from "sqlite3";
 import SQLitePoolConnection from "./SQLitePoolConnection";
-import Mutex from "@/server/Mutex";
-import { DatabasePool } from "@/server/types";
+import Mutex from "@server/Mutex";
+import { DatabasePool } from "@server/types";
 sqlite3.verbose();
 
 export default class SQLitePool implements DatabasePool<sqlite3.Database> {

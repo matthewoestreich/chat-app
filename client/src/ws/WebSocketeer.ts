@@ -1,3 +1,11 @@
+import {
+  WebSocketeerEventHandlerMapArray,
+  WebSocketeerEventMap,
+  WebSocketeerEventPayload,
+  WebSocketeerEventType,
+  WebSocketeerParsedMessage,
+} from "../../types";
+
 export default class WebSocketeer<T extends WebSocketeerEventMap> {
   private socket: WebSocket | null = null;
 
@@ -70,7 +78,6 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     }
     const idx = handlers.findIndex((h) => h === handler);
     if (idx !== -1) {
-      // Fixing the condition to check for -1 (not found)
       handlers.splice(idx, 1);
     }
   }

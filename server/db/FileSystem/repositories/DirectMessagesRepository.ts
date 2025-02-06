@@ -1,4 +1,4 @@
-import { DatabasePool, DirectMessagesRepository } from "@/server/types";
+import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
 import { DirectMessage } from "@/types.shared";
 

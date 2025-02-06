@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { ServerOptions } from "ws";
 import { Express } from "express";
-import expressApp, { setDatabaseProvider } from "@/server";
-import startWebSocketApp from "@/server/wss";
-import { backupDatabaseCronJob, keepAliveCronJob } from "@/server/cronJobs";
+import expressApp, { setDatabaseProvider } from "@server/index";
+import startWebSocketApp from "@server/wss";
+import { backupDatabaseCronJob, keepAliveCronJob } from "@server/cronJobs";
 import { DatabaseProvider } from "./server/types";
 import DatabaseProviderFactory from "./server/db/DatabaseProviderFactory";
 

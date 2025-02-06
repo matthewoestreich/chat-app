@@ -3,9 +3,9 @@ import { Server, IncomingMessage, ServerResponse } from "http";
 import express, { Request, Response } from "express";
 import helmet, { HelmetOptions } from "helmet";
 import bcrypt from "bcrypt";
-import { generateSessionToken } from "@/server/generateTokens.js";
+import { generateSessionToken } from "@server/generateTokens.js";
 import morgan from "morgan";
-import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@/server/middleware";
+import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@server/middleware";
 import clearAllCookies from "./clearAllCookies";
 
 const app = express();
@@ -42,8 +42,8 @@ app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
     res.status(200).send({ ok: false });
     return;
   }
-  const { name, id, email } = req.user;
-  res.status(200).send({ ok: true, name, id, email, session: req.cookies.session });
+  const { userName, id, email } = req.user;
+  res.status(200).send({ ok: true, userName, id, email, session: req.cookies.session });
 });
 
 /**
@@ -65,7 +65,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       return;
     }
     const result = await req.databaseProvider.accounts.create(username, password, email);
-    res.status(200).send({ ok: true, id: result.id, name: result.name, email: result.email });
+    res.status(200).send({ ok: true, id: result.id, userName: result.name, email: result.email });
   } catch (e) {
     console.log(`[POST /register][ERROR]`, { e });
     res.status(200).send({ ok: false });
@@ -113,7 +113,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const jwt = generateSessionToken(name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
-    res.status(200).send({ ok: true, session: jwt.signed, id, name, email });
+    res.status(200).send({ ok: true, session: jwt.signed, id, userName: name, email });
   } catch (e) {
     clearAllCookies(req, res);
     console.log(`[POST /login][ERROR]`, e);

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
-import WebSocketApp from "@/server/wss/WebSocketApp";
-import { generateFakeData } from "@/server/fakerService";
+import WebSocketApp from "@server/wss/WebSocketApp";
+import { generateFakeData } from "@server/fakerService";
 import InMemoryDatabase, { InMemoryDatabaseData } from "./InMemoryDatabase";
 import InMemoryPool from "./pool/InMemoryPool";
 // prettier-ignore
@@ -12,7 +12,7 @@ import {
   RoomsRepositoryInMemory,
   SessionsRepositoryInMemory
 } from "./repositories";
-import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@/server/types";
+import { AccountsRepository, DatabasePool, DatabaseProvider, DirectConversationsRepository, DirectMessagesRepository, RoomsMessagesRepository, RoomsRepository, SessionsRepository } from "@server/types";
 
 export default class InMemoryProvider implements DatabaseProvider {
   databasePool: DatabasePool<InMemoryDatabase>;

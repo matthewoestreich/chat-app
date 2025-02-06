@@ -1,4 +1,4 @@
-import { DatabasePool } from "@/server/types";
+import { DatabasePool } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
 import FileSystemPoolConnection from "./FileSystemPoolConnection";
 

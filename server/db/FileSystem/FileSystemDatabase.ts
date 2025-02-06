@@ -1,6 +1,6 @@
 import nodePath from "node:path";
 import nodeFs from "node:fs";
-import Mutex from "@/server/Mutex";
+import Mutex from "@server/Mutex";
 import { DirectConversation, DirectMessage, Message, Room, Session, User } from "@/types.shared";
 
 export interface FileSystemDatabaseChatTable {

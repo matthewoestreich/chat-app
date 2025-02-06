@@ -1,4 +1,4 @@
-import { DatabasePool, SessionsRepository } from "@/server/types";
+import { DatabasePool, SessionsRepository } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
 import { Session } from "@/types.shared";
 
