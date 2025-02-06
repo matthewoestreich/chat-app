@@ -1,6 +1,6 @@
 <div align="center">
   <h1>RTChat</h1>
-  <heading>A real-time chat app with support for multiple rooms, direct messaging, and dark mode</heading>
+  <heading>A full-stack real-time chat app with support for multiple rooms, direct messaging, and dark mode</heading>
 </div>
 <div align="center">
     <h4><a href="https://rtchat-a7ul.onrender.com">Start Chatting Now!</a></h4>
