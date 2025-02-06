@@ -14,7 +14,7 @@
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/express.png" alt="Express" title="Express">
   </a>
   <a href="https://github.com/websockets/ws" style="text-decoration: none;">
-	  <img width="50" src="./.github/icons/websockets-icon-white.svg" alt="websocket" title="websocket"/>
+	  <img width="50" src="./.github/icons/websockets-logo-gray.svg" alt="websocket" title="websocket"/>
 	</a>
   <a href="https://www.sqlite.org/" style="text-decoration: none;">
   <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/sqlite.png" alt="SQLite" title="SQLite"/>
