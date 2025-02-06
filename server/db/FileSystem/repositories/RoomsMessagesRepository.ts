@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
 import { DatabasePool, RoomsMessagesRepository } from "@server/types";
-import { Message } from "@/types.shared";
+import { Message, PublicMessage } from "@root/types.shared";
 
 export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -10,7 +10,7 @@ export default class RoomsMessagesRepositoryFileSystem implements RoomsMessagesR
     this.databasePool = dbpool;
   }
 
-  async selectByRoomId(_roomId: string): Promise<Message[]> {
+  async selectByRoomId(_roomId: string): Promise<PublicMessage[]> {
     throw new Error("Method not impl");
     //const { db, release } = await this.databasePool.getConnection();
     //const messages = await db.selectManyWhere("messages", (msg) => msg.scopeId === roomId);

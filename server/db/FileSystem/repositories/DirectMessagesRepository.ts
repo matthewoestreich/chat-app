@@ -1,6 +1,6 @@
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { DirectMessage } from "@/types.shared";
+import { DirectMessage } from "@root/types.shared";
 
 export default class DirectMessagesRepositoryFileSystem implements DirectMessagesRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;

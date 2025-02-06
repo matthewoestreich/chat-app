@@ -2,7 +2,7 @@ import { v7 as uuidV7 } from "uuid";
 import bcrypt from "bcrypt";
 import InMemoryDatabase from "../InMemoryDatabase";
 import { AccountsRepository, DatabasePool } from "@server/types";
-import { User } from "@/types.shared";
+import { User } from "@root/types.shared";
 
 export default class AccountsRepositoryInMemory implements AccountsRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;

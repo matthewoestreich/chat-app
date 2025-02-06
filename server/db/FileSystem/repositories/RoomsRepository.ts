@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
 import { DatabasePool, RoomsRepository } from "@server/types";
-import { PublicUser, Room, ChatScopeWithMembers } from "@/types.shared";
+import { PublicUser, Room, ChatScopeWithMembers, PublicMember } from "@root/types.shared";
 
 export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;
@@ -52,7 +52,9 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     return result;
   }
 
-  async selectRoomsWithMembersByUserId(userId: string): Promise<ChatScopeWithMembers[]> {
+  async selectRoomsWithMembersByUserId(_userId: string): Promise<ChatScopeWithMembers[]> {
+    throw new Error("Method not impl");
+    /*
     const { db, release } = await this.databasePool.getConnection();
     const roomsWithMembers: ChatScopeWithMembers[] = [];
 
@@ -61,12 +63,12 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
     for (const membership of roomMembership) {
       const room = await db.selectOneWhere("room", (r) => r.id === membership.roomId);
       const chatRoom = await db.selectManyWhere("chat", (c) => c.roomId === membership.roomId);
-      const roomWithMembers: ChatScopeWithMembers = { id: room!.id, name: room!.name, members: [] };
+      const roomWithMembers: ChatScopeWithMembers = { id: room!.id, scopeName: room!.name, members: [] };
 
       for (const cRoom of chatRoom) {
         const user = await db.selectOne("users", "id", cRoom.userId);
         if (user) {
-          roomWithMembers.members.push({ userId: user!.id, userName: user!.userName, roomId: room!.id, isActive: false });
+          roomWithMembers.members.push({ userId: user!.id, userName: user!.userName, scopeId: room!.id, isActive: false });
         }
       }
 
@@ -75,9 +77,10 @@ export default class RoomsRepositoryFileSystem implements RoomsRepository<FileSy
 
     release();
     return roomsWithMembers;
+    */
   }
 
-  async selectRoomMembersExcludingUser(_roomId: string, _excludingUserId: string): Promise<PublicUser[]> {
+  async selectRoomMembersExcludingUser(_roomId: string, _excludingUserId: string): Promise<PublicMember[]> {
     throw new Error("Method not impl");
     //const { db, release } = await this.databasePool.getConnection();
     //const existingMembers = await db.selectManyWhere("chat", (c) => c.roomId === roomId && c.userId === excludingUserId);

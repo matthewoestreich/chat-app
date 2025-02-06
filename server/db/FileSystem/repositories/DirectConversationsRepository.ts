@@ -1,6 +1,6 @@
 import { v7 as uuidV7 } from "uuid";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
+import { DirectConversation, PublicDirectConversation, PublicMember } from "@root/types.shared";
 import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositoryFileSystem implements DirectConversationsRepository<FileSystemDatabase> {
@@ -42,7 +42,9 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
     return directConversations;
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
+  async selectInvitableUsersByUserId(_userId: string): Promise<PublicMember[]> {
+    throw new Error("Method not impl");
+    /*
     const { db, release } = await this.databasePool.getConnection();
 
     try {
@@ -69,6 +71,7 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
       release();
       return [];
     }
+    */
   }
 
   getAll(): Promise<DirectConversation[]> {

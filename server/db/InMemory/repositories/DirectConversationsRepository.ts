@@ -1,6 +1,6 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
-import { DirectConversation, PublicDirectConversation, PublicUser } from "@/types.shared";
+import { DirectConversation, PublicDirectConversation, PublicMember } from "@root/types.shared";
 import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositoryInMemory implements DirectConversationsRepository<InMemoryDatabase> {
@@ -36,8 +36,10 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
     });
   }
 
-  async selectInvitableUsersByUserId(userId: string): Promise<PublicUser[]> {
+  async selectInvitableUsersByUserId(_userId: string): Promise<PublicMember[]> {
+    throw new Error("Method not impl");
     // Find people 'userId' isn't already in a direct convo with
+    /*
     const { db } = await this.databasePool.getConnection();
     return db.getMany<PublicUser>((data) => {
       const union: string[] = [];
@@ -56,6 +58,7 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
           return { ...rest, isActive: false };
         });
     });
+    */
   }
   getAll(): Promise<DirectConversation[]> {
     throw new Error("Method not implemented.");

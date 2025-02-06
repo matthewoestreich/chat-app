@@ -1,6 +1,6 @@
 import { DatabasePool, SessionsRepository } from "@server/types";
 import FileSystemDatabase from "../FileSystemDatabase";
-import { Session } from "@/types.shared";
+import { Session } from "@root/types.shared";
 
 export default class SessionsRepositoryFileSystem implements SessionsRepository<FileSystemDatabase> {
   databasePool: DatabasePool<FileSystemDatabase>;

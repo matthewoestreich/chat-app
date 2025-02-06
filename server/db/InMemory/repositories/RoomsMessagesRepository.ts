@@ -1,6 +1,6 @@
 import { v7 as uuidV7 } from "uuid";
 import InMemoryDatabase from "../InMemoryDatabase";
-import { Message } from "@/types.shared";
+import { Message, PublicMessage } from "@root/types.shared";
 import { DatabasePool, RoomsMessagesRepository } from "@server/types";
 
 export default class RoomsMessagesRepositoryInMemory implements RoomsMessagesRepository<InMemoryDatabase> {
@@ -10,12 +10,13 @@ export default class RoomsMessagesRepositoryInMemory implements RoomsMessagesRep
     this.databasePool = dbpool;
   }
 
-  async selectByRoomId(roomId: string): Promise<Message[]> {
-    const { db } = await this.databasePool.getConnection();
-    return db.getMany<Message>((data) => {
-      const messages = data.messages.filter((msg) => msg.scopeId === roomId);
-      return messages.map((msg) => ({ ...msg, userName: data.users.find((u) => u.id === msg.userId)?.userName || "NAME_NOT_FOUND" }));
-    });
+  async selectByRoomId(_roomId: string): Promise<PublicMessage[]> {
+    throw new Error("Method not impl");
+    //const { db } = await this.databasePool.getConnection();
+    //return db.getMany<Message>((data) => {
+    //  const messages = data.messages.filter((msg) => msg.scopeId === roomId);
+    //  return messages.map((msg) => ({ ...msg, userName: data.users.find((u) => u.id === msg.userId)?.userName || "NAME_NOT_FOUND" }));
+    //});
   }
 
   getAll(): Promise<Message[]> {

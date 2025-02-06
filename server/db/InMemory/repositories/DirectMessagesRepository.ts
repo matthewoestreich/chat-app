@@ -1,4 +1,4 @@
-import { DirectMessage } from "@/types.shared";
+import { DirectMessage } from "@root/types.shared";
 import InMemoryDatabase from "../InMemoryDatabase";
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
 

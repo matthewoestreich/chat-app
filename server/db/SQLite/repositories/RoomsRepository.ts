@@ -120,7 +120,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
           const result = rows.reduce((acc: ChatScopeWithMembers[], row: Row) => {
             let room = acc.find((r) => r.id === row.roomId);
             if (!room) {
-              room = { id: row.roomId, userId: row.userId, type: "Room", members: [] };
+              room = { id: row.roomId, userId: row.userId, type: "Room", scopeName: row.roomName, members: [] };
               acc.push(room);
             }
             room.members.push({ userId: row.userId, scopeId: row.roomId, userName: row.userName, isActive: false });

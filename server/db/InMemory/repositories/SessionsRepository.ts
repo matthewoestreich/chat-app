@@ -1,6 +1,6 @@
 import { DatabasePool, SessionsRepository } from "@server/types";
 import InMemoryDatabase from "../InMemoryDatabase";
-import { Session } from "@/types.shared";
+import { Session } from "@root/types.shared";
 
 export default class SessionsRepositoryInMemory implements SessionsRepository<InMemoryDatabase> {
   databasePool: DatabasePool<InMemoryDatabase>;
