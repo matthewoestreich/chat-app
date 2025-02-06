@@ -28,9 +28,6 @@
 </div>
 
 <div align="center">
-  <a href="https://www.typescriptlang.org/" style="text-decoration:none;">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
-  </a>
   <a href="http://react.dev/" style="text-decoration:none;">
     <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/react.png" alt="React" title="React"/>
   </a>
