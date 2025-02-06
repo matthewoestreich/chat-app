@@ -1,8 +1,56 @@
-# RTChat
+<div align="center">
+  <h1>RTChat</h1>
+  <heading>A real-time chat app with support for multiple rooms, direct messaging, and dark mode</heading>
+</div>
+<div align="center">
+    <h4><a href="https://rtchat-a7ul.onrender.com">Start Chatting Now!</a></h4>
+</div>
 
-A real-time chat app with support for multiple rooms, direct messaging, and dark mode
+<br />
+<br />
 
-#### [Start chatting now!](https://rtchat-a7ul.onrender.com)
+<div align="center">
+  <small>Tech Stack</small>
+</div>
+<div align="center">
+  <a href="https://expressjs.com/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/express.png" alt="Express" title="Express">
+  </a>
+    <a href="https://www.typescriptlang.org/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
+  </a>
+  <a href="https://github.com/websockets/ws" style="text-decoration:none;">
+	  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/websocket.png" alt="websocket" title="websocket"/>
+	</a>
+  <a href="https://www.sqlite.org/" style="text-decoration:none;">
+  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/sqlite.png" alt="SQLite" title="SQLite"/>
+  </a>
+</div>
+
+<div align="center">
+  <a href="https://www.typescriptlang.org/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
+  </a>
+  <a href="http://react.dev/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/react.png" alt="React" title="React"/>
+  </a>
+  <a href="https://getbootstrap.com/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/bootstrap.png" alt="Bootstrap" title="Bootstrap"/>
+  </a>
+  <a href="https://vite.dev/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/vite.png" alt="Vite" title="Vite"/>
+  </a>
+</div>
+
+<div align="center">
+  <a href="https://jestjs.io/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/jest.png" alt="Jest" title="Jest"/>
+  </a>
+  <a href="https://www.cypress.io/" style="text-decoration:none;">
+    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/cypress.png" alt="Cypress" title="Cypress"/>
+  </a>
+</div>
+
 
 ### Features:
 
@@ -17,42 +65,6 @@ A real-time chat app with support for multiple rooms, direct messaging, and dark
   - [WebSocketApp](server/wss/WebSocketApp.ts) for server side
   - Makes writing WebSocket code feel like you're writing Express routes
   - Each "route" is a message type, which makes sending and/or parsing messages a breeze!
-
-### Tech Stack
-
-**Backend**
-
-<p>
-  <a href="https://expressjs.com/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/express.png" alt="Express" title="Express">
-  </a>
-    <a href="https://www.typescriptlang.org/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
-  </a>
-  <a href="https://github.com/websockets/ws">
-	  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/websocket.png" alt="websocket" title="websocket"/>
-	</a>
-  <a href="https://www.sqlite.org/">
-  <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/sqlite.png" alt="SQLite" title="SQLite"/>
-  </a>
-</p>
-
-**Frontend**
-
-<p>
-  <a href="https://www.typescriptlang.org/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/typescript.png" alt="TypeScript" title="TypeScript"/>
-  </a>
-  <a href="http://react.dev/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/react.png" alt="React" title="React"/>
-  </a>
-  <a href="https://getbootstrap.com/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/bootstrap.png" alt="Bootstrap" title="Bootstrap"/>
-  </a>
-  <a href="https://vite.dev/">
-    <img width="50" src="https://raw.githubusercontent.com/marwin1991/profile-technology-icons/refs/heads/main/icons/vite.png" alt="Vite" title="Vite"/>
-  </a>
-</p>
 
 # Look & Feel
 
