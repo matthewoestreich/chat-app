@@ -9,6 +9,8 @@ export interface ChatState {
   messages: PublicMessage[] | null;
   chatScope: ChatScope | null;
   isEnteringRoom: boolean;
+  isJoinDirectConversationModalOpen: boolean;
+  selectedDirectConversationToJoin: PublicMember | null;
 }
 
 export type ChatStateAction =
@@ -21,7 +23,8 @@ export type ChatStateAction =
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
   | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
-  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: PublicMember[] | null; chatScope: ChatScope | null } };
+  | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: PublicMember[] | null; chatScope: ChatScope | null } }
+  | { type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN"; payload: boolean };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
@@ -53,6 +56,9 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       console.log("isenteringroom");
       return { ...state, isEnteringRoom: action.payload };
     }
+    case "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN": {
+      return { ...state, isJoinDirectConversationModalOpen: action.payload };
+    }
     case "SET_MEMBER_ACTIVE_STATUS": {
       console.log("setmemberactiveStatus");
       if (!state.members) {
@@ -64,7 +70,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       }
       const membersCopy = [...state.members];
       membersCopy[memberIndex].isActive = action.payload.isActive;
-      sortMembers(membersCopy);
+      sortMembers(membersCopy, true);
       return { ...state, members: membersCopy };
     }
     case "SENT_MESSAGE": {

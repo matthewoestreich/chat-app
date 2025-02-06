@@ -36,7 +36,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
-      SELECT u.id, u.name FROM "user" u WHERE u.id != ?
+      SELECT u.id as userId, u.name AS userName FROM "user" u WHERE u.id != ?
       AND u.id NOT IN (
           SELECT userA_Id FROM direct_conversation WHERE userB_Id = ?
           UNION

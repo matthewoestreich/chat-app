@@ -1,6 +1,7 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WebSocketeerEventPayload } from "@client/types";
 import { ChatScope } from "@root/types.shared";
+import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
 import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
@@ -8,6 +9,7 @@ import Topbar from "../Topbar";
 import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
+import JoinDirectConversationModal from "./JoinDirectConversationModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
 import sortMembers from "./sortMembers";
 
@@ -25,6 +27,9 @@ export default function ChatView(): React.JSX.Element {
   const renderCount = useRenderCounter(`ChatPage`);
   console.log(renderCount);
 
+  const { state, dispatch } = useChat();
+  const { user } = useAuth();
+
   const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
   const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
@@ -32,9 +37,7 @@ export default function ChatView(): React.JSX.Element {
 
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const chatMessageInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const { user } = useAuth();
-  const { state, dispatch } = useChat();
+  const offcanvasRoomsRef = useRef<HTMLDivElement | null>(null);
 
   // Scroll to bottom of chat display when we send/receive a message
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function ChatView(): React.JSX.Element {
       if (error) {
         return console.error(error);
       }
-      sortMembers(members);
+      sortMembers(members, false);
       const scope: ChatScope = { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name };
       dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
     };
@@ -115,7 +118,6 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("CREATED_ROOM", handleCreatedRoom);
 
     return (): void => {
-      console.log(`useEffectOnce in ChatView : cleaning up`);
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
       websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -139,19 +141,17 @@ export default function ChatView(): React.JSX.Element {
     setIsCreateRoomModalShown(true);
   }
 
-  const handleMessageInputKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        e.stopPropagation();
-        if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
-          return;
-        }
-        websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
+  // prettier-ignore
+  const handleMessageInputKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
+        return;
       }
-    },
-    [state.chatScope, chatMessageInputRef],
-  );
+      websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
+    }
+  }, [state.chatScope, chatMessageInputRef]);
 
   function handleSendMessage(): void {
     if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
@@ -181,6 +181,10 @@ export default function ChatView(): React.JSX.Element {
     setIsLeaveRoomModalShown(false);
   }, []);
 
+  const handleCloseDirectConversationModal = useCallback(() => {
+    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+  }, [dispatch]);
+
   const renderMessages = useCallback(() => {
     if (state.isEnteringRoom) {
       return <LoadingSpinnerMemo />;
@@ -201,6 +205,7 @@ export default function ChatView(): React.JSX.Element {
     // No need to update ChatScope here. We only want to do that AFTER we entered the room.
     dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
     websocketeer.send("ENTER_ROOM", { id: roomId });
+    closeOffcanvasAtOrBelowBreakpoint(offcanvasRoomsRef, "md");
   }, [dispatch]);
 
   // If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
@@ -225,6 +230,7 @@ export default function ChatView(): React.JSX.Element {
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
+      <JoinDirectConversationModal isOpen={state.isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
       <TopbarMemo />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
@@ -290,6 +296,7 @@ export default function ChatView(): React.JSX.Element {
             </div>
           </div>
           <div
+            ref={offcanvasRoomsRef}
             id="rooms-offcanvas"
             className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end"
           >

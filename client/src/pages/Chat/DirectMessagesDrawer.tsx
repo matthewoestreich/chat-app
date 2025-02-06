@@ -1,9 +1,9 @@
-import React, { CSSProperties, memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@src/ws";
-import JoinDirectConversationModal from "./JoinDirectConversationModal";
-import { useChat } from "@hooks";
+import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { useChat, useEffectOnce } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "../../../../types.shared";
+import { WebSocketeerEventPayload } from "../../../types";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -45,6 +45,9 @@ const styles: Record<string, CSSProperties> = {
 
 const MemberMemo = memo(Member);
 
+export type JoinedDirectConvoPayload = (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_DIRECT_CONVERSATION">) => void;
+type ListDirectConvosPayload = (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS">) => void;
+
 interface DirectMessagesDrawerProperties {
   isShown: boolean;
   onClose: () => void;
@@ -52,7 +55,6 @@ interface DirectMessagesDrawerProperties {
 
 export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperties): React.JSX.Element {
   const { isShown, onClose } = props;
-  const [isJoinDirectConversationModalOpen, setIsDirectConversationModalOpen] = useState(false);
   const { state, dispatch } = useChat();
 
   useEffect(() => {
@@ -61,40 +63,51 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     }
   }, [isShown]);
 
-  websocketeer.on("LIST_DIRECT_CONVERSATIONS", ({ directConversations, error }) => {
-    if (error) {
-      return console.error(error);
-    }
-    dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+  useEffectOnce(() => {
+    const handleJoinedDirectConversation: JoinedDirectConvoPayload = ({ directConversations, error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+    };
+
+    const handleListDirectConversations: ListDirectConvosPayload = ({ directConversations, error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+    };
+
+    websocketeer.on("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
+    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+
+    return (): void => {
+      websocketeer.off("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
+      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+    };
   });
 
-  function handleOpenJoinDirectConversationModal(): void {
-    setIsDirectConversationModalOpen(true);
-  }
+  const handleOpenJoinDirectConversationModal = useCallback(() => {
+    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
+  }, [dispatch]);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
-  const handleCloseDirectConversationModal = useCallback(() => {
-    setIsDirectConversationModalOpen(false);
-  }, []);
-
-  const handleDirectConversationClick = useCallback(
-    (directConvo: PublicDirectConversation) => {
-      // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well
-      // as rendering the messages.
-      const chatScope: ChatScope = {
-        id: directConvo.id,
-        userId: directConvo.userId,
-        userName: directConvo.userName,
-        type: "DirectConversation",
-      };
-      dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.id });
-    },
-    [dispatch],
-  );
+  // prettier-ignore
+  const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
+    // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well as rendering the messages.
+    const chatScope: ChatScope = {
+      scopeName: directConvo.userName,
+      id: directConvo.id,
+      userId: directConvo.userId,
+      userName: directConvo.userName,
+      type: "DirectConversation",
+    };
+    dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.id });
+  }, [dispatch]);
 
   const directConversationClickHandlers = useMemo(() => {
     return new Map(state.directConversations?.map((dc) => [dc.id, (): void => handleDirectConversationClick(dc)]));
@@ -117,7 +130,6 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   return (
     <>
-      <JoinDirectConversationModal isOpen={isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
       <div className="card" style={isShown ? { ...styles.drawer, ...styles.open } : styles.drawer}>
         <div className="card-header fs-3" style={styles.header}>
           <div className="flex-fill text-center">Direct Messages</div>

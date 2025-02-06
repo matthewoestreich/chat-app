@@ -325,7 +325,6 @@ wsapp.on("GET_DIRECT_MESSAGES", async (client, { id }) => {
 wsapp.on("GET_INVITABLE_USERS", async (client) => {
   try {
     const users = await wsapp.databaseProvider.directConversations.selectInvitableUsersByUserId(client.user.id);
-
     client.send("LIST_INVITABLE_USERS", {
       // Add `isActive` field for each user
       users: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
