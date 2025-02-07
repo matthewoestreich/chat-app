@@ -1,11 +1,11 @@
 import { WebSocket, ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
-import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import errorCodeToReason, { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
-import { PublicMessage, Room } from "@root/types.shared";
+import { DirectMessage, Message, PublicMessage, Room } from "@root/types.shared";
 
 const wsapp = new WebSocketApp();
 
@@ -57,13 +57,12 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  * log the reason for socket closure.
  *
  */
-wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
-  if (client.activeIn?.container) {
-    client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
-    wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
-  }
-  //const reasonString = reason.toString();
-  //const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+wsapp.on("CONNECTION_CLOSED", (client, { reason, code }) => {
+  client.broadcast("USER_DISCONNECTED", { userId: client.user.id });
+  wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
+  const reasonString = reason.toString();
+  const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
+  console.log(`${client.user.userName} ${client.user.id} closed connection`, why);
 });
 
 /**
@@ -74,15 +73,14 @@ wsapp.on("CONNECTION_CLOSED", (client, _payload) => {
  *
  */
 wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
-  if (scope.type === "Room") {
-    client.broadcast("RECEIVE_MESSAGE", {
-      userId: client.user.id,
-      userName: client.user.userName,
-      message,
-    });
-    try {
-      const sentMessage = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, message);
-      const formattedMessage = {
+  try {
+    let publicMessage: PublicMessage | null = null;
+    let sentMessage: Message | DirectMessage | null = null;
+
+    if (scope.type === "Room") {
+      client.broadcast("RECEIVE_MESSAGE", { userId: client.user.id, userName: client.user.userName, message });
+      sentMessage = await wsapp.databaseProvider.roomMessages.create(client.activeIn.id, client.user.id, message);
+      publicMessage = {
         scopeId: sentMessage.scopeId,
         userId: client.user.id,
         timestamp: sentMessage.timestamp,
@@ -90,30 +88,27 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
         id: sentMessage.id,
         userName: client.user.userName,
       };
-      client.send("SENT_MESSAGE", { message: formattedMessage });
-    } catch (e) {
-      console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
-      client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
+    } else if (scope.type === "DirectConversation") {
+      sentMessage = await wsapp.databaseProvider.directMessages.create(scope.id, client.user.id, scope.userId, message);
+      publicMessage = {
+        message: sentMessage.message,
+        id: sentMessage.id,
+        scopeId: sentMessage.scopeId,
+        timestamp: sentMessage.timestamp,
+        userId: client.user.id,
+        // TODO gather userName!
+        userName: "YOU STILL NEED TO FIX THIS",
+      };
     }
-  }
-  if (scope.type === "DirectConversation") {
-    try {
-      const dm = await wsapp.databaseProvider.directMessages.create(scope.id, client.user.id, scope.userId, message);
-      client.send("SENT_MESSAGE", {
-        message: {
-          message: dm.message,
-          id: dm.id,
-          scopeId: dm.scopeId,
-          timestamp: dm.timestamp,
-          userId: dm.fromUserId,
-          // NEED TO FIX THIS
-          userName: dm.fromUserId,
-        },
-      });
-    } catch (e) {
-      console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
-      client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
+
+    if (publicMessage === null) {
+      return client.send("SENT_MESSAGE", { error: new Error(`Scope '${scope.type}' is unrecognized.`), message: {} as PublicMessage });
     }
+
+    client.send("SENT_MESSAGE", { message: publicMessage });
+  } catch (e) {
+    console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
+    client.send("SENT_MESSAGE", { error: e as Error, message: {} as PublicMessage });
   }
 });
 
@@ -265,7 +260,7 @@ wsapp.on("GET_JOINABLE_ROOMS", async (client) => {
 wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
   try {
     const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
-    client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) })) });
+    client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })) });
   } catch (e) {
     client.send("LIST_DIRECT_CONVERSATIONS", { error: e as Error, directConversations: [] });
   }
@@ -282,12 +277,14 @@ wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
     const newDirectConvo = await wsapp.databaseProvider.directConversations.create(client.user.id, withUserId);
     const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
+    const invitableUsers = await wsapp.databaseProvider.directConversations.selectInvitableUsersByUserId(client.user.id);
     client.send("JOINED_DIRECT_CONVERSATION", {
-      directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.id) })),
+      invitableUsers: invitableUsers.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
+      directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
       directConversationId: newDirectConvo.id,
     });
   } catch (e) {
-    client.send("JOINED_DIRECT_CONVERSATION", { error: e as Error, directConversationId: "", directConversations: [] });
+    client.send("JOINED_DIRECT_CONVERSATION", { error: e as Error, directConversationId: "", directConversations: [], invitableUsers: [] });
   }
 });
 

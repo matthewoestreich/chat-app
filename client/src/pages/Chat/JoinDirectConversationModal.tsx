@@ -27,23 +27,23 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   useEffectOnce(() => {
     const handleListInvitableUsers: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_INVITABLE_USERS">) => void = ({ users, error }) => {
-      console.log("list invit users");
       if (error) {
         return console.error(error);
       }
-      setUsers((_prev) => sortMembers(users, true));
+      setUsers(sortMembers(users, true));
     };
 
-    const handleJoinedDirectConversation: JoinedDirectConvoPayload = ({ directConversationId }) => {
-      console.log({ directConversationId, users });
-      websocketeer.send("GET_INVITABLE_USERS");
+    const handleJoinedDirectConversation: JoinedDirectConvoPayload = ({ invitableUsers, error }) => {
+      if (error) {
+        return;
+      }
+      setUsers(sortMembers(invitableUsers, true));
     };
 
     websocketeer.on("LIST_INVITABLE_USERS", handleListInvitableUsers);
     websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
 
     return (): void => {
-      console.log("cleanup in joindirectconvomodal");
       websocketeer.off("LIST_INVITABLE_USERS", handleListInvitableUsers);
       websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
     };
@@ -60,11 +60,6 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
     }
   }, [isOpen, modalInstance]);
 
-  useEffect(() => {
-    console.log("DONT FORGET TO REMOE THIHS");
-    console.log(`users changed:`, users);
-  }, [users]);
-
   function handleGetModalInstance(modalInstance: BsModal | null): void {
     setModalInstance(modalInstance);
   }
@@ -73,7 +68,6 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
     if (selectedUser === null) {
       return;
     }
-    console.log({ selectedUser });
     websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: selectedUser.userId });
   }, [selectedUser]);
 
@@ -103,7 +97,6 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   // prettier-ignore
   const renderInvitableUsers = useCallback(() => {
-    console.log(`[renderInvitUsers] one of |users|searchtext|selectedUser?.userId|userClickHandlers| changed`, users)
     return users?.filter((user) => user.userName.includes(searchText)).map((user) => (
       <MemberMemo 
         key={user.userId} 

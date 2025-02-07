@@ -87,10 +87,10 @@ export type ChatScopeWithMembers = Omit<ChatScope, "userName"> & {
 };
 
 export interface PublicDirectConversation {
-  id: string; // convo id
+  scopeId: string; // convo id
   userId: string; // other participant id in DM
   userName: string; // other participant name in DM
-  isActive?: boolean; // is other participant currently online
+  isActive: boolean; // is other participant currently online
 }
 
 /** Generally, if an event starts with "GET" it's coming from the client.
@@ -173,9 +173,10 @@ export interface WebSocketAppEventRegistry {
     error?: Error;
   };
   // Server informs client of create direct convo result, and provides client with updated list of
-  // direct convos, and the convoId they just created.
+  // direct convos, and the convoId they just created, as well as an updated list of invitable users.
   JOINED_DIRECT_CONVERSATION: {
     directConversations: PublicDirectConversation[];
+    invitableUsers: PublicMember[];
     directConversationId: string;
     error?: Error;
   };
@@ -229,5 +230,10 @@ export interface WebSocketAppEventRegistry {
   MEMBER_LEFT_ROOM: {
     id: string;
     error?: Error;
+  };
+  // Going with "USER" instead of "MEMBER" here bc they didn't necessarily have to be a member of anything.
+  // This is solely so we can update the "online" status for this user.
+  USER_DISCONNECTED: {
+    userId: string;
   };
 }

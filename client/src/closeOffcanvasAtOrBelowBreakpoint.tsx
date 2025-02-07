@@ -47,21 +47,19 @@ const getIndex = (target: BootstrapBreakpointString): number => {
   return { xs: 0, sm: 1, md: 2, lg: 3, xl: 4, xxl: 6 }[target];
 };
 
-export default function closeOffcanvasAtOrBelowBreakpoint(
-  offcanvasRef: RefObject<HTMLDivElement | null>,
-  closeAtInclusive: BootstrapBreakpointString,
-): void {
+// prettier-ignore
+export default function closeOffcanvasAtOrBelowBreakpoint(offcanvasRef: RefObject<HTMLDivElement | null>, closeAtInclusive: BootstrapBreakpointString,): void {
   if (!offcanvasRef.current) {
     return;
   }
-  const detector = new BootstrapBreakpointDetector();
-  const current = detector.detect();
+
+  const current = new BootstrapBreakpointDetector().detect();
   if (!current) {
     return;
   }
-  console.log(current);
+
   const target = getIndex(closeAtInclusive);
-  // sm or lower
+
   if (current.index <= target) {
     const BsOffcanvas = Offcanvas.getOrCreateInstance(offcanvasRef.current);
     console.log(BsOffcanvas);

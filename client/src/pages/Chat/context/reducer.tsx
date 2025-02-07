@@ -1,4 +1,4 @@
-import { ChatScope, DirectMessage, PublicDirectConversation, PublicMessage, Room, PublicMember } from "../../../../../types.shared";
+import { ChatScope, DirectMessage, PublicDirectConversation, PublicMessage, Room, PublicMember } from "@root/types.shared";
 import sortMembers from "../sortMembers";
 
 export interface ChatState {
@@ -10,7 +10,6 @@ export interface ChatState {
   chatScope: ChatScope | null;
   isEnteringRoom: boolean;
   isJoinDirectConversationModalOpen: boolean;
-  selectedDirectConversationToJoin: PublicMember | null;
 }
 
 export type ChatStateAction =
@@ -46,7 +45,10 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
     }
     case "SET_DIRECT_CONVERSATIONS": {
       console.log("setDirctConvos");
-      return { ...state, directConversations: action.payload };
+      if (!action.payload) {
+        return state;
+      }
+      return { ...state, directConversations: sortMembers(action.payload, true) };
     }
     case "SET_DIRECT_MESSAGES": {
       console.log("setDirectMEssages");
@@ -61,17 +63,21 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
     }
     case "SET_MEMBER_ACTIVE_STATUS": {
       console.log("setmemberactiveStatus");
-      if (!state.members) {
-        return state;
+      const memberIndex = state.members?.findIndex((m) => m.userId === action.payload.userId);
+      let tempMembers = state.members || [];
+      if (memberIndex && memberIndex !== -1) {
+        tempMembers = [...(state.members || [])];
+        tempMembers[memberIndex].isActive = action.payload.isActive;
       }
-      const memberIndex = state.members.findIndex((m) => m.userId === action.payload.userId);
-      if (memberIndex === -1) {
-        return { ...state };
+
+      const directConversationIndex = state.directConversations?.findIndex((dc) => dc.userId === action.payload.userId);
+      let tempDirectConvos = state.directConversations || [];
+      if (directConversationIndex && directConversationIndex !== -1) {
+        tempDirectConvos = [...(state.directConversations || [])];
+        tempDirectConvos[directConversationIndex].isActive = action.payload.isActive;
       }
-      const membersCopy = [...state.members];
-      membersCopy[memberIndex].isActive = action.payload.isActive;
-      sortMembers(membersCopy, true);
-      return { ...state, members: membersCopy };
+
+      return { ...state, members: sortMembers(tempMembers, true), directConversations: sortMembers(tempDirectConvos, true) };
     }
     case "SENT_MESSAGE": {
       return {

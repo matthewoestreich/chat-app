@@ -115,6 +115,10 @@ export default function ChatView(): React.JSX.Element {
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
+    const handleUserDisconnected: (payload: WebSocketeerEventPayload<WebSocketEvents, "USER_DISCONNECTED">) => void = ({ userId }) => {
+      dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId, isActive: false } });
+    };
+
     websocketeer.on("SENT_MESSAGE", handleSentMessage);
     websocketeer.on("ENTERED_ROOM", handleEnteredRoom);
     websocketeer.on("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -123,6 +127,7 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("JOINED_ROOM", handleJoinedRoom);
     websocketeer.on("UNJOINED_ROOM", handleUnjoinedRoom);
     websocketeer.on("CREATED_ROOM", handleCreatedRoom);
+    websocketeer.on("USER_DISCONNECTED", handleUserDisconnected);
 
     return (): void => {
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
@@ -133,6 +138,7 @@ export default function ChatView(): React.JSX.Element {
       websocketeer.off("JOINED_ROOM", handleJoinedRoom);
       websocketeer.off("UNJOINED_ROOM", handleUnjoinedRoom);
       websocketeer.off("CREATED_ROOM", handleCreatedRoom);
+      websocketeer.off("USER_DISCONNECTED", handleUserDisconnected);
     };
   });
 
