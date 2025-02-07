@@ -100,17 +100,17 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well as rendering the messages.
     const chatScope: ChatScope = {
       scopeName: directConvo.userName,
-      id: directConvo.id,
+      id: directConvo.scopeId,
       userId: directConvo.userId,
       userName: directConvo.userName,
       type: "DirectConversation",
     };
     dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.id });
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.scopeId });
   }, [dispatch]);
 
   const directConversationClickHandlers = useMemo(() => {
-    return new Map(state.directConversations?.map((dc) => [dc.id, (): void => handleDirectConversationClick(dc)]));
+    return new Map(state.directConversations?.map((dc) => [dc.scopeId, (): void => handleDirectConversationClick(dc)]));
   }, [state.directConversations, handleDirectConversationClick]);
 
   const renderConversations = useCallback(() => {
@@ -119,9 +119,9 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     }
     return state.directConversations.map((convo) => (
       <MemberMemo
-        key={convo.id}
+        key={convo.scopeId}
         isButton={true}
-        onClick={directConversationClickHandlers.get(convo.id)}
+        onClick={directConversationClickHandlers.get(convo.scopeId)}
         memberName={convo.userName}
         isOnline={convo.isActive || false}
       />
@@ -129,38 +129,36 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   }, [state.directConversations, directConversationClickHandlers]);
 
   return (
-    <>
-      <div className="card" style={isShown ? { ...styles.drawer, ...styles.open } : styles.drawer}>
-        <div className="card-header fs-3" style={styles.header}>
-          <div className="flex-fill text-center">Direct Messages</div>
-          <button onClick={handleClose} className="btn btn-close btn-sm" type="button" style={styles.closeButton}></button>
-        </div>
-        <div className="card-body" style={styles.body}>
-          {/* prettier-ignore */}
-          <ul className="list-group list-group-flush">
+    <div className="card" style={isShown ? { ...styles.drawer, ...styles.open } : styles.drawer}>
+      <div className="card-header fs-3" style={styles.header}>
+        <div className="flex-fill text-center">Direct Messages</div>
+        <button onClick={handleClose} className="btn btn-close btn-sm" type="button" style={styles.closeButton}></button>
+      </div>
+      <div className="card-body" style={styles.body}>
+        {/* prettier-ignore */}
+        <ul className="list-group list-group-flush">
             {renderConversations()}
           </ul>
-        </div>
-        <div className="card-footer">
-          <div className="row">
-            <div className="col-4 d-flex p-1">
-              <button onClick={handleOpenJoinDirectConversationModal} className="btn btn-success shadow flex-grow-1" type="button" title="New">
-                <i className="bi bi-person-plus-fill"></i>
-              </button>
-            </div>
-            <div className="col-4 d-flex p-1">
-              <button className="btn btn-warning shadow flex-grow-1" type="button" title="Leave">
-                <i className="bi bi-person-dash-fill"></i>
-              </button>
-            </div>
-            <div className="col-4 d-flex p-1">
-              <button onClick={handleClose} className="btn btn-danger shadow flex-grow-1" type="button" title="Close Direct Messages">
-                <i className="bi bi-x-square"></i>
-              </button>
-            </div>
+      </div>
+      <div className="card-footer">
+        <div className="row">
+          <div className="col-4 d-flex p-1">
+            <button onClick={handleOpenJoinDirectConversationModal} className="btn btn-success shadow flex-grow-1" type="button" title="New">
+              <i className="bi bi-person-plus-fill"></i>
+            </button>
+          </div>
+          <div className="col-4 d-flex p-1">
+            <button className="btn btn-warning shadow flex-grow-1" type="button" title="Leave">
+              <i className="bi bi-person-dash-fill"></i>
+            </button>
+          </div>
+          <div className="col-4 d-flex p-1">
+            <button onClick={handleClose} className="btn btn-danger shadow flex-grow-1" type="button" title="Close Direct Messages">
+              <i className="bi bi-x-square"></i>
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

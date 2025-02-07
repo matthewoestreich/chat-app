@@ -1,8 +1,9 @@
 import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback, ChangeEvent } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@src/ws";
-import { AlertState } from "../../../types";
+import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { AlertState, WebSocketeerEventPayload } from "../../../types";
+import { useEffectOnce } from "@hooks";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -31,15 +32,23 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     }
   }, [isOpen, modalInstance]);
 
-  websocketeer.on("CREATED_ROOM", ({ error }) => {
-    if (error) {
-      return console.error(error);
-    }
-    if (!isOpen) {
-      return;
-    }
-    setAlert({ type: "success", shown: true, message: `Successfully created room!`, icon: "bi-check" });
-    setIsCreatingRoom(false);
+  useEffectOnce(() => {
+    const handleOnCreatedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "CREATED_ROOM">) => void = ({ error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      if (!isOpen) {
+        return;
+      }
+      setAlert({ type: "success", shown: true, message: `Successfully created room!`, icon: "bi-check" });
+      setIsCreatingRoom(false);
+    };
+
+    websocketeer.on("CREATED_ROOM", handleOnCreatedRoom);
+
+    return (): void => {
+      websocketeer.off("CREATED_ROOM", handleOnCreatedRoom);
+    };
   });
 
   function closeAlert(): void {

@@ -31,9 +31,10 @@ export default class DirectConversationsRepositoryFileSystem implements DirectCo
       const foundOtherUser = await db.selectOne("users", "id", otherUser.otherUserId);
       if (foundOtherUser) {
         directConversations.push({
-          id: otherUser.convoId,
+          scopeId: otherUser.convoId,
           userId: otherUser.otherUserId,
           userName: foundOtherUser.userName,
+          isActive: false,
         });
       }
     }

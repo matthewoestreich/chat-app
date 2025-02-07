@@ -1,9 +1,10 @@
 import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
 import { Modal as BsModal } from "bootstrap";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@src/ws";
+import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
 import { Room } from "../../../../types.shared";
-import { AlertState } from "../../../types";
+import { AlertState, WebSocketeerEventPayload } from "../../../types";
+import { useEffectOnce } from "@hooks";
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -31,29 +32,39 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
     }
   }, [isOpen, modalInstance]);
 
-  websocketeer.on("LIST_JOINABLE_ROOMS", ({ rooms, error }) => {
-    if (error) {
-      return console.error(error);
-    }
-    if (!isOpen) {
-      return;
-    }
-    setRooms(rooms);
-  });
+  useEffectOnce(() => {
+    const handleListJoinableRooms: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_JOINABLE_ROOMS">) => void = ({ rooms, error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      if (!isOpen) {
+        return;
+      }
+      setRooms(rooms);
+    };
 
-  websocketeer.on("JOINED_ROOM", ({ error }) => {
-    if (error) {
-      return console.error(error);
-    }
-    if (!isOpen) {
-      return;
-    }
-    if (selectedRoom) {
-      setAlert({ type: "success", icon: "bi-check", shown: true, message: `Successfully joined room "${selectedRoom.name}"!` });
-      setRooms((prevRooms) => prevRooms?.filter((room) => room.id !== selectedRoom.id));
-    }
-    setIsLoading(false);
-    setSelectedRoom(null);
+    const handleOnJoinedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_ROOM">) => void = ({ error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      if (!isOpen) {
+        return;
+      }
+      if (selectedRoom) {
+        setAlert({ type: "success", icon: "bi-check", shown: true, message: `Successfully joined room "${selectedRoom.name}"!` });
+        setRooms((prevRooms) => prevRooms?.filter((room) => room.id !== selectedRoom.id));
+      }
+      setIsLoading(false);
+      setSelectedRoom(null);
+    };
+
+    websocketeer.on("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
+    websocketeer.on("JOINED_ROOM", handleOnJoinedRoom);
+
+    return (): void => {
+      websocketeer.off("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
+      websocketeer.off("JOINED_ROOM", handleOnJoinedRoom);
+    };
   });
 
   function handleCloseAlert(): void {

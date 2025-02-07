@@ -26,9 +26,10 @@ export default class DirectConversationsRepositoryInMemory implements DirectConv
         const foundOtherUser = otherUsers.find((otherUser) => u.id === otherUser.otherUserId);
         if (foundOtherUser) {
           directConversations.push({
-            id: foundOtherUser.convoId,
+            scopeId: foundOtherUser.convoId,
             userId: foundOtherUser.otherUserId,
             userName: u.userName,
+            isActive: false,
           });
         }
       });
