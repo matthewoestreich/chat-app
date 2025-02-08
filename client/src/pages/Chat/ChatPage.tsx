@@ -14,18 +14,18 @@ export default function ChatPage(): React.JSX.Element {
   useEffectOnce(() => {
     websocketeer.connect();
 
-    const handleListRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_ROOMS"> = ({ rooms, error }) => {
+    const handleConnectionEstablished: WebSocketeerEventHandler<WebSocketEvents, "CONNECTED"> = ({ rooms, directConversations, error }) => {
       if (error) {
         return console.error(error);
       }
-      dispatch({ type: "SET_ROOMS", payload: rooms });
+      dispatch({ type: "AFTER_CONNECTION_ESTABLISHED", payload: { rooms, directConversations } });
     };
 
-    websocketeer.on("LIST_ROOMS", handleListRooms);
+    websocketeer.on("CONNECTED", handleConnectionEstablished);
 
     return (): void => {
       console.log(`useEffectOnce in LoginPage : cleaning up`);
-      websocketeer.off("LIST_ROOMS", handleListRooms);
+      websocketeer.off("CONNECTED", handleConnectionEstablished);
     };
   });
 

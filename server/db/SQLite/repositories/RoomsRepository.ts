@@ -141,22 +141,36 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       const query = `
-      SELECT 
+      SELECT
           r.id AS roomId,
           u.name AS userName,
-          u.id AS userId
-      FROM 
-          chat c1
+          u.id AS userId,
+          dc.id AS scopeId
+      FROM
+          chat c
       JOIN 
-          room r ON c1.roomId = r.id
+          room r 
+      ON
+          c.roomId = r.id
       JOIN 
-          "user" u ON c1.userId = u.id
-      WHERE 
-          r.id = ? AND u.id != ?
-      ORDER BY u.name ASC;
+          "user" u 
+      ON
+          c.userId = u.id
+      LEFT JOIN 
+          direct_conversation dc
+      ON 
+          (dc.userA_Id = u.id AND dc.userB_Id = ?)
+          OR
+          (dc.userB_Id = u.id AND dc.userA_Id = ?)
+      WHERE
+          r.id = ?
+      AND 
+          u.id != ?
+      ORDER BY
+          u.name ASC;
     `;
 
-      db.all(query, [roomId, excludingUserId], (err, rows: PublicMember[]) => {
+      db.all(query, [excludingUserId, excludingUserId, roomId, excludingUserId], (err, rows: PublicMember[]) => {
         if (err) {
           release();
           return reject(err);

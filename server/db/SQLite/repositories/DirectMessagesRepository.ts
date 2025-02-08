@@ -1,5 +1,5 @@
+import { PublicMessage } from "@root/types.shared";
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
-import { DirectMessage } from "@root/types.shared";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
 
@@ -9,19 +9,25 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
     this.databasePool = dbpool;
   }
-
-  async selectByDirectConversationId(directConversationId: string): Promise<DirectMessage[]> {
+  /*
+  id: string;
+  userId: string;
+  scopeId: string; // roomId/directConvoId,etc..
+  message: string;
+  timestamp: Date;
+  */
+  async selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
         const query = `
-          SELECT dm.*, u.name AS fromUserName
+          SELECT dm.id, dm.directConversationId AS scopeId, dm.message, dm.timestamp, dm.fromUserId as userId, u.name AS userName
           FROM direct_messages dm 
           JOIN "user" u
           ON u.id = dm.fromUserId 
           WHERE dm.directConversationId = ?
           ORDER BY timestamp ASC;`;
-        db.all(query, [directConversationId], (err, rows: DirectMessage[]) => {
+        db.all(query, [directConversationId], (err, rows: PublicMessage[]) => {
           if (err) {
             release();
             return reject(err);
@@ -36,22 +42,22 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     });
   }
 
-  getAll(): Promise<DirectMessage[]> {
+  getAll(): Promise<PublicMessage[]> {
     throw new Error("Method not implemented.");
   }
 
-  getById(_id: string): Promise<DirectMessage> {
+  getById(_id: string): Promise<PublicMessage> {
     throw new Error("Method not implemented.");
   }
 
-  async create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<DirectMessage> {
+  async create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<PublicMessage> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
         const query = `INSERT INTO direct_messages (id, directConversationId, fromUserId, toUserId, message, isRead, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`;
         const params = [uuidV7(), directConversationId, fromUserId, toUserId, message, true, new Date()];
 
-        db.get(query, [params], function (err: Error | null, row: DirectMessage) {
+        db.get(query, [params], function (err: Error | null, row: PublicMessage) {
           if (err) {
             release();
             return reject(err);
@@ -66,7 +72,7 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     });
   }
 
-  update(_id: string, _entity: DirectMessage): Promise<DirectMessage | null> {
+  update(_id: string, _entity: PublicMessage): Promise<PublicMessage | null> {
     throw new Error("Method not implemented.");
   }
 

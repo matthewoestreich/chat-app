@@ -1,4 +1,4 @@
-import { DirectConversation, DirectMessage, Message, PublicDirectConversation, PublicMessage, PublicUser, Room, ChatScopeWithMembers, Session, User, WebSocketAppEventRegistry, PublicMember } from "@root/types.shared";
+import { DirectConversation, Message, PublicDirectConversation, PublicMessage, PublicUser, Room, ChatScopeWithMembers, Session, User, WebSocketAppEventRegistry, PublicMember } from "@root/types.shared";
 import type { WebSocket } from "ws";
 
 declare class WebSocketClient {
@@ -81,12 +81,12 @@ export interface DirectConversationsRepository<DB> {
 
 export interface DirectMessagesRepository<DB> {
   databasePool: DatabasePool<DB>;
-  getAll(): Promise<DirectMessage[]>;
-  getById(id: string): Promise<DirectMessage>;
-  create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<DirectMessage>;
-  update(id: string, entity: DirectMessage): Promise<DirectMessage | null>;
+  getAll(): Promise<PublicMessage[]>;
+  getById(id: string): Promise<PublicMessage>;
+  create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<PublicMessage>;
+  update(id: string, entity: PublicMessage): Promise<PublicMessage | null>;
   delete(id: string): Promise<boolean>;
-  selectByDirectConversationId(directConversationId: string): Promise<DirectMessage[]>;
+  selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]>;
 }
 
 export interface RoomsMessagesRepository<T> {

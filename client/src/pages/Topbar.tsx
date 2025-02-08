@@ -2,12 +2,16 @@ import React, { DetailedHTMLProps, HTMLAttributes, useCallback, useEffect, useSt
 import { DarkThemeIcon, LightThemeIcon } from "@components";
 import { useAuth, useTheme } from "@hooks";
 
-interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {}
+interface TopbarProperties extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {
+  onLogout?: () => void;
+}
 
-export default function Topbar(_props: TopbarProperties): React.JSX.Element {
+export default function Topbar(props: TopbarProperties): React.JSX.Element {
   const [themeIcon, setThemeIcon] = useState<React.JSX.Element | null>(null);
   const { theme, toggleTheme } = useTheme();
   const { logout, session } = useAuth();
+
+  const onLogout = props.onLogout;
 
   useEffect(() => {
     if (theme === "dark") {
@@ -24,8 +28,12 @@ export default function Topbar(_props: TopbarProperties): React.JSX.Element {
   }, [toggleTheme]);
 
   const handleLogout = useCallback(() => {
+    console.log({ onLogout });
+    if (onLogout) {
+      onLogout();
+    }
     logout();
-  }, [logout]);
+  }, [logout, onLogout]);
 
   return (
     <header className="navbar navbar-expand-lg fixed-top bg-secondary-subtle">

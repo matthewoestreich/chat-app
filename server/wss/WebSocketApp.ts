@@ -71,6 +71,22 @@ export default class WebSocketApp extends EventEmitter {
     }
   }
 
+  /**
+   * Blasts a message to every single socket.
+   * @param type Message type
+   * @param payload Message payload
+   */
+  blast<K extends EventTypes>(type: K, payload: EventPayload<K>, excludeClient?: WebSocketClient): void {
+    for (const [_containerId, container] of WebSocketApp.cache) {
+      for (const [_clientId, client] of container) {
+        if (excludeClient && client === excludeClient) {
+          continue;
+        }
+        client.send(type, payload);
+      }
+    }
+  }
+
   on<K extends EventTypes>(event: K, handler: (client: WebSocketClient, payload: EventPayload<K>) => void): this {
     return super.on(event, handler);
   }

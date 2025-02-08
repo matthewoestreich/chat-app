@@ -97,7 +97,9 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
 
   const renderRooms = useCallback(() => {
     console.log("[JoinRoomModal]::renderRooms", { rooms, isLoading, selectedRoom, roomClickHandlers });
-    if (!rooms || isLoading) return <div>Loading..</div>;
+    if (!rooms || isLoading) {
+      return <div>Loading..</div>;
+    }
     return rooms.map((room) => (
       <JoinableRoomMemo key={room.id} onClick={roomClickHandlers.get(room.id)} isSelected={selectedRoom === room} roomId={room.id} name={room.name} />
     ));
