@@ -3,7 +3,7 @@ import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";
-import { WebSocketeerEventPayload } from "../../../types";
+import { WebSocketeerEventHandler } from "@client/types";
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";
@@ -13,7 +13,7 @@ export default function ChatPage(): React.JSX.Element {
   useEffectOnce(() => {
     websocketeer.connect();
 
-    const handleListRooms: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_ROOMS">) => void = ({ rooms, error }) => {
+    const handleListRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_ROOMS"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }

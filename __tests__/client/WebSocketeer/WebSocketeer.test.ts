@@ -41,7 +41,7 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
     wsteer.on("FOO", handleFoo);
     wsteer.off("FOO", handleFoo);
     wsteer.emit("FOO", { foo: "data" });
-    const fooHandlers = wsteer.listEventHandlers("FOO");
+    const fooHandlers = wsteer.getEventHandlers("FOO");
 
     expect(fooHandlers).toBe(undefined);
     expect(handler1).toHaveBeenCalledTimes(0);
@@ -61,9 +61,9 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
     wsteer.on("FOO", handleFoo1);
     wsteer.off("FOO", handleFoo1);
     wsteer.emit("FOO", { foo: "data" });
-    const fooHandlers1 = wsteer.listEventHandlers("FOO");
+    const fooHandlers1 = wsteer.getEventHandlers("FOO");
     wsteer.on("FOO", handleFoo2);
-    const foundHandlers2 = wsteer.listEventHandlers("FOO");
+    const foundHandlers2 = wsteer.getEventHandlers("FOO");
     wsteer.emit("FOO", { foo: "data" });
 
     expect(fooHandlers1).toBe(undefined);

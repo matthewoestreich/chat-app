@@ -3,9 +3,8 @@ import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import sortMembers from "./sortMembers";
 import { PublicMember } from "@root/types.shared";
-import { AlertState, WebSocketeerEventPayload } from "@client/types";
+import { AlertState, WebSocketeerEventHandler } from "@client/types";
 import { useChat, useEffectOnce } from "@hooks";
-import { JoinedDirectConvoPayload } from "./DirectMessagesDrawer";
 
 interface JoinDirectConversationModalProperties {
   isOpen: boolean;
@@ -24,7 +23,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
   const { isOpen, onClose } = props;
 
   useEffectOnce(() => {
-    const handleListInvitableUsers: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_INVITABLE_USERS">) => void = ({ users, error }) => {
+    const handleListInvitableUsers: WebSocketeerEventHandler<WebSocketEvents, "LIST_INVITABLE_USERS"> = ({ users, error }) => {
       console.log({ users });
       if (error) {
         return console.error(error);
@@ -32,7 +31,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
       setUsers(sortMembers(users, true));
     };
 
-    const handleJoinedDirectConversation: JoinedDirectConvoPayload = ({ invitableUsers, error }) => {
+    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({ invitableUsers, error }) => {
       if (error) {
         return;
       }

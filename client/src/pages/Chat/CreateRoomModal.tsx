@@ -1,7 +1,7 @@
 import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useCallback, ChangeEvent, useEffect } from "react";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
-import { AlertState, WebSocketeerEventPayload } from "@client/types";
+import { AlertState, WebSocketeerEventHandler } from "@client/types";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   const { isOpen, onClose } = props;
 
   useEffect(() => {
-    const handleOnCreatedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "CREATED_ROOM">) => void = ({ error }) => {
+    const handleOnCreatedRoom: WebSocketeerEventHandler<WebSocketEvents, "CREATED_ROOM"> = ({ error }) => {
       if (error) {
         return console.error(error);
       }

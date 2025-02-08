@@ -2,8 +2,8 @@ import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "rea
 import { Member } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat, useEffectOnce } from "@hooks";
-import { ChatScope, PublicDirectConversation } from "../../../../types.shared";
-import { WebSocketeerEventPayload } from "../../../types";
+import { ChatScope, PublicDirectConversation } from "@root/types.shared";
+import { WebSocketeerEventHandler } from "@client/types";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -45,9 +45,6 @@ const styles: Record<string, CSSProperties> = {
 
 const MemberMemo = memo(Member);
 
-export type JoinedDirectConvoPayload = (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_DIRECT_CONVERSATION">) => void;
-type ListDirectConvosPayload = (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS">) => void;
-
 interface DirectMessagesDrawerProperties {
   isShown: boolean;
   onClose: () => void;
@@ -64,14 +61,20 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   }, [isShown]);
 
   useEffectOnce(() => {
-    const handleJoinedDirectConversation: JoinedDirectConvoPayload = ({ directConversations, error }) => {
+    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
+      directConversations,
+      error,
+    }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
     };
 
-    const handleListDirectConversations: ListDirectConvosPayload = ({ directConversations, error }) => {
+    const handleListDirectConversations: WebSocketeerEventHandler<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS"> = ({
+      directConversations,
+      error,
+    }) => {
       if (error) {
         return console.error(error);
       }

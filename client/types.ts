@@ -67,6 +67,9 @@ export interface WebSocketeerEventMap {
 
 export type WebSocketeerEventType<T extends WebSocketeerEventMap> = keyof T;
 export type WebSocketeerEventPayload<T extends WebSocketeerEventMap, K extends WebSocketeerEventType<T>> = T[K];
+export type WebSocketeerEventHandler<T extends WebSocketeerEventMap, K extends WebSocketeerEventType<T>> = (
+  payload: WebSocketeerEventPayload<T, K>,
+) => void;
 
 export type WebSocketeerEventHandlerMapArray<T extends WebSocketeerEventMap> = {
   [K in keyof T]?: ((payload: T[K]) => void)[];

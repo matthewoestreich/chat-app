@@ -1,5 +1,5 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { WebSocketeerEventPayload } from "@client/types";
+import { WebSocketeerEventHandler } from "@client/types";
 import { ChatScope } from "@root/types.shared";
 import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
@@ -54,7 +54,7 @@ export default function ChatView(): React.JSX.Element {
   }, [state.messages]);
 
   useEffectOnce(() => {
-    const handleSentMessage: (payload: WebSocketeerEventPayload<WebSocketEvents, "SENT_MESSAGE">) => void = ({ message, error }) => {
+    const handleSentMessage: WebSocketeerEventHandler<WebSocketEvents, "SENT_MESSAGE"> = ({ message, error }) => {
       if (error) {
         return console.error(error);
       }
@@ -64,7 +64,7 @@ export default function ChatView(): React.JSX.Element {
       }
     };
 
-    const handleEnteredRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "ENTERED_ROOM">) => void = ({ members, messages, room, error }) => {
+    const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
       if (error) {
         return console.error(error);
       }
@@ -73,49 +73,49 @@ export default function ChatView(): React.JSX.Element {
       dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
     };
 
-    const handleMemberEnteredRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "MEMBER_ENTERED_ROOM">) => void = ({ id, error }) => {
+    const handleMemberEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_ENTERED_ROOM"> = ({ id, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: true } });
     };
 
-    const handleMemberLeftRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "MEMBER_LEFT_ROOM">) => void = ({ id, error }) => {
+    const handleMemberLeftRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_LEFT_ROOM"> = ({ id, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: false } });
     };
 
-    const handleListRooms: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_ROOMS">) => void = ({ rooms, error }) => {
+    const handleListRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_ROOMS"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
-    const handleJoinedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_ROOM">) => void = ({ rooms, error }) => {
+    const handleJoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "JOINED_ROOM"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
-    const handleUnjoinedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "UNJOINED_ROOM">) => void = ({ rooms, error }) => {
+    const handleUnjoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "UNJOINED_ROOM"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
-    const handleCreatedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "CREATED_ROOM">) => void = ({ rooms, error }) => {
+    const handleCreatedRoom: WebSocketeerEventHandler<WebSocketEvents, "CREATED_ROOM"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
-    const handleUserDisconnected: (payload: WebSocketeerEventPayload<WebSocketEvents, "USER_DISCONNECTED">) => void = ({ userId }) => {
+    const handleUserDisconnected: WebSocketeerEventHandler<WebSocketEvents, "USER_DISCONNECTED"> = ({ userId }) => {
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId, isActive: false } });
     };
 

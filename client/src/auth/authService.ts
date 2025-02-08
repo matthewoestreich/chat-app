@@ -1,4 +1,4 @@
-import { AuthenticationResult, CreateAccountResult, LogoutResult } from "../../types";
+import { AuthenticationResult, CreateAccountResult, LogoutResult } from "@client/types";
 
 /**
  * Sends login request to backend.

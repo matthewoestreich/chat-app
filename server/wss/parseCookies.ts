@@ -1,4 +1,4 @@
-import { Cookies } from "../../types.shared";
+import { Cookies } from "@root/types.shared";
 
 export default function (rawCookie: string): Cookies {
   const cookies: Cookies = { session: "" }; // Initialize an empty cookie object

@@ -1,32 +1,31 @@
 import {
+  WebSocketeerEventHandler,
   WebSocketeerEventHandlerMapArray,
   WebSocketeerEventMap,
   WebSocketeerEventPayload,
   WebSocketeerEventType,
   WebSocketeerParsedMessage,
-} from "../../types";
+} from "@client/types";
 
 export default class WebSocketeer<T extends WebSocketeerEventMap> {
+  private handlers: WebSocketeerEventHandlerMapArray<T> = {};
   private socket: WebSocket | null = null;
-
   private nativeSocketDefaultEventHandlers = {
     onOpen: (_e: Event): void => {},
     onClose: (_e: CloseEvent): void => {},
     onError: (_e: Event): void => {},
   };
 
-  private handlers: WebSocketeerEventHandlerMapArray<T> = {};
-
   public url: string;
-
-  constructor(url: string) {
-    this.url = url;
-  }
 
   // eslint-disable-next-line
   private parseRawMessage(data: any): WebSocketeerParsedMessage<T> {
     const { type, ...payload } = JSON.parse(data);
     return { type, payload };
+  }
+
+  constructor(url: string) {
+    this.url = url;
   }
 
   public connect(): void {
@@ -77,11 +76,12 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
       return;
     }
     const idx = handlers.findIndex((h) => h === handler);
-    if (idx !== -1) {
-      handlers.splice(idx, 1);
+    if (idx === -1) {
+      return;
     }
+    handlers.splice(idx, 1);
     if (handlers.length === 0) {
-      this.handlers[event] = undefined;
+      delete this.handlers[event];
     }
   }
 
@@ -106,7 +106,7 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     this.socket.send(JSON.stringify({ type: event, ...payload[0] }));
   }
 
-  public listEventHandlers<K extends WebSocketeerEventType<T>>(event: K): ((payload: T[K]) => void)[] | undefined {
+  public getEventHandlers<K extends WebSocketeerEventType<T>>(event: K): WebSocketeerEventHandler<T, K>[] | undefined {
     return this.handlers[event];
   }
 }

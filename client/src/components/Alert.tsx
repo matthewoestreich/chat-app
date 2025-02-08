@@ -1,5 +1,5 @@
 import React from "react";
-import { BootstrapContextualClasses } from "../../types";
+import { BootstrapContextualClasses } from "@client/types";
 
 interface AlertProperties {
   isOpen: boolean;

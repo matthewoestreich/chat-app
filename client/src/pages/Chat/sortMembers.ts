@@ -1,4 +1,4 @@
-import { PublicMember } from "../../../../types.shared";
+import { PublicMember } from "@root/types.shared";
 
 /**
  * Sorts members based on (in order):

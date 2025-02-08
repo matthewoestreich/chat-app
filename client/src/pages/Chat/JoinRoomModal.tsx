@@ -2,7 +2,7 @@ import React, { ChangeEvent, HTMLAttributes, memo, useCallback, useEffect, useMe
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { Room } from "@root/types.shared";
-import { AlertState, WebSocketeerEventPayload } from "@client/types";
+import { AlertState, WebSocketeerEventHandler } from "@client/types";
 
 const JoinableRoomMemo = memo(JoinableRoom);
 
@@ -22,7 +22,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   const { isOpen, onClose } = props;
 
   useEffect(() => {
-    const handleListJoinableRooms: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_JOINABLE_ROOMS">) => void = ({ rooms, error }) => {
+    const handleListJoinableRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_JOINABLE_ROOMS"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
       }
@@ -47,7 +47,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   }, [isOpen]);
 
   useEffect(() => {
-    const handleOnJoinedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_ROOM">) => void = ({ error }) => {
+    const handleOnJoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "JOINED_ROOM"> = ({ error }) => {
       if (error) {
         return console.error(error);
       }
