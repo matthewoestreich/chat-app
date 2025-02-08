@@ -2,7 +2,6 @@ import {
   WebSocketeerEventHandler,
   WebSocketeerEventHandlerMapArray,
   WebSocketeerEventMap,
-  WebSocketeerEventPayload,
   WebSocketeerEventType,
   WebSocketeerParsedMessage,
 } from "@client/types";
@@ -63,14 +62,14 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     this.nativeSocketDefaultEventHandlers.onError = handler;
   }
 
-  public on<K extends WebSocketeerEventType<T>>(event: K, handler: (payload: WebSocketeerEventPayload<T, K>) => void): void {
+  public on<K extends WebSocketeerEventType<T>>(event: K, handler: WebSocketeerEventHandler<T, K>): void {
     if (!this.handlers[event]) {
       this.handlers[event] = [];
     }
     this.handlers[event].push(handler);
   }
 
-  public off<K extends WebSocketeerEventType<T>>(event: K, handler: (payload: WebSocketeerEventPayload<T, K>) => void): void {
+  public off<K extends WebSocketeerEventType<T>>(event: K, handler: WebSocketeerEventHandler<T, K>): void {
     const handlers = this.handlers[event];
     if (!handlers) {
       return;

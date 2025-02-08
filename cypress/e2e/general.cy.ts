@@ -13,36 +13,8 @@ describe("Homepage", () => {
     cy.getLoginInputEmail().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
     cy.getLoginInputPassword().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
   });
-});
-
-/**
- * THERE IS NO NEED TO CALL cy.visit("/chat")` AT THE START OF A TEST
- * WITHIN THIS "describe" BLOCK. THIS IS BC WE LOGIN `beforeEach(..)`
- * WHICH REDIRECTS US TO `/chat` AUTOMATICALLY!!!
- */
-describe("Global", () => {
-  const USER = generateAccountInfo();
-  const NEW_ROOM_NAME = getRandomString(7);
-
-  before(() => {
-    cy.createAccount(USER.name, USER.email, USER.password);
-  });
-
-  beforeEach(() => {
-    cy.login(USER.email, USER.password);
-    cy.wait(100);
-  });
-
-  afterEach(() => {
-    cy.logout();
-  });
-
-  it("should redirect an already logged in account", () => {
-    cy.visit("/");
-    cy.url().should("include", "/chat");
-  });
-
   it("should toggle theme", () => {
+    cy.visit(BASE_URL);
     cy.getToggleThemeButton().as("toggleBtn");
     cy.get("@toggleBtn").should("exist");
     cy.get("@toggleBtn").children().first().should("exist").click();
@@ -63,6 +35,34 @@ describe("Global", () => {
     cy.get("@toggleBtn").children().first().should("exist").click();
     cy.getCurrentTheme().should("have.attr", "data-bs-theme", "light");
     cy.localStorageItemEquals("theme", "light");
+  });
+});
+
+/**
+ * THERE IS NO NEED TO CALL cy.visit("/chat")` AT THE START OF A TEST
+ * WITHIN THIS "describe" BLOCK. THIS IS BC WE LOGIN `beforeEach(..)`
+ * WHICH REDIRECTS US TO `/chat` AUTOMATICALLY!!!
+ */
+describe("Global", () => {
+  const USER = generateAccountInfo();
+  const NEW_ROOM_NAME = getRandomString(7);
+
+  before(() => {
+    cy.createAccount(USER.name, USER.email, USER.password);
+  });
+
+  beforeEach(() => {
+    cy.login(USER.email, USER.password);
+    cy.get(".loading-spinner").should("not.exist");
+  });
+
+  afterEach(() => {
+    cy.logout();
+  });
+
+  it("should redirect an already logged in account", () => {
+    cy.visit("/");
+    cy.url().should("include", "/chat");
   });
 
   it("should list joinable rooms", () => {
