@@ -4,9 +4,14 @@ const BASE_URL = Cypress.config("baseUrl");
 
 describe("Homepage", () => {
   it("should load the homepage", () => {
-    // @ts-ignore
     cy.visit(BASE_URL);
     cy.title().should("eq", "RTChat | Welcome!");
+  });
+  it("should display invalid feedback without entering username or password", () => {
+    cy.visit(BASE_URL);
+    cy.getLoginButton().click();
+    cy.getLoginInputEmail().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
+    cy.getLoginInputPassword().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
   });
 });
 

@@ -28,7 +28,7 @@ export type ChatStateAction =
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
     case "SET_ROOMS": {
-      console.log("setRooms");
+      console.log("[reducer]::setAlreadyJoinedRooms");
       return { ...state, rooms: action.payload };
     }
     case "SET_MEMBERS": {

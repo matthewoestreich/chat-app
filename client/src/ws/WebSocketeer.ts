@@ -80,6 +80,9 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
     if (idx !== -1) {
       handlers.splice(idx, 1);
     }
+    if (handlers.length === 0) {
+      this.handlers[event] = undefined;
+    }
   }
 
   public emit<K extends keyof T>(event: K, payload: T[K]): void {
@@ -101,5 +104,9 @@ export default class WebSocketeer<T extends WebSocketeerEventMap> {
       return console.warn("Socket is empty. Have you called `listen()` yet?");
     }
     this.socket.send(JSON.stringify({ type: event, ...payload[0] }));
+  }
+
+  public listEventHandlers<K extends WebSocketeerEventType<T>>(event: K): ((payload: T[K]) => void)[] | undefined {
+    return this.handlers[event];
   }
 }

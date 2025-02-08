@@ -117,15 +117,17 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     if (!state.directConversations) {
       return;
     }
-    return state.directConversations.map((convo) => (
-      <MemberMemo
-        key={convo.scopeId}
-        isButton={true}
-        onClick={directConversationClickHandlers.get(convo.scopeId)}
-        memberName={convo.userName}
-        isOnline={convo.isActive || false}
-      />
-    ));
+    return state.directConversations.map((convo) => {
+      return (
+        <MemberMemo
+          key={convo.scopeId}
+          isButton={true}
+          onClick={directConversationClickHandlers.get(convo.scopeId)}
+          memberName={convo.userName}
+          isOnline={convo.isActive || false}
+        />
+      );
+    });
   }, [state.directConversations, directConversationClickHandlers]);
 
   return (

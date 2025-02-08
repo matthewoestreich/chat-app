@@ -130,6 +130,7 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("USER_DISCONNECTED", handleUserDisconnected);
 
     return (): void => {
+      console.log(`[ChatView]::useEffect : tearing down`);
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
       websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -174,13 +175,13 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
   }
 
-  function handleOpenDirectMessagesDrawer(): void {
+  const handleOpenDirectMessagesDrawer = useCallback(() => {
     setIsDirectMessagesShown(true);
-  }
+  }, []);
 
-  function handleCloseDirectMessagesDrawer(): void {
+  const handleCloseDirectMessagesDrawer = useCallback(() => {
     setIsDirectMessagesShown(false);
-  }
+  }, []);
 
   const handleCloseCreateRoomModal = useCallback(() => {
     setIsCreateRoomModalShown(false);
@@ -199,6 +200,7 @@ export default function ChatView(): React.JSX.Element {
   }, [dispatch]);
 
   const renderMessages = useCallback(() => {
+    console.log("[ChatView] in 'renderMessages' (this does not mean messages ae rendering)");
     if (state.isEnteringRoom) {
       return <LoadingSpinnerMemo />;
     }
@@ -208,6 +210,7 @@ export default function ChatView(): React.JSX.Element {
   }, [state.messages, state.isEnteringRoom]);
 
   const renderMembers = useCallback(() => {
+    console.log("[ChatView] in 'renderMembers' (this does not mean members ae rendering)");
     return state.members?.map((member) => (
       <MemberMemo memberId={member.userId} key={member.userId} memberName={member.userName} isOnline={member.isActive} />
     ));
@@ -227,6 +230,7 @@ export default function ChatView(): React.JSX.Element {
   }, [state.rooms, handleRoomClick]);
 
   const renderRooms = useCallback(() => {
+    console.log("[ChatView] in 'renderRooms' (this does not mean rooms ae rendering)");
     return state.rooms?.map((room) => (
       <RoomMemo
         key={room.id}

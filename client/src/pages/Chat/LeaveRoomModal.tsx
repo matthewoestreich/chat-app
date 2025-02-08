@@ -1,8 +1,7 @@
-import React, { HTMLAttributes, useEffect, useState } from "react";
-import { Modal as BsModal } from "bootstrap";
+import React, { HTMLAttributes } from "react";
 import { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@components";
 import { SingletonWebSocketeer as websocketeer } from "@src/ws";
-import { ChatScope } from "../../../../types.shared";
+import { ChatScope } from "@root/types.shared";
 
 interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -12,28 +11,12 @@ interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 
 // LeaveRoomModal
 export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.JSX.Element {
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
-
-  useEffect(() => {
-    if (modalInstance) {
-      if (props.isOpen === true) {
-        modalInstance.show();
-      } else if (props.isOpen === false) {
-        modalInstance.hide();
-      }
-    }
-  }, [props.isOpen, modalInstance]);
-
   websocketeer.on("UNJOINED_ROOM", ({ error }) => {
     if (error) {
       return console.error(error);
     }
     handleModalClose();
   });
-
-  function handleGetModalInstance(modal: BsModal | null): void {
-    setModalInstance(modal);
-  }
 
   function handleModalClose(): void {
     props.onClose();
@@ -46,7 +29,7 @@ export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.J
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} size="sm" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal shown={props.isOpen} size="sm" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>

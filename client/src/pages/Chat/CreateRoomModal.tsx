@@ -1,9 +1,7 @@
-import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useEffect, useCallback, ChangeEvent } from "react";
-import { Modal as BsModal } from "bootstrap";
+import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useCallback, ChangeEvent, useEffect } from "react";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
-import { AlertState, WebSocketeerEventPayload } from "../../../types";
-import { useEffectOnce } from "@hooks";
+import { AlertState, WebSocketeerEventPayload } from "@client/types";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -15,7 +13,6 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [roomNameInput, setRoomNameInput] = useState("");
   const [isPrivateCheckboxChecked, setIsPrivateCheckboxChecked] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -23,16 +20,6 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   const { isOpen, onClose } = props;
 
   useEffect(() => {
-    if (modalInstance) {
-      if (isOpen === true) {
-        modalInstance.show();
-      } else if (isOpen === false) {
-        modalInstance.hide();
-      }
-    }
-  }, [isOpen, modalInstance]);
-
-  useEffectOnce(() => {
     const handleOnCreatedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "CREATED_ROOM">) => void = ({ error }) => {
       if (error) {
         return console.error(error);
@@ -49,7 +36,7 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     return (): void => {
       websocketeer.off("CREATED_ROOM", handleOnCreatedRoom);
     };
-  });
+  }, [isOpen]);
 
   function closeAlert(): void {
     setAlert({ type: null, shown: false, message: "", icon: "" });
@@ -76,10 +63,6 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
     onClose();
   }
 
-  const handleGetModalInstance = useCallback((instance: BsModal | null) => {
-    setModalInstance(instance);
-  }, []);
-
   function handleCreateRoom(): void {
     formRef.current?.requestSubmit();
   }
@@ -101,7 +84,7 @@ export default function CreateRoomModal(props: CreateRoomModalProperties): React
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} size="md" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal shown={props.isOpen} size="md" className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>

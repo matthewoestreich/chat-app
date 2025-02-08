@@ -1,10 +1,10 @@
-import React, { ChangeEvent, HTMLAttributes, useCallback, useEffect, useState } from "react";
-import { Modal as BsModal } from "bootstrap";
+import React, { ChangeEvent, HTMLAttributes, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
 import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
-import { Room } from "../../../../types.shared";
-import { AlertState, WebSocketeerEventPayload } from "../../../types";
-import { useEffectOnce } from "@hooks";
+import { Room } from "@root/types.shared";
+import { AlertState, WebSocketeerEventPayload } from "@client/types";
+
+const JoinableRoomMemo = memo(JoinableRoom);
 
 interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -13,26 +13,15 @@ interface JoinRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
 
 export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX.Element {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [searchText, setSearchText] = useState("");
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
-  const [rooms, setRooms] = useState<Room[] | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
+  const [rooms, setRooms] = useState<Room[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isJoiningRoom, setIsJoiningRoom] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   const { isOpen, onClose } = props;
 
   useEffect(() => {
-    if (modalInstance) {
-      if (isOpen === true) {
-        modalInstance.show();
-        websocketeer.send("GET_JOINABLE_ROOMS");
-      } else if (isOpen === false) {
-        modalInstance.hide();
-      }
-    }
-  }, [isOpen, modalInstance]);
-
-  useEffectOnce(() => {
     const handleListJoinableRooms: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_JOINABLE_ROOMS">) => void = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
@@ -40,32 +29,43 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
       if (!isOpen) {
         return;
       }
+      console.log({ rooms });
       setRooms(rooms);
+      setIsLoading(false);
     };
 
+    if (isOpen === true) {
+      console.log("getting joinable rooms");
+      websocketeer.send("GET_JOINABLE_ROOMS");
+      websocketeer.on("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
+    }
+
+    return (): void => {
+      console.log("[JoinRoomModal]::useEffect : Tearing Down", { isOpen });
+      websocketeer.off("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleOnJoinedRoom: (payload: WebSocketeerEventPayload<WebSocketEvents, "JOINED_ROOM">) => void = ({ error }) => {
       if (error) {
         return console.error(error);
       }
-      if (!isOpen) {
-        return;
-      }
+
       if (selectedRoom) {
         setAlert({ type: "success", icon: "bi-check", shown: true, message: `Successfully joined room "${selectedRoom.name}"!` });
-        setRooms((prevRooms) => prevRooms?.filter((room) => room.id !== selectedRoom.id));
+        setRooms(rooms?.filter((room) => room.id !== selectedRoom.id) || []);
       }
-      setIsLoading(false);
+      setIsJoiningRoom(false);
       setSelectedRoom(null);
     };
 
-    websocketeer.on("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
     websocketeer.on("JOINED_ROOM", handleOnJoinedRoom);
 
     return (): void => {
-      websocketeer.off("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
       websocketeer.off("JOINED_ROOM", handleOnJoinedRoom);
     };
-  });
+  }, [rooms, selectedRoom]);
 
   function handleCloseAlert(): void {
     setAlert({ type: null, shown: false, icon: null, message: "" });
@@ -75,6 +75,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
     setAlert({ type: null, icon: null, shown: false, message: "" });
     setSearchText("");
     setIsLoading(false);
+    setRooms(null);
     onClose();
   }
 
@@ -82,28 +83,32 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
     if (selectedRoom === null) {
       return;
     }
-    setIsLoading(true);
+    setIsJoiningRoom(true);
     websocketeer.send("JOIN_ROOM", { id: selectedRoom.id });
   }
 
-  const renderRooms = useCallback(() => {
-    return rooms
-      ?.filter((room) => room.name.includes(searchText))
-      .map((room) => (
-        <JoinableRoom key={room.id} onClick={() => setSelectedRoom(room)} isSelected={selectedRoom === room} roomId={room.id} name={room.name} />
-      ));
-  }, [searchText, rooms, selectedRoom]);
+  const handleRoomClick = useCallback((room: Room) => {
+    setSelectedRoom(room);
+  }, []);
 
-  function handleGetModalInstance(modalInstance: BsModal | null): void {
-    setModalInstance(modalInstance);
-  }
+  const roomClickHandlers = useMemo(() => {
+    return new Map(rooms?.map((room) => [room.id, (): void => handleRoomClick(room)]));
+  }, [rooms, handleRoomClick]);
+
+  const renderRooms = useCallback(() => {
+    console.log("[JoinRoomModal]::renderRooms", { rooms, isLoading, selectedRoom, roomClickHandlers });
+    if (!rooms || isLoading) return <div>Loading..</div>;
+    return rooms.map((room) => (
+      <JoinableRoomMemo key={room.id} onClick={roomClickHandlers.get(room.id)} isSelected={selectedRoom === room} roomId={room.id} name={room.name} />
+    ));
+  }, [rooms, isLoading, roomClickHandlers, selectedRoom]);
 
   function handleSearchInput(e: ChangeEvent<HTMLInputElement>): void {
     setSearchText(e.target.value);
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal shown={props.isOpen} className="fade" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>
@@ -132,7 +137,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
             <button onClick={handleCloseModal} className="btn btn-danger" type="button">
               Close
             </button>
-            <ButtonLoading onClick={handleJoinRoom} isLoading={isLoading} className="btn btn-primary" type="button">
+            <ButtonLoading onClick={handleJoinRoom} isLoading={isJoiningRoom} className="btn btn-primary" type="button">
               Join Room
             </ButtonLoading>
           </ModalFooter>

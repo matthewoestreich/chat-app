@@ -4,11 +4,14 @@ export default function useEffectOnce(effect: EffectCallback): void {
   const hasExecuted = useRef(false);
 
   useEffect(() => {
+    let cleanup;
+
     if (hasExecuted.current === false) {
       hasExecuted.current = true;
-      const cleanup = effect();
-      return cleanup;
+      cleanup = effect();
     }
+
+    return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

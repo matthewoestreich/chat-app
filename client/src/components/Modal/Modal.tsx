@@ -7,7 +7,8 @@ import ModalDialog from "./ModalDialog";
  *
  */
 interface ModalProperties extends HTMLAttributes<HTMLDivElement> {
-  getInstance?: (bsModal: BsModal | null) => void;
+  //getInstance?: (bsModal: BsModal | null) => void;
+  shown: boolean;
   dataBsBackdrop?: "static" | boolean;
   dataBsKeyboard?: boolean;
   tabIndex?: number;
@@ -21,19 +22,26 @@ export default function Modal(props: ModalProperties): React.JSX.Element {
     console.warn("[Modal] firt child not ModalDialog! This may cause issues.");
   }
 
+  const bsModalInstance = useRef<BsModal | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const getInstance = props.getInstance;
+  const modalSize = props?.size === undefined ? "modal-md" : `modal-${props.size}`;
 
   useEffect(() => {
-    if (getInstance) {
-      if (modalRef.current) {
-        const bsModal = BsModal.getOrCreateInstance(modalRef.current) || new BsModal(modalRef.current);
-        getInstance(bsModal);
-      }
+    console.log(`modalRef || modalRef.current changed`, { modalRef, current: modalRef.current });
+    if (modalRef.current) {
+      bsModalInstance.current = BsModal.getOrCreateInstance(modalRef.current);
     }
-  }, [getInstance]);
+  }, [modalRef]);
 
-  const modalSize = props?.size === undefined ? "modal-md" : `modal-${props.size}`;
+  if (props.shown === true) {
+    if (bsModalInstance.current) {
+      bsModalInstance.current.show();
+    }
+  } else if (props.shown === false) {
+    if (modalRef.current && bsModalInstance.current) {
+      bsModalInstance.current.hide();
+    }
+  }
 
   return (
     <div

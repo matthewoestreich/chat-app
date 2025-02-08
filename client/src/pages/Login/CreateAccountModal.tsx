@@ -1,5 +1,4 @@
-import React, { ChangeEvent, FormEvent, HTMLAttributes, KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Modal as BsModal } from "bootstrap";
+import React, { ChangeEvent, FormEvent, HTMLAttributes, KeyboardEvent, useRef, useState } from "react";
 // prettier-ignore
 import { 
   Modal,
@@ -13,6 +12,7 @@ import {
   ModalFooter
 } from "@components";
 import { sendRegisterRequest } from "@src/auth/authService";
+import { CreateAccountResult } from "@client/types";
 
 interface CreateAccountModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -26,25 +26,10 @@ export default function CreateAccountModal(props: CreateAccountModalProperties):
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [isCloseButtonDisabled, setIsCloseButtonDisabled] = useState(false);
   const [isFormValidated, setIsFormValidated] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-
-  useEffect(() => {
-    if (modalInstance) {
-      if (props.isOpen === true) {
-        modalInstance.show();
-      } else if (props.isOpen === false) {
-        modalInstance.hide();
-      }
-    }
-  }, [props.isOpen, modalInstance]);
-
-  function handleGetModalInstance(instance: BsModal | null): void {
-    setModalInstance(instance);
-  }
 
   function handleUsernameInput(event: ChangeEvent<HTMLInputElement>): void {
     setUsername(event.target.value);
@@ -109,7 +94,7 @@ export default function CreateAccountModal(props: CreateAccountModalProperties):
   }
 
   return (
-    <Modal getInstance={handleGetModalInstance} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal shown={props.isOpen} className="fade modal-lg" dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>

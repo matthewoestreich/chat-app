@@ -1,5 +1,4 @@
 import React, { ChangeEvent, memo, useCallback, useEffect, useMemo, useState } from "react";
-import { Modal as BsModal } from "bootstrap";
 import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader, ModalTitle } from "@components";
 import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
 import sortMembers from "./sortMembers";
@@ -18,7 +17,6 @@ const MemberMemo = memo(Member);
 export default function JoinDirectConversationModal(props: JoinDirectConversationModalProperties): React.JSX.Element {
   const { dispatch } = useChat();
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
-  const [modalInstance, setModalInstance] = useState<InstanceType<typeof BsModal> | null>(null);
   const [users, setUsers] = useState<PublicMember[] | null>(null);
   const [selectedUser, setSelectedUser] = useState<PublicMember | null>(null);
   const [searchText, setSearchText] = useState("");
@@ -27,6 +25,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   useEffectOnce(() => {
     const handleListInvitableUsers: (payload: WebSocketeerEventPayload<WebSocketEvents, "LIST_INVITABLE_USERS">) => void = ({ users, error }) => {
+      console.log({ users });
       if (error) {
         return console.error(error);
       }
@@ -50,19 +49,10 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
   });
 
   useEffect(() => {
-    if (modalInstance) {
-      if (isOpen === true) {
-        modalInstance.show();
-        websocketeer.send("GET_INVITABLE_USERS");
-      } else if (isOpen === false) {
-        modalInstance.hide();
-      }
+    if (isOpen === true) {
+      websocketeer.send("GET_INVITABLE_USERS");
     }
-  }, [isOpen, modalInstance]);
-
-  function handleGetModalInstance(modalInstance: BsModal | null): void {
-    setModalInstance(modalInstance);
-  }
+  }, [isOpen]);
 
   const handleJoinDirectConversationClick = useCallback(() => {
     if (selectedUser === null) {
@@ -73,7 +63,6 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   function handleCloseModal(): void {
     dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
-    modalInstance?.hide();
     onClose();
   }
 
@@ -97,6 +86,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   // prettier-ignore
   const renderInvitableUsers = useCallback(() => {
+    console.log("rendering members")
     return users?.filter((user) => user.userName.includes(searchText)).map((user) => (
       <MemberMemo 
         key={user.userId} 
@@ -111,7 +101,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
   }, [searchText, users, selectedUser?.userId, userClickHandlers]);
 
   return (
-    <Modal getInstance={handleGetModalInstance} className="fade mh-100" tabIndex={-1} dataBsBackdrop="static" dataBsKeyboard={false}>
+    <Modal shown={props.isOpen} className="fade mh-100" tabIndex={-1} dataBsBackdrop="static" dataBsKeyboard={false}>
       <ModalDialog>
         <ModalContent>
           <ModalHeader>
