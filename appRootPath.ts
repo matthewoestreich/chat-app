@@ -4,5 +4,4 @@
  */
 
 import nodePath from "node:path";
-
 export default nodePath.resolve(__dirname);

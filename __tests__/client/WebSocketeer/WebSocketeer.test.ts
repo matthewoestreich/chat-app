@@ -1,5 +1,5 @@
 import WebSocketeer from "../../../client/src/ws/WebSocketeer";
-import { WebSocketeerEventMap, WebSocketeerEventPayload } from "../../../client/types";
+import { WebSocketeerEventMap, WebSocketeerEventHandler } from "../../../client/types";
 
 interface TestEvents extends WebSocketeerEventMap {
   FOO: {
@@ -34,7 +34,7 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
   it("should remove handlers with off", () => {
     const handler1 = jest.fn();
 
-    const handleFoo: (payload: WebSocketeerEventPayload<TestEvents, "FOO">) => void = ({ foo }) => {
+    const handleFoo: WebSocketeerEventHandler<TestEvents, "FOO"> = ({ foo }) => {
       handler1(foo);
     };
 
@@ -51,10 +51,10 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
     const handler1 = jest.fn();
     const handler2 = jest.fn();
 
-    const handleFoo1: (payload: WebSocketeerEventPayload<TestEvents, "FOO">) => void = ({ foo }) => {
+    const handleFoo1: WebSocketeerEventHandler<TestEvents, "FOO"> = ({ foo }) => {
       handler1(foo);
     };
-    const handleFoo2: (payload: WebSocketeerEventPayload<TestEvents, "FOO">) => void = ({ foo }) => {
+    const handleFoo2: WebSocketeerEventHandler<TestEvents, "FOO"> = ({ foo }) => {
       handler2(foo);
     };
 

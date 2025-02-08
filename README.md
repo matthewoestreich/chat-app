@@ -45,15 +45,16 @@
 - WebSocket Authentication
 - Dark Mode
 - Responsive
-- Abstract database access level
+- Abstract Database Access Level
   - This means we can use nearly any medium for storage, even an API!
-- We have custom ***type-safe*** event emitter wrappers around WebSockets!
+- Type-Safe WebSockets
+  - We have custom ***type-safe*** event emitter wrappers around WebSockets!
   - [WebSocketeer](client/src/ws/WebSocketeer.ts) for client side
   - [WebSocketApp](server/wss/WebSocketApp.ts) for server side
   - Makes writing WebSocket code feel like you're writing Express routes
   - Each "route" is a message type, which makes sending and/or parsing messages a breeze!
 
-# Look & Feel
+# Look & Feel 
 
 \***_Subject to change, may look different now_**
 

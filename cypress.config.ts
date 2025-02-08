@@ -8,11 +8,6 @@ export default defineConfig({
   e2e: {
     baseUrl: `http://localhost:${process.env.EXPRESS_PORT}`,
     experimentalInteractiveRunEvents: true,
-    setupNodeEvents(_on, config) {
-      //_on("before:run", async () => {});
-
-      return config;
-    },
   },
 
   component: {
