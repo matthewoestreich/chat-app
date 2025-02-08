@@ -211,10 +211,13 @@ export default function ChatView(): React.JSX.Element {
 
   const renderMembers = useCallback(() => {
     console.log("[ChatView] in 'renderMembers' (this does not mean members ae rendering)");
+    if (state.isEnteringRoom) {
+      return <></>;
+    }
     return state.members?.map((member) => (
       <MemberMemo memberId={member.userId} key={member.userId} memberName={member.userName} isOnline={member.isActive} />
     ));
-  }, [state.members]);
+  }, [state.members, state.isEnteringRoom]);
 
   // prettier-ignore
   const handleRoomClick = useCallback((roomId: string) => {
