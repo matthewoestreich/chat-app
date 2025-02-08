@@ -80,7 +80,9 @@ Cypress.Commands.add("login", (email: string, password: string) => {
 });
 
 Cypress.Commands.add("logout", () => {
-  cy.getLogoutButton().should("be.visible").click();
+  cy.getLogoutButton().as("logoutBtn");
+  cy.get("@logoutBtn").should("be.visible");
+  cy.get("@logoutBtn").click();
 });
 
 Cypress.Commands.add("enterRoom", (roomName: string) => {

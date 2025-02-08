@@ -30,6 +30,7 @@ describe("Global", () => {
 
   beforeEach(() => {
     cy.login(USER.email, USER.password);
+    cy.wait(100);
   });
 
   afterEach(() => {
@@ -42,16 +43,24 @@ describe("Global", () => {
   });
 
   it("should toggle theme", () => {
-    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+    cy.getToggleThemeButton().as("toggleBtn");
+    cy.get("@toggleBtn").should("exist");
+    cy.get("@toggleBtn").children().first().should("exist").click();
     cy.getCurrentTheme().should("have.attr", "data-bs-theme", "dark");
     cy.localStorageItemEquals("theme", "dark");
-    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+
+    cy.get("@toggleBtn").should("exist");
+    cy.get("@toggleBtn").children().first().should("exist").click();
     cy.getCurrentTheme().should("have.attr", "data-bs-theme", "light");
     cy.localStorageItemEquals("theme", "light");
-    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+
+    cy.get("@toggleBtn").should("exist");
+    cy.get("@toggleBtn").children().first().should("exist").click();
     cy.getCurrentTheme().should("have.attr", "data-bs-theme", "dark");
     cy.localStorageItemEquals("theme", "dark");
-    cy.getToggleThemeButton().should("exist").children().first().should("exist").click();
+
+    cy.get("@toggleBtn").should("exist");
+    cy.get("@toggleBtn").children().first().should("exist").click();
     cy.getCurrentTheme().should("have.attr", "data-bs-theme", "light");
     cy.localStorageItemEquals("theme", "light");
   });
