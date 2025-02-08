@@ -8,9 +8,13 @@ interface TestEvents extends WebSocketeerEventMap {
 }
 
 describe("WebSocketeer : Event Emitter Functionality", () => {
-  it("should allow multiple handlers for the same event", () => {
-    const wsteer = new WebSocketeer<TestEvents>("");
+  let wsteer: WebSocketeer<TestEvents>;
 
+  beforeEach(() => {
+    wsteer = new WebSocketeer<TestEvents>("");
+  });
+
+  it("should allow multiple handlers for the same event", () => {
     const handler1 = jest.fn();
     const handler2 = jest.fn();
 
@@ -28,7 +32,6 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
   });
 
   it("should remove handlers with off", () => {
-    const wsteer = new WebSocketeer<TestEvents>("");
     const handler1 = jest.fn();
 
     const handleFoo: (payload: WebSocketeerEventPayload<TestEvents, "FOO">) => void = ({ foo }) => {
@@ -45,7 +48,6 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
   });
 
   it("should recreate handlers after becoming undefined", () => {
-    const wsteer = new WebSocketeer<TestEvents>("");
     const handler1 = jest.fn();
     const handler2 = jest.fn();
 
@@ -62,8 +64,11 @@ describe("WebSocketeer : Event Emitter Functionality", () => {
     const fooHandlers1 = wsteer.listEventHandlers("FOO");
     wsteer.on("FOO", handleFoo2);
     const foundHandlers2 = wsteer.listEventHandlers("FOO");
+    wsteer.emit("FOO", { foo: "data" });
 
     expect(fooHandlers1).toBe(undefined);
     expect(foundHandlers2?.length).toEqual(1);
+    expect(handler1).toHaveBeenCalledTimes(0);
+    expect(handler2).toHaveBeenCalledTimes(1);
   });
 });
