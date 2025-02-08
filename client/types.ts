@@ -50,6 +50,7 @@ export interface AuthContextValue {
 }
 
 export type BootstrapContextualClasses = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
+export type BootstrapBreakpointString = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
 
 export type ThemeMode = "light" | "dark";
 

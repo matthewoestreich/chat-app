@@ -1,5 +1,5 @@
 import React from "react";
-import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";

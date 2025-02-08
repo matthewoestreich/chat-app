@@ -1,6 +1,6 @@
 import React, { useId, HTMLAttributes, useState, useRef, FormEvent, useCallback, ChangeEvent, useEffect } from "react";
 import { Alert, Form, ButtonLoading, InputFloating, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import { AlertState, WebSocketeerEventPayload } from "@client/types";
 
 interface CreateRoomModalProperties extends HTMLAttributes<HTMLDivElement> {

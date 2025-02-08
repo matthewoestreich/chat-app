@@ -1,6 +1,6 @@
 import React, { ChangeEvent, HTMLAttributes, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ButtonLoading, JoinableRoom, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader } from "@components";
-import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import { Room } from "@root/types.shared";
 import { AlertState, WebSocketeerEventPayload } from "@client/types";
 

@@ -1,3 +1,3 @@
 export { default as WebSocketeer } from "./WebSocketeer";
 export { WsEvents as WebSocketEvents } from "./WsEvents";
-export { default as SingletonWebSocketeer } from "./SingletonWebSocketeer";
+export { default as websocketeer } from "./WebSocketeerSingleton";

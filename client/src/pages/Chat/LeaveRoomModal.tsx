@@ -1,6 +1,6 @@
 import React, { HTMLAttributes } from "react";
 import { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@components";
-import { SingletonWebSocketeer as websocketeer } from "@src/ws";
+import { websocketeer } from "@src/ws";
 import { ChatScope } from "@root/types.shared";
 
 interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {

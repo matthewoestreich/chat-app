@@ -82,7 +82,7 @@
     "babel-jest": "^29.7.0",
     "bootstrap": "^5.3.3",
     "cron": "^3.2.1",
-    "cypress": "^14.0.0",
+    "cypress": "^14.0.2",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",

@@ -8,7 +8,6 @@ import { DatabaseProvider } from "./server/types";
 import DatabaseProviderFactory from "./server/db/DatabaseProviderFactory";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
-process.env.WSS_URL = process.env.WSS_URL || undefined;
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || undefined;
 
 if (process.env.EXPRESS_PORT === undefined) {
@@ -16,9 +15,6 @@ if (process.env.EXPRESS_PORT === undefined) {
 }
 if (process.env.JWT_SIGNATURE === undefined) {
   throw new Error("[MAIN][ERROR] process.env.JWT_SIGNATURE is undefined! It is required to start this server.");
-}
-if (process.env.WSS_URL === undefined) {
-  throw new Error("[MAIN][ERROR] Missing WSS_URL env var. Cannot start server.");
 }
 
 const provider = DatabaseProviderFactory.create("sqlite");

@@ -1,6 +1,6 @@
 import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
-import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat, useEffectOnce } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "../../../../types.shared";
 import { WebSocketeerEventPayload } from "../../../types";

@@ -4,7 +4,7 @@ import { ChatScope } from "@root/types.shared";
 import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
-import { SingletonWebSocketeer as websocketeer, WebSocketEvents } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import Topbar from "../Topbar";
 import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";

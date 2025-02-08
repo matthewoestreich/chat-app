@@ -15,45 +15,57 @@ export default function errorCodeToReason(code: number): WebSocketErrorCodeToRea
 }
 
 export const WEBSOCKET_ERROR_CODE = {
-  NormalClosure: {
+  "Normal Closure": {
     code: 1000,
     definition: "Successful operation, connection not required anymore",
   },
-  GoingAway: {
+  "Going Away": {
     code: 1001,
     definition: "Browser tab closing, graceful server shutdown",
   },
-  UnsupportedData: {
+  "Protocol error": {
+    code: 1002,
+    definition: "The client or server is terminating the connection because of a protocol error",
+  },
+  "Unsupported Data": {
     code: 1003,
-    definition: "Endpoint received unsupported frame (e.g. binary-only got text frame, ping/pong frames not handled properly",
+    definition: "Endpoint received unsupported frame (e.g. binary-only got text frame, ping/pong frames not handled properly)",
   },
-  NoStatusRcvd: {
+  "No Status Rcvd": {
     code: 1005,
-    definition: "Got no close status but transport layer finished normally (e.g. TCP FIN but no previous CLOSE frame",
+    definition: "Got no close status but transport layer finished normally (e.g. TCP FIN but no previous CLOSE frame)",
   },
-  AbnormalClosure: {
+  "Abnormal closure": {
     code: 1006,
     definition: "Transport layer broke (e.g. couldn't connect, TCP RST)",
   },
-  InvalidFramePayloadData: {
+  "Invalid frame payload data": {
     code: 1007,
-    definition: "Data in endpoint's frame is not consistent (e.g. malformed UTF-8",
+    definition: "Data in endpoint's frame is not consistent (e.g. malformed UTF-8)",
   },
-  PolicyViolation: {
+  "Policy Violation": {
     code: 1008,
-    definition: "Generic code not applicable to any other (e.g. isn't 1003 nor 1009",
+    definition: "Policy violated. Generic code not applicable to any other (e.g. isn't 1003 nor 1009)",
   },
-  MessageTooBig: {
+  "Message Too Big": {
     code: 1009,
     definition: "Endpoint won't process large message",
   },
-  InternalError: {
+  "Mandatory Ext.": {
+    code: 1010,
+    definition: "The client should write the extensions it expected the server to support in the payload",
+  },
+  "Internal Server Error": {
     code: 1011,
     definition: "Unexpected server problem while operating",
   },
-  ServiceRestart: {
+  "Service Restart": {
     code: 1012,
     definition: "Server/service is restarting",
+  },
+  "TLS handshake": {
+    code: 1015,
+    definition: "The connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified)",
   },
   Unauthorized: {
     code: 3000,

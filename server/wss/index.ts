@@ -275,12 +275,15 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
  */
 wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
-    const newDirectConvo = await wsapp.databaseProvider.directConversations.create(client.user.id, withUserId);
-    const directConversations = await wsapp.databaseProvider.directConversations.selectByUserId(client.user.id);
-    const invitableUsers = await wsapp.databaseProvider.directConversations.selectInvitableUsersByUserId(client.user.id);
+    const { create, selectByUserId, selectInvitableUsersByUserId } = wsapp.databaseProvider.directConversations;
+
+    const newDirectConvo = await create(client.user.id, withUserId);
+    const directConvos = await selectByUserId(client.user.id);
+    const invitableUsers = await selectInvitableUsersByUserId(client.user.id);
+
     client.send("JOINED_DIRECT_CONVERSATION", {
       invitableUsers: invitableUsers.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
-      directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
+      directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
       directConversationId: newDirectConvo.id,
     });
   } catch (e) {

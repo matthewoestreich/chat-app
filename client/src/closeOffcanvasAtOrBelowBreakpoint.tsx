@@ -1,5 +1,6 @@
 import { RefObject } from "react";
 import { Offcanvas } from "bootstrap";
+import { BootstrapBreakpointString } from "@client/types";
 
 class BootstrapBreakpointDetector {
   private breakpointNames: string[];
@@ -7,7 +8,7 @@ class BootstrapBreakpointDetector {
 
   constructor() {
     this.breakpointNames = ["xxl", "xl", "lg", "md", "sm", "xs"];
-    this.breakpointValues = null; // Cache breakpoint values
+    this.breakpointValues = null;
   }
 
   public detect(): { name: string; index: number } | null {
@@ -41,12 +42,6 @@ class BootstrapBreakpointDetector {
   }
 }
 
-type BootstrapBreakpointString = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
-
-const getIndex = (target: BootstrapBreakpointString): number => {
-  return { xs: 0, sm: 1, md: 2, lg: 3, xl: 4, xxl: 6 }[target];
-};
-
 // prettier-ignore
 export default function closeOffcanvasAtOrBelowBreakpoint(offcanvasRef: RefObject<HTMLDivElement | null>, closeAtInclusive: BootstrapBreakpointString,): void {
   if (!offcanvasRef.current) {
@@ -58,7 +53,8 @@ export default function closeOffcanvasAtOrBelowBreakpoint(offcanvasRef: RefObjec
     return;
   }
 
-  const target = getIndex(closeAtInclusive);
+  // Get index
+  const target = { xs: 0, sm: 1, md: 2, lg: 3, xl: 4, xxl: 6 }[closeAtInclusive];
 
   if (current.index <= target) {
     const BsOffcanvas = Offcanvas.getOrCreateInstance(offcanvasRef.current);

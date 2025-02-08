@@ -1,14 +1,13 @@
 import React, { ChangeEvent, useState, FormEvent, memo } from "react";
 import { InputFloating, Alert, Form, ButtonLoading } from "@components";
 import { useAuth } from "@hooks";
+import { AlertState, CreateAccountResult } from "@client/types";
 import CreateAccountModal from "./CreateAccountModal";
 import Topbar from "../Topbar";
-import { AlertState, CreateAccountResult } from "../../../types";
 
 const TopbarMemo = memo(Topbar);
 
 export default function LoginPage(): React.JSX.Element {
-  //useSetPageTitle("RTChat | Welcome!");
   document.title = "RTChat | Welcome!";
 
   const [email, setEmail] = useState("");
