@@ -28,11 +28,14 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
       if (error) {
         return console.error(error);
       }
+      if (!isOpen) {
+        return;
+      }
       setUsers(sortMembers(users, true));
     };
 
     const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({ invitableUsers, error }) => {
-      if (error) {
+      if (error || !isOpen) {
         return;
       }
       setUsers(sortMembers(invitableUsers, true));

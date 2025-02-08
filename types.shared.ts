@@ -60,11 +60,6 @@ export type PublicMessage = Message & {
   userName: string;
 };
 
-export type DirectMessage = Pick<Message, "id" | "message" | "timestamp" | "scopeId"> & {
-  fromUserId: string;
-  toUserId: string;
-};
-
 export interface Session {
   token: string;
   userId: string;
@@ -93,17 +88,19 @@ export interface PublicDirectConversation {
   isActive: boolean; // is other participant currently online
 }
 
+export type WebSocketAppError = Error | string;
+
 /** Generally, if an event starts with "GET" it's coming from the client.
  * If an event starts with "LIST", it's typically in response to a "GET" and is sent from the server. */
 export interface WebSocketAppEventRegistry {
   CONNECTION_ESTABLISHED: {
     request: IncomingMessage;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   CONNECTION_CLOSED: {
     code: number;
     reason: Buffer;
-    error?: Error;
+    error?: WebSocketAppError;
   };
 
   /** * Client side events. */
@@ -114,8 +111,9 @@ export interface WebSocketAppEventRegistry {
   GET_INVITABLE_USERS: unknown;
   GET_DIRECT_CONVERSATIONS: unknown;
   GET_DIRECT_MESSAGES: {
-    id: string;
+    scopeId: string;
   };
+  CONNECTION_LOGOUT: unknown;
   // Client sends a message.
   SEND_MESSAGE: {
     message: string;
@@ -123,9 +121,6 @@ export interface WebSocketAppEventRegistry {
   };
   // Client tells server they have entered a room.
   ENTER_ROOM: {
-    id: string;
-  };
-  ENTER_DIRECT_CONVERSATION: {
     id: string;
   };
   // Client tells server they want to join a room.
@@ -148,92 +143,101 @@ export interface WebSocketAppEventRegistry {
 
   /** * Server side events */
 
+  CONNECTED: {
+    rooms: Room[];
+    directConversations: PublicDirectConversation[];
+    error?: WebSocketAppError;
+  };
   // Report back to client the message was sent.
   SENT_MESSAGE: {
     message: PublicMessage;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server "relays" a message, therefore client receives a message someone else sent (in a room, direct convo, etc..).
   RECEIVE_MESSAGE: {
     userId: string;
     userName: string;
     message: string;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server informs client of enter room results.
   ENTERED_ROOM: {
     members: PublicMember[];
     messages: PublicMessage[];
     room: Room;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server informs client of join room result, and provides the client with a list of updated rooms.
   JOINED_ROOM: {
     rooms: Room[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server informs client of create direct convo result, and provides client with updated list of
   // direct convos, and the convoId they just created, as well as an updated list of invitable users.
   JOINED_DIRECT_CONVERSATION: {
     directConversations: PublicDirectConversation[];
     invitableUsers: PublicMember[];
+    withUserId: string;
     directConversationId: string;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server reports results of unjoin.
   UNJOINED_ROOM: {
     rooms: Room[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server reports create room result + newly created room id + list of updated rooms.
   CREATED_ROOM: {
     id: string;
     rooms: Room[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server sends clients a list of rooms they aren't already a member of (or any conditon, like room is public, etc..)
   LIST_JOINABLE_ROOMS: {
     rooms: Room[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server sends client a list of rooms they are a member of.
   LIST_ROOMS: {
     rooms: Room[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server sends clients all direct convos they're in.
   LIST_DIRECT_CONVERSATIONS: {
     directConversations: PublicDirectConversation[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server sends client a list of messages for a particular direct convo.
   LIST_DIRECT_MESSAGES: {
-    directMessages: DirectMessage[];
-    error?: Error;
+    directMessages: PublicMessage[];
+    error?: WebSocketAppError;
   };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)
   LIST_INVITABLE_USERS: {
     users: PublicMember[];
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Server sends client the results of a create room request.
   ROOM_CREATED: {
     id: string;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // When someone enters a room, inform everyone in that room (so we can update "online" status, etc..)
   MEMBER_ENTERED_ROOM: {
     id: string;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // When someone leaves a room, inform everyone in that room (so we can update "online" status, etc..)
   MEMBER_LEFT_ROOM: {
     id: string;
-    error?: Error;
+    error?: WebSocketAppError;
   };
   // Going with "USER" instead of "MEMBER" here bc they didn't necessarily have to be a member of anything.
   // This is solely so we can update the "online" status for this user.
   USER_DISCONNECTED: {
+    userId: string;
+  };
+  USER_CONNECTED: {
     userId: string;
   };
 }

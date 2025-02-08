@@ -1,11 +1,11 @@
 import { WebSocket, ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
-import { /*errorCodeToReason,*/ WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
+import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
-import { DirectMessage, Message, PublicMessage, Room } from "@root/types.shared";
+import { Message, PublicMessage, Room } from "@root/types.shared";
 
 let DATABASE: DatabaseProvider;
 const wsapp = new WebSocketApp();
@@ -42,12 +42,24 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
     return client.socket.close(code, definition);
   }
 
-  client.user = jsonwebtoken.decode(cookies.session) as AuthenticatedUser;
-  const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
-  client.send("LIST_ROOMS", { rooms });
-  rooms.forEach((room) => wsapp.addContainerToCache(room.id));
-  const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
-  client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
+  try {
+    client.user = jsonwebtoken.decode(cookies.session) as AuthenticatedUser;
+
+    const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
+    const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
+
+    client.send("CONNECTED", { rooms, directConversations: directConvos });
+    // Blast a message to everyone that someone came online, so they can update status display bubble thingy.
+    wsapp.blast("USER_CONNECTED", { userId: client.user.id }, client);
+
+    rooms.forEach((room) => wsapp.addContainerToCache(room.id));
+
+    const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
+    client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
+  } catch (e) {
+    console.log(e);
+    client.send("CONNECTED", { error: "Something went wrong!", rooms: [], directConversations: [] });
+  }
 });
 
 /**
@@ -59,11 +71,25 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  *
  */
 wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
-  client.broadcast("USER_DISCONNECTED", { userId: client.user.id });
+  //client.broadcast("USER_DISCONNECTED", { userId: client.user.id });
+  // TODO find better solution. like redis? For now just 'blast' a message to every single person,
+  // telling them a user disconnected
+  wsapp.blast("USER_DISCONNECTED", { userId: client.user.id }, client);
   wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
-  //const reasonString = reason.toString();
-  //const why = reasonString === "" ? errorCodeToReason(code) : { reason: reasonString, definition: "" };
-  //console.log(`${client.user.userName} ${client.user.id} closed connection`, why);
+});
+
+/**
+ *
+ * @event {CONNECTION_LOGOUT}
+ *
+ * Fires when someone logs out.
+ *
+ */
+wsapp.on("CONNECTION_LOGOUT", (client) => {
+  // TODO find better solution. like redis? For now just 'blast' a message to every single person,
+  // telling them a user disconnected
+  wsapp.blast("USER_DISCONNECTED", { userId: client.user.id }, client);
+  wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
 });
 
 /**
@@ -76,7 +102,7 @@ wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
 wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
   try {
     let publicMessage: PublicMessage | null = null;
-    let sentMessage: Message | DirectMessage | null = null;
+    let sentMessage: Message | null = null;
 
     if (scope.type === "Room") {
       client.broadcast("RECEIVE_MESSAGE", { userId: client.user.id, userName: client.user.userName, message });
@@ -276,19 +302,19 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
  */
 wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
-    const { create, selectByUserId, selectInvitableUsersByUserId } = DATABASE.directConversations;
-
-    const newDirectConvo = await create(client.user.id, withUserId);
-    const directConvos = await selectByUserId(client.user.id);
-    const invitableUsers = await selectInvitableUsersByUserId(client.user.id);
+    const newDirectConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
+    const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
+    const invitableUsers = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
 
     client.send("JOINED_DIRECT_CONVERSATION", {
       invitableUsers: invitableUsers.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
       directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
       directConversationId: newDirectConvo.id,
+      withUserId,
     });
   } catch (e) {
-    client.send("JOINED_DIRECT_CONVERSATION", { error: e as Error, directConversationId: "", directConversations: [], invitableUsers: [] });
+    console.error(e);
+    client.send("JOINED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversationId: "", directConversations: [], invitableUsers: [], withUserId: "" });
   }
 });
 
@@ -299,15 +325,16 @@ wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
  * Gets all messages in a direct conversation.
  *
  */
-wsapp.on("GET_DIRECT_MESSAGES", async (client, { id }) => {
+wsapp.on("GET_DIRECT_MESSAGES", async (client, { scopeId }) => {
   try {
-    const messages = await DATABASE.directMessages.selectByDirectConversationId(id);
+    console.log({ scopeId });
+    const messages = await DATABASE.directMessages.selectByDirectConversationId(scopeId);
 
-    if (messages && messages.length && client.user.id !== messages[0].fromUserId && client.user.id !== messages[0].toUserId) {
-      const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
-      const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: client.socket };
-      return console.log(errMsg, errData);
-    }
+    //if (messages && messages.length && client.user.id !== messages[0].fromUserId && client.user.id !== messages[0].toUserId) {
+    //  const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
+    //  const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: client.socket };
+    //  return console.log(errMsg, errData);
+    //}
 
     client.send("LIST_DIRECT_MESSAGES", { directMessages: messages });
   } catch (e) {

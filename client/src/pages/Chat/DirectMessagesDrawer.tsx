@@ -1,9 +1,8 @@
-import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
+import React, { CSSProperties, memo, useCallback, useMemo } from "react";
 import { Member } from "@components";
-import { websocketeer, WebSocketEvents } from "@src/ws";
-import { useChat, useEffectOnce } from "@hooks";
+import { websocketeer } from "@src/ws";
+import { useChat } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "@root/types.shared";
-import { WebSocketeerEventHandler } from "@client/types";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -54,42 +53,6 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose } = props;
   const { state, dispatch } = useChat();
 
-  useEffect(() => {
-    if (isShown) {
-      websocketeer.send("GET_DIRECT_CONVERSATIONS");
-    }
-  }, [isShown]);
-
-  useEffectOnce(() => {
-    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
-      directConversations,
-      error,
-    }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
-    };
-
-    const handleListDirectConversations: WebSocketeerEventHandler<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS"> = ({
-      directConversations,
-      error,
-    }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
-    };
-
-    websocketeer.on("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
-    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
-
-    return (): void => {
-      websocketeer.off("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
-      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
-    };
-  });
-
   const handleOpenJoinDirectConversationModal = useCallback(() => {
     dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
   }, [dispatch]);
@@ -109,7 +72,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       type: "DirectConversation",
     };
     dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { id: directConvo.scopeId });
+    websocketeer.send("GET_DIRECT_MESSAGES", { scopeId: directConvo.scopeId });
   }, [dispatch]);
 
   const directConversationClickHandlers = useMemo(() => {
@@ -118,8 +81,10 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   const renderConversations = useCallback(() => {
     if (!state.directConversations) {
+      console.log("[DirectMessagesDrawer]::renderConversations : no 'state.directConversations' found");
       return;
     }
+    console.log("[DirectMessagesDrawer]::renderConversations : found 'state.directConversations'", { dcs: state.directConversations });
     return state.directConversations.map((convo) => {
       return (
         <MemberMemo
@@ -127,11 +92,12 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
           isButton={true}
           onClick={directConversationClickHandlers.get(convo.scopeId)}
           memberName={convo.userName}
-          isOnline={convo.isActive || false}
+          isOnline={convo.isActive}
+          isSelected={state.chatScope?.id === convo.scopeId}
         />
       );
     });
-  }, [state.directConversations, directConversationClickHandlers]);
+  }, [state.directConversations, directConversationClickHandlers, state.chatScope?.id]);
 
   return (
     <div className="card" style={isShown ? { ...styles.drawer, ...styles.open } : styles.drawer}>
