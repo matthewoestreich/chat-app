@@ -28,11 +28,10 @@ export default function Topbar(props: TopbarProperties): React.JSX.Element {
   }, [toggleTheme]);
 
   const handleLogout = useCallback(() => {
-    console.log({ onLogout });
+    logout();
     if (onLogout) {
       onLogout();
     }
-    logout();
   }, [logout, onLogout]);
 
   return (

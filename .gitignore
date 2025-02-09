@@ -5,6 +5,7 @@
 .vscode
 inMemoryData.json
 database.json
+manualSeed.ts
 www
 # Logs
 logs
