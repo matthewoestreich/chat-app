@@ -5,6 +5,7 @@ import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";
 import { WebSocketeerEventHandler } from "@client/types";
+import sortMembers from "./sortMembers";
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";
@@ -18,7 +19,7 @@ export default function ChatPage(): React.JSX.Element {
       if (error) {
         return console.error(error);
       }
-      dispatch({ type: "AFTER_CONNECTION_ESTABLISHED", payload: { rooms, directConversations } });
+      dispatch({ type: "AFTER_CONNECTION_ESTABLISHED", payload: { rooms, directConversations: sortMembers(directConversations, true) } });
     };
 
     websocketeer.on("CONNECTED", handleConnectionEstablished);

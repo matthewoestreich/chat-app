@@ -4,7 +4,7 @@ import { websocketeer, WebSocketEvents } from "@src/ws";
 import sortMembers from "./sortMembers";
 import { PublicMember } from "@root/types.shared";
 import { AlertState, WebSocketeerEventHandler } from "@client/types";
-import { useChat, useEffectOnce } from "@hooks";
+import { useChat } from "@hooks";
 
 interface JoinDirectConversationModalProperties {
   isOpen: boolean;
@@ -22,9 +22,12 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   const { isOpen, onClose } = props;
 
-  useEffectOnce(() => {
-    const handleListInvitableUsers: WebSocketeerEventHandler<WebSocketEvents, "LIST_INVITABLE_USERS"> = ({ users, error }) => {
-      console.log({ users });
+  useEffect(() => {
+    if (isOpen === true) {
+      websocketeer.send("GET_JOINABLE_DIRECT_CONVERSATIONS");
+    }
+
+    const handleListJoinableDirectConvos: WebSocketeerEventHandler<WebSocketEvents, "LIST_JOINABLE_DIRECT_CONVERSATIONS"> = ({ users, error }) => {
       if (error) {
         return console.error(error);
       }
@@ -34,27 +37,26 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
       setUsers(sortMembers(users, true));
     };
 
-    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({ invitableUsers, error }) => {
+    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
+      invitableUsers,
+      directConversations,
+      error,
+    }) => {
       if (error || !isOpen) {
         return;
       }
       setUsers(sortMembers(invitableUsers, true));
+      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
     };
 
-    websocketeer.on("LIST_INVITABLE_USERS", handleListInvitableUsers);
+    websocketeer.on("LIST_JOINABLE_DIRECT_CONVERSATIONS", handleListJoinableDirectConvos);
     websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
 
     return (): void => {
-      websocketeer.off("LIST_INVITABLE_USERS", handleListInvitableUsers);
+      websocketeer.off("LIST_JOINABLE_DIRECT_CONVERSATIONS", handleListJoinableDirectConvos);
       websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
     };
-  });
-
-  useEffect(() => {
-    if (isOpen === true) {
-      websocketeer.send("GET_INVITABLE_USERS");
-    }
-  }, [isOpen]);
+  }, [isOpen, dispatch]);
 
   const handleJoinDirectConversationClick = useCallback(() => {
     if (selectedUser === null) {

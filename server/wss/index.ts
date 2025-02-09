@@ -48,7 +48,10 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
     const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
 
-    client.send("CONNECTED", { rooms, directConversations: directConvos });
+    client.send("CONNECTED", {
+      rooms,
+      directConversations: directConvos.map((dc) => ({ ...dc, isActive: wsapp.isItemCached(dc.userId) })),
+    });
     // Blast a message to everyone that someone came online, so they can update status display bubble thingy.
     wsapp.blast("USER_CONNECTED", { userId: client.user.id }, client);
 
@@ -105,7 +108,6 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
     let sentMessage: Message | null = null;
 
     if (scope.type === "Room") {
-      client.broadcast("RECEIVE_MESSAGE", { userId: client.user.id, userName: client.user.userName, message });
       sentMessage = await DATABASE.roomMessages.create(client.activeIn.id, client.user.id, message);
       publicMessage = {
         scopeId: sentMessage.scopeId,
@@ -124,7 +126,7 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
         timestamp: sentMessage.timestamp,
         userId: client.user.id,
         // TODO gather userName!
-        userName: "YOU STILL NEED TO FIX THIS",
+        userName: client.user.userName,
       };
     }
 
@@ -132,6 +134,7 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
       return client.send("SENT_MESSAGE", { error: new Error(`Scope '${scope.type}' is unrecognized.`), message: {} as PublicMessage });
     }
 
+    client.broadcast("RECEIVE_MESSAGE", { message: publicMessage });
     client.send("SENT_MESSAGE", { message: publicMessage });
   } catch (e) {
     console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
@@ -320,44 +323,38 @@ wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
 
 /**
  *
- * @event {GET_DIRECT_MESSAGES}
+ * @event {ENTER_DIRECT_CONVERSATION}
  *
  * Gets all messages in a direct conversation.
  *
  */
-wsapp.on("GET_DIRECT_MESSAGES", async (client, { scopeId }) => {
+wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { scopeId, isMemberClick }) => {
   try {
-    console.log({ scopeId });
     const messages = await DATABASE.directMessages.selectByDirectConversationId(scopeId);
-
-    //if (messages && messages.length && client.user.id !== messages[0].fromUserId && client.user.id !== messages[0].toUserId) {
-    //  const errMsg = `[wsapp][LIST_DIRECT_MESSAGES] Possible spoof : socket.user.id does not match either direct conversation member.`;
-    //  const errData = { members: [messages[0].fromUserId, messages[0].toUserId], socket: client.socket };
-    //  return console.log(errMsg, errData);
-    //}
-
-    client.send("LIST_DIRECT_MESSAGES", { directMessages: messages });
+    const container = wsapp.addClientToCache(client, scopeId);
+    client.setActiveIn(scopeId, container);
+    client.send("ENTERED_DIRECT_CONVERSATION", { messages, scopeId, isMemberClick });
   } catch (e) {
     console.log(e);
-    client.send("LIST_DIRECT_MESSAGES", { error: e as Error, directMessages: [] });
+    client.send("ENTERED_DIRECT_CONVERSATION", { error: (e as Error).message, messages: [], scopeId: "", isMemberClick });
   }
 });
 
 /**
  *
- * @event {GET_INVITABLE_USERS}
+ * @event {GET_JOINABLE_DIRECT_CONVERSATIONS}
  *
  * Gets all users you are not currently in a direct conversation with..
  *
  */
-wsapp.on("GET_INVITABLE_USERS", async (client) => {
+wsapp.on("GET_JOINABLE_DIRECT_CONVERSATIONS", async (client) => {
   try {
     const users = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
-    client.send("LIST_INVITABLE_USERS", {
+    client.send("LIST_JOINABLE_DIRECT_CONVERSATIONS", {
       // Add `isActive` field for each user
       users: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
     });
   } catch (e) {
-    client.send("LIST_INVITABLE_USERS", { error: e as Error, users: [] });
+    client.send("LIST_JOINABLE_DIRECT_CONVERSATIONS", { error: e as Error, users: [] });
   }
 });
