@@ -1,8 +1,9 @@
-import React, { CSSProperties, memo, useCallback, useMemo } from "react";
+import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
-import { websocketeer } from "@src/ws";
+import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "@root/types.shared";
+import { WebSocketeerEventHandler } from "../../../types";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -53,8 +54,42 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose } = props;
   const { state, dispatch } = useChat();
 
+  useEffect(() => {
+    // TODO should the server send us this info upon a joined direct convo???
+    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
+      directConversationId,
+      directConversations,
+      withUserId,
+      error,
+    }) => {
+      if (error) {
+        return console.error(error);
+      }
+      const member = state.members?.find((member) => member.userId === withUserId);
+      if (!member) {
+        return;
+      }
+      const scope: ChatScope = {
+        id: directConversationId,
+        userId: member.userId,
+        userName: member.userName,
+        type: "DirectConversation",
+        scopeName: member.userName,
+      };
+      dispatch({ type: "JOINED_DIRECT_CONVERSATION", payload: { directConversations, scope, isDirectMessagesDrawerShown: true } });
+      websocketeer.send("GET_DIRECT_MESSAGES", { scopeId: scope.id });
+    };
+
+    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+
+    return (): void => {
+      console.log("[ChatState]::cleaning up useEffect with deps : '[dispatch, state.members]'");
+      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+    };
+  }, [dispatch, state.members]);
+
   const handleOpenJoinDirectConversationModal = useCallback(() => {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
+    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_SHOWN", payload: true });
   }, [dispatch]);
 
   const handleClose = useCallback(() => {

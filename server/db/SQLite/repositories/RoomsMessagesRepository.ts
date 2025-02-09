@@ -30,7 +30,7 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
           messages.userId = user.id
         WHERE
           messages.roomId = ?
-        ORDER BY messages.timestamp DESC;`;
+        ORDER BY messages.timestamp ASC;`;
 
         db.all(query, [roomId], (err, rows: PublicMessage[]) => {
           if (err) {

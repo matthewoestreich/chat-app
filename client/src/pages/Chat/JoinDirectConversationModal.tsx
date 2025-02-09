@@ -64,7 +64,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
   }, [selectedUser]);
 
   function handleCloseModal(): void {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_SHOWN", payload: false });
     onClose();
   }
 

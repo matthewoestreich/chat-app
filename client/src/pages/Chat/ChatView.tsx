@@ -1,8 +1,6 @@
-import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { KeyboardEvent, memo, useCallback, useEffect, useRef } from "react";
 import { WebSocketeerEventHandler } from "@client/types";
-import { ChatScope, PublicMember } from "@root/types.shared";
-import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
-import { Message, Room, Member, LoadingSpinner } from "@components";
+import { Message, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import Topbar from "../Topbar";
@@ -10,17 +8,15 @@ import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import JoinDirectConversationModal from "./JoinDirectConversationModal";
-import DirectMessagesDrawer from "./DirectMessagesDrawer";
-import sortMembers from "./sortMembers";
+import { RoomsSection, MembersSection } from "./sections";
 
-const RoomMemo = memo(Room);
+const RoomsSectionMemo = memo(RoomsSection);
+const MembersSectionMemo = memo(MembersSection);
 const MessageMemo = memo(Message);
-const MemberMemo = memo(Member);
 const CreateRoomModalMemo = memo(CreateRoomModal);
 const JoinDirectConversationModalMemo = memo(JoinDirectConversationModal);
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
-const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
 const LoadingSpinnerMemo = memo(LoadingSpinner);
 const TopbarMemo = memo(Topbar);
 
@@ -37,14 +33,8 @@ export default function ChatView(): React.JSX.Element {
   const { state, dispatch } = useChat();
   const { user } = useAuth();
 
-  const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
-  const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
-  const [isJoinRoomModalShown, setIsJoinRoomModalShown] = useState(false);
-  const [isDirectMessagesShown, setIsDirectMessagesShown] = useState(false);
-
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const chatMessageInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const offcanvasRoomsRef = useRef<HTMLDivElement | null>(null);
 
   // Scroll to bottom of chat display when we send/receive a message
   useEffect(() => {
@@ -64,15 +54,6 @@ export default function ChatView(): React.JSX.Element {
       }
     };
 
-    const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      sortMembers(members, false);
-      const scope: ChatScope = { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name };
-      dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
-    };
-
     const handleMemberEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_ENTERED_ROOM"> = ({ id, error }) => {
       if (error) {
         return console.error(error);
@@ -85,34 +66,6 @@ export default function ChatView(): React.JSX.Element {
         return console.error(error);
       }
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: false } });
-    };
-
-    const handleListRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_ROOMS"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_ROOMS", payload: rooms });
-    };
-
-    const handleJoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "JOINED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_ROOMS", payload: rooms });
-    };
-
-    const handleUnjoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "UNJOINED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "AFTER_UNJOINED_ROOM", payload: rooms });
-    };
-
-    const handleCreatedRoom: WebSocketeerEventHandler<WebSocketEvents, "CREATED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
     const handleUserDisconnected: WebSocketeerEventHandler<WebSocketEvents, "USER_DISCONNECTED"> = ({ userId }) => {
@@ -131,13 +84,8 @@ export default function ChatView(): React.JSX.Element {
     };
 
     websocketeer.on("SENT_MESSAGE", handleSentMessage);
-    websocketeer.on("ENTERED_ROOM", handleEnteredRoom);
     websocketeer.on("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
     websocketeer.on("MEMBER_LEFT_ROOM", handleMemberLeftRoom);
-    websocketeer.on("LIST_ROOMS", handleListRooms);
-    websocketeer.on("JOINED_ROOM", handleJoinedRoom);
-    websocketeer.on("UNJOINED_ROOM", handleUnjoinedRoom);
-    websocketeer.on("CREATED_ROOM", handleCreatedRoom);
     websocketeer.on("USER_DISCONNECTED", handleUserDisconnected);
     websocketeer.on("USER_CONNECTED", handleUserConnected);
     websocketeer.on("LIST_DIRECT_MESSAGES", handleDirectMessages);
@@ -145,65 +93,13 @@ export default function ChatView(): React.JSX.Element {
     return (): void => {
       console.log(`[ChatView]::useEffect : tearing down`);
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
-      websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
       websocketeer.off("MEMBER_LEFT_ROOM", handleMemberLeftRoom);
-      websocketeer.off("LIST_ROOMS", handleListRooms);
-      websocketeer.off("JOINED_ROOM", handleJoinedRoom);
-      websocketeer.off("UNJOINED_ROOM", handleUnjoinedRoom);
-      websocketeer.off("CREATED_ROOM", handleCreatedRoom);
       websocketeer.off("USER_DISCONNECTED", handleUserDisconnected);
       websocketeer.off("USER_CONNECTED", handleUserConnected);
       websocketeer.off("LIST_DIRECT_MESSAGES", handleDirectMessages);
     };
   });
-
-  useEffect(() => {
-    // TODO should the server send us this info upon a joined direct convo???
-    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
-      directConversationId,
-      directConversations,
-      withUserId,
-      error,
-    }) => {
-      if (error) {
-        return console.error(error);
-      }
-      const member = state.members?.find((member) => member.userId === withUserId);
-      if (!member) {
-        return;
-      }
-      const scope: ChatScope = {
-        id: directConversationId,
-        userId: member.userId,
-        userName: member.userName,
-        type: "DirectConversation",
-        scopeName: member.userName,
-      };
-      dispatch({ type: "JOINED_DIRECT_CONVERSATION", payload: { directConversations, scope } });
-      websocketeer.send("GET_DIRECT_MESSAGES", { scopeId: scope.id });
-      setIsDirectMessagesShown(true);
-    };
-
-    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
-
-    return (): void => {
-      console.log("[ChatState]::cleaning up useEffect with deps : '[dispatch, state.members]'");
-      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
-    };
-  }, [dispatch, state.members]);
-
-  function handleOpenJoinRoomModal(): void {
-    setIsJoinRoomModalShown(true);
-  }
-
-  function handleOpenLeaveRoomModal(): void {
-    setIsLeaveRoomModalShown(true);
-  }
-
-  function handleOpenCreateRoomModal(): void {
-    setIsCreateRoomModalShown(true);
-  }
 
   // prettier-ignore
   const handleMessageInputKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -229,28 +125,20 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.send("CONNECTION_LOGOUT");
   }, []);
 
-  const handleOpenDirectMessagesDrawer = useCallback(() => {
-    setIsDirectMessagesShown(true);
-  }, []);
-
-  const handleCloseDirectMessagesDrawer = useCallback(() => {
-    setIsDirectMessagesShown(false);
-  }, []);
-
   const handleCloseCreateRoomModal = useCallback(() => {
-    setIsCreateRoomModalShown(false);
-  }, []);
+    dispatch({ type: "SET_IS_CREATE_ROOM_MODAL_SHOWN", payload: false });
+  }, [dispatch]);
 
   const handleCloseJoinRoomModal = useCallback(() => {
-    setIsJoinRoomModalShown(false);
-  }, []);
+    dispatch({ type: "SET_IS_JOIN_ROOM_MODAL_SHOWN", payload: false });
+  }, [dispatch]);
 
   const handleCloseLeaveRoomModal = useCallback(() => {
-    setIsLeaveRoomModalShown(false);
-  }, []);
+    dispatch({ type: "SET_IS_LEAVE_ROOM_MODAL_SHOWN", payload: false });
+  }, [dispatch]);
 
   const handleCloseDirectConversationModal = useCallback(() => {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_SHOWN", payload: false });
   }, [dispatch]);
 
   /**
@@ -266,101 +154,12 @@ export default function ChatView(): React.JSX.Element {
     });
   }, [state.messages, state.isEnteringRoom]);
 
-  /**
-   * Member click handler
-   */
-  // prettier-ignore
-  const handleMemberClick = useCallback(({ scopeId, userId, userName }: PublicMember) => {
-    if (!state.directConversations) {
-      return websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: userId });
-    }
-
-    // See if we are already in a direct convo with this member.
-    const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === userId);
-    if (convoIndex === -1) {
-      // It's a new direct convo
-      return websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: userId });
-    }
-
-    // It's an existing convo.
-    // Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
-    const scope: ChatScope = { id: scopeId, userId: userId, userName: userName, scopeName: userName, type: "DirectConversation" };
-    dispatch({ type: "SET_CHAT_SCOPE", payload: scope });
-    setIsDirectMessagesShown(true);
-  }, [state.directConversations, dispatch]);
-
-  /**
-   * Member Click Handlers map
-   */
-  const memberClickHandlers = useMemo(() => {
-    return new Map(state.members?.map((member) => [member.userId, (): void => handleMemberClick(member)]));
-  }, [state.members, handleMemberClick]);
-
-  /**
-   * Members render function
-   */
-  const renderMembers = useCallback(() => {
-    console.log("[ChatView] in 'renderMembers' (this does not mean members ae rendering)");
-    if (state.isEnteringRoom) {
-      return <></>;
-    }
-    return state.members?.map((member) => (
-      <MemberMemo
-        memberId={member.userId}
-        key={member.userId}
-        isButton
-        onClick={memberClickHandlers.get(member.userId)}
-        memberName={member.userName}
-        isOnline={member.isActive}
-      />
-    ));
-  }, [state.members, state.isEnteringRoom, memberClickHandlers]);
-
-  /**
-   * Room click handler
-   */
-  // prettier-ignore
-  const handleRoomClick = useCallback((roomId: string) => {
-    if (state.chatScope?.id === roomId) {
-      // We're already in this room
-      return;
-    }
-    // No need to update ChatScope here. We only want to do that AFTER we entered the room.
-    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
-    websocketeer.send("ENTER_ROOM", { id: roomId });
-    closeOffcanvasAtOrBelowBreakpoint(offcanvasRoomsRef, "md");
-  }, [dispatch, state.chatScope?.id]);
-
-  /**
-   * Room click handlers map
-   * If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
-   */
-  const roomClickHandlers = useMemo(() => {
-    return new Map(state.rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
-  }, [state.rooms, handleRoomClick]);
-
-  /**
-   * Rooms render function
-   */
-  const renderRooms = useCallback(() => {
-    console.log("[ChatView] in 'renderRooms' (this does not mean rooms ae rendering)");
-    return state.rooms?.map((room) => (
-      <RoomMemo
-        key={room.id}
-        roomId={room.id}
-        roomName={room.name}
-        onClick={roomClickHandlers.get(room.id)}
-        isSelected={state.chatScope?.id === room.id}
-      />
-    ));
-  }, [state.rooms, state.chatScope?.id, roomClickHandlers]);
-
   return (
     <>
-      <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
-      <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
-      <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
-      <JoinDirectConversationModalMemo isOpen={state.isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
+      <LeaveRoomModalMemo isOpen={state.isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
+      <CreateRoomModalMemo isOpen={state.isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
+      <JoinRoomModalMemo isOpen={state.isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
+      <JoinDirectConversationModalMemo isOpen={state.isJoinDirectConversationModalShown} onClose={handleCloseDirectConversationModal} />
       <TopbarMemo onLogout={handleLogout} />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">
@@ -369,38 +168,7 @@ export default function ChatView(): React.JSX.Element {
           </div>
         </div>
         <div className="row g-0 flex-fill justify-content-center min-h-0">
-          <div
-            id="members-offcanvas"
-            className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start"
-          >
-            <div className="card-header d-flex flex-row display-6 text-center">
-              <div className="flex-fill text-center">Members</div>
-              <button
-                className="btn btn-close btn-sm d-lg-none ms-auto"
-                type="button"
-                data-bs-dismiss="offcanvas"
-                data-bs-target="#members-offcanvas"
-              ></button>
-            </div>
-            <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
-              <ul className="list-group list-group-flush">{renderMembers()}</ul>
-              <DirectMessagesDrawerMemo isShown={isDirectMessagesShown} onClose={handleCloseDirectMessagesDrawer} />
-            </div>
-            <div className="card-footer">
-              <div className="row">
-                <div className="col-12 d-flex p-1">
-                  <button
-                    onClick={handleOpenDirectMessagesDrawer}
-                    className="btn btn-primary flex-grow-1 shadow"
-                    type="button"
-                    title="Direct Messages"
-                  >
-                    <i className="bi bi-chat-dots-fill"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MembersSectionMemo />
           <div className="card col-lg-6 offset-lg-0 col-md-12 offset-md-0 h-90pct overf-hide d-flex">
             <div className="card-header d-flex flex-row">
               <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
@@ -425,56 +193,7 @@ export default function ChatView(): React.JSX.Element {
               </div>
             </div>
           </div>
-          <div
-            ref={offcanvasRoomsRef}
-            id="rooms-offcanvas"
-            className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-end"
-          >
-            <div className="card-header d-flex flex-row display-6 text-center">
-              <div className="flex-fill text-center">Rooms</div>
-              <button
-                className="btn btn-close btn-sm d-lg-none ms-auto shadow"
-                type="button"
-                data-bs-dismiss="offcanvas"
-                data-bs-target="#rooms-offcanvas"
-              ></button>
-            </div>
-            <ul id="rooms-container" className="card-body overf-y-scroll p-0 m-1">
-              {renderRooms()}
-            </ul>
-            <div className="card-footer">
-              <div className="row">
-                <div className="col-4 d-flex p-1">
-                  <button
-                    onClick={handleOpenJoinRoomModal}
-                    id="open-join-room-modal"
-                    className="btn btn-primary shadow flex-grow-1"
-                    type="button"
-                    title="Join Room"
-                  >
-                    <i className="bi bi-box-arrow-in-up-right"></i>
-                  </button>
-                </div>
-                <div className="col-4 d-flex p-1">
-                  <button
-                    onClick={handleOpenLeaveRoomModal}
-                    id="open-leave-room-modal"
-                    className="btn btn-warning shadow flex-grow-1"
-                    type="button"
-                    title="Leave Current Room"
-                    disabled={state.chatScope === null}
-                  >
-                    <i className="bi bi-box-arrow-down-left"></i>
-                  </button>
-                </div>
-                <div className="col-4 d-flex p-1">
-                  <button onClick={handleOpenCreateRoomModal} className="btn btn-primary shadow flex-grow-1" type="button" title="Create Room">
-                    <i className="bi bi-folder-plus"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RoomsSectionMemo />
         </div>
       </div>
     </>

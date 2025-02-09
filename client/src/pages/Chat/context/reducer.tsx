@@ -8,7 +8,11 @@ export interface ChatState {
   messages: PublicMessage[] | null;
   chatScope: ChatScope | null;
   isEnteringRoom: boolean;
-  isJoinDirectConversationModalOpen: boolean;
+  isJoinDirectConversationModalShown: boolean;
+  isCreateRoomModalShown: boolean;
+  isJoinRoomModalShown: boolean;
+  isLeaveRoomModalShown: boolean;
+  isDirectMessagesDrawerShown: boolean;
 }
 
 export type ChatStateAction =
@@ -17,14 +21,22 @@ export type ChatStateAction =
   | { type: "SET_MEMBERS"; payload: PublicMember[] | null }
   | { type: "SET_MESSAGES"; payload: PublicMessage[] | null }
   | { type: "SET_DIRECT_CONVERSATIONS"; payload: PublicDirectConversation[] | null }
-  | { type: "JOINED_DIRECT_CONVERSATION"; payload: { directConversations: PublicDirectConversation[]; scope: ChatScope } }
+  | {
+      type: "JOINED_DIRECT_CONVERSATION";
+      payload: { directConversations: PublicDirectConversation[]; scope: ChatScope; isDirectMessagesDrawerShown: boolean };
+    }
   | { type: "SET_CHAT_SCOPE"; payload: ChatScope | null }
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
   | { type: "AFTER_UNJOINED_ROOM"; payload: Room[] }
   | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
   | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: PublicMember[] | null; chatScope: ChatScope | null } }
-  | { type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN"; payload: boolean };
+  | { type: "SET_IS_CREATE_ROOM_MODAL_SHOWN"; payload: boolean }
+  | { type: "AFTER_MEMBER_CLICK"; payload: { chatScope: ChatScope; isDirectMessagesDrawerShown: boolean } }
+  | { type: "SET_IS_JOIN_ROOM_MODAL_SHOWN"; payload: boolean }
+  | { type: "SET_IS_LEAVE_ROOM_MODAL_SHOWN"; payload: boolean }
+  | { type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_SHOWN"; payload: boolean }
+  | { type: "SET_IS_DIRECT_MESSAGES_DRAWER_SHOWN"; payload: boolean };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
@@ -72,6 +84,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
         ...state,
         directConversations: sortMembers(action.payload.directConversations, true),
         chatScope: action.payload.scope,
+        isDirectMessagesDrawerShown: action.payload.isDirectMessagesDrawerShown,
       };
       if (copy.length) {
         updatedState.members = copy;
@@ -82,13 +95,33 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       console.log("[ChatReducer]::isenteringroom");
       return { ...state, isEnteringRoom: action.payload };
     }
-    case "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN": {
+    case "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_SHOWN": {
       console.log("[ChatReducer]::setIsJoinDirectConvoModalOpen");
-      return { ...state, isJoinDirectConversationModalOpen: action.payload };
+      return { ...state, isJoinDirectConversationModalShown: action.payload };
+    }
+    case "SET_IS_CREATE_ROOM_MODAL_SHOWN": {
+      console.log("[ChatReducer]::setIsCreateRoomModalShown");
+      return { ...state, isCreateRoomModalShown: action.payload };
+    }
+    case "SET_IS_JOIN_ROOM_MODAL_SHOWN": {
+      console.log("[ChatReducer]::setIsJoinRoomModalShown");
+      return { ...state, isJoinRoomModalShown: action.payload };
+    }
+    case "SET_IS_LEAVE_ROOM_MODAL_SHOWN": {
+      console.log("[ChatReducer]::setIsLeaveRoomModalShown");
+      return { ...state, isLeaveRoomModalShown: action.payload };
+    }
+    case "SET_IS_DIRECT_MESSAGES_DRAWER_SHOWN": {
+      console.log("[ChatReducer]::setIsDirectMessagesDrawerShown");
+      return { ...state, isDirectMessagesDrawerShown: action.payload };
     }
     case "AFTER_UNJOINED_ROOM": {
       console.log("[ChatReducer]::afterUnjoinedRoom");
       return { ...state, rooms: action.payload, members: null, messages: null, chatScope: null };
+    }
+    case "AFTER_MEMBER_CLICK": {
+      console.log("[ChatReducer]::afterMemberClick");
+      return { ...state, chatScope: action.payload.chatScope, isDirectMessagesDrawerShown: action.payload.isDirectMessagesDrawerShown };
     }
     case "SET_MEMBER_ACTIVE_STATUS": {
       console.log("[ChatReducer]::setmemberactiveStatus");
