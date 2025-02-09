@@ -1,8 +1,9 @@
 import React, { CSSProperties, memo, useCallback, useMemo } from "react";
 import { Member } from "@components";
-import { websocketeer } from "@src/ws";
-import { useChat } from "@hooks";
+import { websocketeer, WebSocketEvents } from "@src/ws";
+import { useChat, useEffectOnce } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "@root/types.shared";
+import { WebSocketeerEventHandler } from "../../../types";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -53,6 +54,29 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose } = props;
   const { state, dispatch } = useChat();
 
+  useEffectOnce(() => {
+    const handleEnteredDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_DIRECT_CONVERSATION"> = ({
+      messages,
+      error,
+      isMemberClick,
+      scopeId,
+    }) => {
+      if (error) {
+        return console.error(error);
+      }
+      if (isMemberClick) {
+        document.getElementById(scopeId)?.scrollIntoView({ behavior: "smooth" });
+      }
+      dispatch({ type: "SET_MESSAGES", payload: messages });
+    };
+
+    websocketeer.on("ENTERED_DIRECT_CONVERSATION", handleEnteredDirectConversation);
+
+    return (): void => {
+      websocketeer.off("ENTERED_DIRECT_CONVERSATION", handleEnteredDirectConversation);
+    };
+  });
+
   const handleOpenJoinDirectConversationModal = useCallback(() => {
     dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
   }, [dispatch]);
@@ -72,7 +96,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       type: "DirectConversation",
     };
     dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
-    websocketeer.send("GET_DIRECT_MESSAGES", { scopeId: directConvo.scopeId });
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: directConvo.scopeId, isMemberClick: false });
   }, [dispatch]);
 
   const directConversationClickHandlers = useMemo(() => {
@@ -88,6 +112,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     return state.directConversations.map((convo) => {
       return (
         <MemberMemo
+          id={convo.scopeId}
           key={convo.scopeId}
           isButton={true}
           onClick={directConversationClickHandlers.get(convo.scopeId)}

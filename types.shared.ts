@@ -108,11 +108,11 @@ export interface WebSocketAppEventRegistry {
   // Since "GET_x" messages are usual a request for data, they usually require no payload, but most def don't require an `error?` field.
   GET_ROOMS: unknown;
   GET_JOINABLE_ROOMS: unknown;
-  GET_INVITABLE_USERS: unknown;
+  GET_JOINABLE_DIRECT_CONVERSATIONS: unknown;
   GET_DIRECT_CONVERSATIONS: unknown;
-  GET_DIRECT_MESSAGES: {
-    scopeId: string;
-  };
+  //GET_DIRECT_MESSAGES: {
+  //  scopeId: string;
+  //};
   CONNECTION_LOGOUT: unknown;
   // Client sends a message.
   SEND_MESSAGE: {
@@ -122,6 +122,10 @@ export interface WebSocketAppEventRegistry {
   // Client tells server they have entered a room.
   ENTER_ROOM: {
     id: string;
+  };
+  ENTER_DIRECT_CONVERSATION: {
+    scopeId: string;
+    isMemberClick: boolean;
   };
   // Client tells server they want to join a room.
   JOIN_ROOM: {
@@ -155,16 +159,24 @@ export interface WebSocketAppEventRegistry {
   };
   // Server "relays" a message, therefore client receives a message someone else sent (in a room, direct convo, etc..).
   RECEIVE_MESSAGE: {
-    userId: string;
-    userName: string;
-    message: string;
+    message: PublicMessage;
     error?: WebSocketAppError;
+    //userId: string;
+    //userName: string;
+    //message: string;
+    //error?: WebSocketAppError;
   };
   // Server informs client of enter room results.
   ENTERED_ROOM: {
     members: PublicMember[];
     messages: PublicMessage[];
     room: Room;
+    error?: WebSocketAppError;
+  };
+  ENTERED_DIRECT_CONVERSATION: {
+    messages: PublicMessage[];
+    scopeId: string;
+    isMemberClick: boolean;
     error?: WebSocketAppError;
   };
   // Server informs client of join room result, and provides the client with a list of updated rooms.
@@ -207,19 +219,9 @@ export interface WebSocketAppEventRegistry {
     directConversations: PublicDirectConversation[];
     error?: WebSocketAppError;
   };
-  // Server sends client a list of messages for a particular direct convo.
-  LIST_DIRECT_MESSAGES: {
-    directMessages: PublicMessage[];
-    error?: WebSocketAppError;
-  };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)
-  LIST_INVITABLE_USERS: {
+  LIST_JOINABLE_DIRECT_CONVERSATIONS: {
     users: PublicMember[];
-    error?: WebSocketAppError;
-  };
-  // Server sends client the results of a create room request.
-  ROOM_CREATED: {
-    id: string;
     error?: WebSocketAppError;
   };
   // When someone enters a room, inform everyone in that room (so we can update "online" status, etc..)

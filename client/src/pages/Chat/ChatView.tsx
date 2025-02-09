@@ -64,6 +64,16 @@ export default function ChatView(): React.JSX.Element {
       }
     };
 
+    const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
+      if (error) {
+        return console.error(error);
+      }
+      dispatch({ type: "RECEIVE_MESSAGE", payload: message });
+      if (chatMessageInputRef && chatMessageInputRef.current) {
+        chatMessageInputRef.current.value = "";
+      }
+    };
+
     const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
       if (error) {
         return console.error(error);
@@ -71,6 +81,7 @@ export default function ChatView(): React.JSX.Element {
       sortMembers(members, false);
       const scope: ChatScope = { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name };
       dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
+      setIsDirectMessagesShown(false);
     };
 
     const handleMemberEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_ENTERED_ROOM"> = ({ id, error }) => {
@@ -123,13 +134,6 @@ export default function ChatView(): React.JSX.Element {
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId, isActive: true } });
     };
 
-    const handleDirectMessages: WebSocketeerEventHandler<WebSocketEvents, "LIST_DIRECT_MESSAGES"> = ({ directMessages, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_MESSAGES", payload: directMessages });
-    };
-
     websocketeer.on("SENT_MESSAGE", handleSentMessage);
     websocketeer.on("ENTERED_ROOM", handleEnteredRoom);
     websocketeer.on("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -140,7 +144,7 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("CREATED_ROOM", handleCreatedRoom);
     websocketeer.on("USER_DISCONNECTED", handleUserDisconnected);
     websocketeer.on("USER_CONNECTED", handleUserConnected);
-    websocketeer.on("LIST_DIRECT_MESSAGES", handleDirectMessages);
+    websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
 
     return (): void => {
       console.log(`[ChatView]::useEffect : tearing down`);
@@ -154,7 +158,7 @@ export default function ChatView(): React.JSX.Element {
       websocketeer.off("CREATED_ROOM", handleCreatedRoom);
       websocketeer.off("USER_DISCONNECTED", handleUserDisconnected);
       websocketeer.off("USER_CONNECTED", handleUserConnected);
-      websocketeer.off("LIST_DIRECT_MESSAGES", handleDirectMessages);
+      websocketeer.off("RECEIVE_MESSAGE", handleReceiveMessage);
     };
   });
 
@@ -181,7 +185,7 @@ export default function ChatView(): React.JSX.Element {
         scopeName: member.userName,
       };
       dispatch({ type: "JOINED_DIRECT_CONVERSATION", payload: { directConversations, scope } });
-      websocketeer.send("GET_DIRECT_MESSAGES", { scopeId: scope.id });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scope.id, isMemberClick: true });
       setIsDirectMessagesShown(true);
     };
 
@@ -287,6 +291,7 @@ export default function ChatView(): React.JSX.Element {
     const scope: ChatScope = { id: scopeId, userId: userId, userName: userName, scopeName: userName, type: "DirectConversation" };
     dispatch({ type: "SET_CHAT_SCOPE", payload: scope });
     setIsDirectMessagesShown(true);
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scope.id, isMemberClick: true });
   }, [state.directConversations, dispatch]);
 
   /**
@@ -306,6 +311,7 @@ export default function ChatView(): React.JSX.Element {
     }
     return state.members?.map((member) => (
       <MemberMemo
+        id={member.userId}
         memberId={member.userId}
         key={member.userId}
         isButton

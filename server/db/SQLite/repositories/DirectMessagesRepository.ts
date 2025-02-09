@@ -2,6 +2,7 @@ import { PublicMessage } from "@root/types.shared";
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
+sqlite3.verbose();
 
 export default class DirectMessagesRepositorySQLite implements DirectMessagesRepository<sqlite3.Database> {
   databasePool: DatabasePool<sqlite3.Database>;
@@ -54,18 +55,21 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
-        const query = `INSERT INTO direct_messages (id, directConversationId, fromUserId, toUserId, message, isRead, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        const params = [uuidV7(), directConversationId, fromUserId, toUserId, message, true, new Date()];
+        const directMessageId = uuidV7();
+        const query = `INSERT INTO direct_messages (id, directConversationId, fromUserId, toUserId, message, isRead) VALUES (?, ?, ?, ?, ?, ?)`;
+        const params = [directMessageId, directConversationId, fromUserId, toUserId, message, true];
 
-        db.get(query, [params], function (err: Error | null, row: PublicMessage) {
+        db.run(query, params, (err: Error | null) => {
           if (err) {
             release();
             return reject(err);
           }
+          const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, userName: "", timestamp: new Date() };
           release();
-          resolve(row);
+          resolve(entity);
         });
       } catch (e) {
+        console.log(e);
         release();
         reject(e);
       }
