@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:server && npm run build:frontend",
     "build:server": "tsc -p tsconfig.json",
-    "build:frontend": "vite --config ./client/vite.config.ts build --mode production",
+    "build:frontend": "NODE_ENV=production vite --config ./client/vite.config.ts build --mode production",
     "build:frontend:dev": "NODE_ENV=development vite --config ./client/vite.config.ts build",
     "cy:open": "NODE_ENV=test cypress open",
     "cy:run": "NODE_ENV=test cypress run --spec 'cypress/e2e/*.cy.ts'",
