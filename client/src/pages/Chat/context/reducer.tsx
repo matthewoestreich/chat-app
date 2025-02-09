@@ -8,7 +8,7 @@ export interface ChatState {
   messages: PublicMessage[] | null;
   chatScope: ChatScope | null;
   isEnteringRoom: boolean;
-  isJoinDirectConversationModalOpen: boolean;
+  isCreateDirectConversationModalOpen: boolean;
 }
 
 export type ChatStateAction =
@@ -26,7 +26,7 @@ export type ChatStateAction =
   | { type: "SET_MEMBER_ACTIVE_STATUS"; payload: { userId: string; isActive: boolean } }
   | { type: "ENTERED_ROOM"; payload: { messages: PublicMessage[] | null; members: PublicMember[] | null; chatScope: ChatScope | null } }
   | { type: "ENTERED_DIRECT_CONVERSATION"; payload: { scope: ChatScope } }
-  | { type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN"; payload: boolean };
+  | { type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN"; payload: boolean };
 
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
@@ -73,8 +73,8 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
     case "SET_IS_ENTERING_ROOM": {
       return { ...state, isEnteringRoom: action.payload };
     }
-    case "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN": {
-      return { ...state, isJoinDirectConversationModalOpen: action.payload };
+    case "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN": {
+      return { ...state, isCreateDirectConversationModalOpen: action.payload };
     }
     case "AFTER_UNJOINED_ROOM": {
       return { ...state, rooms: action.payload, members: null, messages: null, chatScope: null };

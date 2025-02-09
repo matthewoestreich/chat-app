@@ -9,7 +9,7 @@ import Topbar from "../Topbar";
 import LeaveRoomModal from "./LeaveRoomModal";
 import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
-import JoinDirectConversationModal from "./JoinDirectConversationModal";
+import CreateDirectConversationModal from "./CreateDirectConversationModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
 import sortMembers from "./sortMembers";
 
@@ -17,7 +17,7 @@ const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
 const MemberMemo = memo(Member);
 const CreateRoomModalMemo = memo(CreateRoomModal);
-const JoinDirectConversationModalMemo = memo(JoinDirectConversationModal);
+const CreateDirectConversationModalMemo = memo(CreateDirectConversationModal);
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
@@ -163,7 +163,6 @@ export default function ChatView(): React.JSX.Element {
   });
 
   useEffect(() => {
-    // TODO should the server send us this info upon a joined direct convo???
     const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
       directConversationId,
       directConversations,
@@ -225,7 +224,6 @@ export default function ChatView(): React.JSX.Element {
     if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
       return;
     }
-    console.log({ chatScope: state.chatScope });
     websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
   }
 
@@ -254,7 +252,7 @@ export default function ChatView(): React.JSX.Element {
   }, []);
 
   const handleCloseDirectConversationModal = useCallback(() => {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+    dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
   }, [dispatch]);
 
   /**
@@ -286,8 +284,7 @@ export default function ChatView(): React.JSX.Element {
       return websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: userId });
     }
 
-    // It's an existing convo.
-    // Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
+    // It's an existing convo. Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
     const scope: ChatScope = { id: scopeId, userId: userId, userName: userName, scopeName: userName, type: "DirectConversation" };
     dispatch({ type: "SET_CHAT_SCOPE", payload: scope });
     setIsDirectMessagesShown(true);
@@ -366,7 +363,7 @@ export default function ChatView(): React.JSX.Element {
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
-      <JoinDirectConversationModalMemo isOpen={state.isJoinDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
+      <CreateDirectConversationModalMemo isOpen={state.isCreateDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
       <TopbarMemo onLogout={handleLogout} />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>
         <div className="row text-center">

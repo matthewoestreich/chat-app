@@ -110,9 +110,6 @@ export interface WebSocketAppEventRegistry {
   GET_JOINABLE_ROOMS: unknown;
   GET_JOINABLE_DIRECT_CONVERSATIONS: unknown;
   GET_DIRECT_CONVERSATIONS: unknown;
-  //GET_DIRECT_MESSAGES: {
-  //  scopeId: string;
-  //};
   CONNECTION_LOGOUT: unknown;
   // Client sends a message.
   SEND_MESSAGE: {
@@ -144,6 +141,9 @@ export interface WebSocketAppEventRegistry {
     name: string;
     isPrivate?: boolean;
   };
+  CREATE_DIRECT_CONVERSATION: {
+    withUserId: string;
+  };
 
   /** * Server side events */
 
@@ -161,10 +161,6 @@ export interface WebSocketAppEventRegistry {
   RECEIVE_MESSAGE: {
     message: PublicMessage;
     error?: WebSocketAppError;
-    //userId: string;
-    //userName: string;
-    //message: string;
-    //error?: WebSocketAppError;
   };
   // Server informs client of enter room results.
   ENTERED_ROOM: {
@@ -184,13 +180,23 @@ export interface WebSocketAppEventRegistry {
     rooms: Room[];
     error?: WebSocketAppError;
   };
-  // Server informs client of create direct convo result, and provides client with updated list of
-  // direct convos, and the convoId they just created, as well as an updated list of invitable users.
+  // Joined direct conversation is used when a user is in a chat room and clicks on a member they wish to have
+  // a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
+  // That is how it differs from CREATE_DIRECT_CONVERSATION (which is used to explicitly create a new convo via the
+  // create direct convos modal).
   JOINED_DIRECT_CONVERSATION: {
     directConversations: PublicDirectConversation[];
-    invitableUsers: PublicMember[];
     withUserId: string;
     directConversationId: string;
+    error?: WebSocketAppError;
+  };
+  // Create direct convo is used to explicitly create a new direct convo via the create convo modal.
+  // JOINED_DIRECT_CONVERSATION is used when a user is in a chat room and clicks on a member they wish to have
+  // a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
+  // We send the client back a list of updated direct convos as well as a list of joinable direct convos.
+  CREATED_DIRECT_CONVERSATION: {
+    directConversations: PublicDirectConversation[];
+    joinableDirectConversations: PublicMember[];
     error?: WebSocketAppError;
   };
   // Server reports results of unjoin.
@@ -221,7 +227,7 @@ export interface WebSocketAppEventRegistry {
   };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)
   LIST_JOINABLE_DIRECT_CONVERSATIONS: {
-    users: PublicMember[];
+    conversations: PublicMember[];
     error?: WebSocketAppError;
   };
   // When someone enters a room, inform everyone in that room (so we can update "online" status, etc..)

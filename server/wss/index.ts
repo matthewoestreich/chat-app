@@ -267,6 +267,31 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
 
 /**
  *
+ * @event {CREATE_DIRECT_CONVERSATION}
+ *
+ * Create direct convo is used to explicitly create a new direct convo via the join convo modal.
+ * JOINED_DIRECT_CONVERSATION is used when a user is in a chat room and clicks on a member they wish to have
+ * a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
+ *
+ */
+wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
+  try {
+    await DATABASE.directConversations.create(client.user.id, withUserId);
+    const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
+    const joinableConvos = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
+
+    client.send("CREATED_DIRECT_CONVERSATION", {
+      joinableDirectConversations: joinableConvos.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
+      directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
+    });
+  } catch (e) {
+    console.error(e);
+    client.send("CREATED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversations: [], joinableDirectConversations: [] });
+  }
+});
+
+/**
+ *
  * @event {GET_JOINABLE_ROOMS}
  *
  * Gets all rooms that a user is not already a member of.
@@ -300,24 +325,25 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
  *
  * @event {JOIN_DIRECT_CONVERSATION}
  *
- * Create a new direct conversation with someone
+ * Joined direct conversation is used when a user is in a chat room and clicks on a member they wish to have
+ * a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
+ * That is how it differs from CREATE_DIRECT_CONVERSATION (which is used to explicitly create a new convo via the
+ * join direct convos modal).
  *
  */
 wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
     const newDirectConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
-    const invitableUsers = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
 
     client.send("JOINED_DIRECT_CONVERSATION", {
-      invitableUsers: invitableUsers.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
       directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
       directConversationId: newDirectConvo.id,
       withUserId,
     });
   } catch (e) {
     console.error(e);
-    client.send("JOINED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversationId: "", directConversations: [], invitableUsers: [], withUserId: "" });
+    client.send("JOINED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversationId: "", directConversations: [], withUserId: "" });
   }
 });
 
@@ -353,9 +379,9 @@ wsapp.on("GET_JOINABLE_DIRECT_CONVERSATIONS", async (client) => {
     const users = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
     client.send("LIST_JOINABLE_DIRECT_CONVERSATIONS", {
       // Add `isActive` field for each user
-      users: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
+      conversations: users.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
     });
   } catch (e) {
-    client.send("LIST_JOINABLE_DIRECT_CONVERSATIONS", { error: e as Error, users: [] });
+    client.send("LIST_JOINABLE_DIRECT_CONVERSATIONS", { error: e as Error, conversations: [] });
   }
 });

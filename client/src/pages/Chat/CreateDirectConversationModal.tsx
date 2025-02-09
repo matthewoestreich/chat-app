@@ -6,17 +6,17 @@ import { PublicMember } from "@root/types.shared";
 import { AlertState, WebSocketeerEventHandler } from "@client/types";
 import { useChat } from "@hooks";
 
-interface JoinDirectConversationModalProperties {
+interface CreateDirectConversationModalProperties {
   isOpen: boolean;
   onClose: () => void;
 }
 
 const MemberMemo = memo(Member);
 
-export default function JoinDirectConversationModal(props: JoinDirectConversationModalProperties): React.JSX.Element {
+export default function CreateDirectConversationModal(props: CreateDirectConversationModalProperties): React.JSX.Element {
   const { dispatch } = useChat();
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
-  const [users, setUsers] = useState<PublicMember[] | null>(null);
+  const [directConversations, setDirectConversations] = useState<PublicMember[] | null>(null);
   const [selectedUser, setSelectedUser] = useState<PublicMember | null>(null);
   const [searchText, setSearchText] = useState("");
 
@@ -27,34 +27,36 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
       websocketeer.send("GET_JOINABLE_DIRECT_CONVERSATIONS");
     }
 
-    const handleListJoinableDirectConvos: WebSocketeerEventHandler<WebSocketEvents, "LIST_JOINABLE_DIRECT_CONVERSATIONS"> = ({ users, error }) => {
+    const handleListJoinableDirectConvos: WebSocketeerEventHandler<WebSocketEvents, "LIST_JOINABLE_DIRECT_CONVERSATIONS"> = ({
+      conversations,
+      error,
+    }) => {
       if (error) {
         return console.error(error);
       }
       if (!isOpen) {
         return;
       }
-      setUsers(sortMembers(users, true));
+      setDirectConversations(sortMembers(conversations, true));
     };
 
-    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
-      invitableUsers,
-      directConversations,
-      error,
-    }) => {
+    // prettier-ignore
+    const handleCreatedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "CREATED_DIRECT_CONVERSATION"> = ({ joinableDirectConversations, directConversations, error }) => {
       if (error || !isOpen) {
         return;
       }
-      setUsers(sortMembers(invitableUsers, true));
+      // Local modal state
+      setDirectConversations(joinableDirectConversations);
+      // "Global" context state
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
     };
 
     websocketeer.on("LIST_JOINABLE_DIRECT_CONVERSATIONS", handleListJoinableDirectConvos);
-    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+    websocketeer.on("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
 
     return (): void => {
       websocketeer.off("LIST_JOINABLE_DIRECT_CONVERSATIONS", handleListJoinableDirectConvos);
-      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+      websocketeer.off("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
     };
   }, [isOpen, dispatch]);
 
@@ -62,11 +64,11 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
     if (selectedUser === null) {
       return;
     }
-    websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: selectedUser.userId });
+    websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: selectedUser.userId });
   }, [selectedUser]);
 
   function handleCloseModal(): void {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+    dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
     onClose();
   }
 
@@ -85,13 +87,13 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
 
   // If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
   const userClickHandlers = useMemo(() => {
-    return new Map(users?.map((user) => [user.userId, (): void => handleUserClick(user)]));
-  }, [users, handleUserClick]);
+    return new Map(directConversations?.map((user) => [user.userId, (): void => handleUserClick(user)]));
+  }, [directConversations, handleUserClick]);
 
   // prettier-ignore
   const renderInvitableUsers = useCallback(() => {
     console.log("rendering members")
-    return users?.filter((user) => user.userName.includes(searchText)).map((user) => (
+    return directConversations?.filter((user) => user.userName.includes(searchText)).map((user) => (
       <MemberMemo 
         key={user.userId} 
         isButton={true} 
@@ -102,7 +104,7 @@ export default function JoinDirectConversationModal(props: JoinDirectConversatio
         className={selectedUser?.userId === user.userId ? "active" : ""} 
       />
     ));
-  }, [searchText, users, selectedUser?.userId, userClickHandlers]);
+  }, [searchText, directConversations, selectedUser?.userId, userClickHandlers]);
 
   return (
     <Modal shown={props.isOpen} className="fade mh-100" tabIndex={-1} dataBsBackdrop="static" dataBsKeyboard={false}>

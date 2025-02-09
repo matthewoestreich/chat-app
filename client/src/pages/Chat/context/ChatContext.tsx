@@ -14,7 +14,7 @@ export const initialChatState: ChatState = {
   messages: null,
   chatScope: null,
   isEnteringRoom: false,
-  isJoinDirectConversationModalOpen: false,
+  isCreateDirectConversationModalOpen: false,
   selectedDirectConversationToJoin: null,
 };
 
