@@ -122,6 +122,7 @@ export interface WebSocketAppEventRegistry {
   };
   ENTER_DIRECT_CONVERSATION: {
     scopeId: string;
+    // Was this direct convo entered via clicking on a member inside a room?
     isMemberClick: boolean;
   };
   // Client tells server they want to join a room.

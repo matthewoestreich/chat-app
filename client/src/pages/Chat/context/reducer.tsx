@@ -113,7 +113,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return {
         ...state,
         messages: action.payload.messages,
-        members: action.payload.members,
+        members: sortMembers(action.payload.members || [], true),
         chatScope: action.payload.chatScope,
         isEnteringRoom: false,
       };

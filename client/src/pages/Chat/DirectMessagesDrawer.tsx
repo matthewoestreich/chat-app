@@ -78,7 +78,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   });
 
   const handleOpenJoinDirectConversationModal = useCallback(() => {
-    dispatch({ type: "SET_IS_JOIN_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
+    dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
   }, [dispatch]);
 
   const handleClose = useCallback(() => {

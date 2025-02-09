@@ -11,7 +11,6 @@ import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import CreateDirectConversationModal from "./CreateDirectConversationModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
-import sortMembers from "./sortMembers";
 
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
@@ -78,9 +77,14 @@ export default function ChatView(): React.JSX.Element {
       if (error) {
         return console.error(error);
       }
-      sortMembers(members, false);
-      const scope: ChatScope = { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name };
-      dispatch({ type: "ENTERED_ROOM", payload: { members, messages, chatScope: scope } });
+      dispatch({
+        type: "ENTERED_ROOM",
+        payload: {
+          members,
+          messages,
+          chatScope: { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name },
+        },
+      });
       setIsDirectMessagesShown(false);
     };
 
