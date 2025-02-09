@@ -1,7 +1,7 @@
-import React, { CSSProperties, memo, useCallback, useMemo } from "react";
+import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
-import { useChat, useEffectOnce } from "@hooks";
+import { useChat } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "@root/types.shared";
 import { WebSocketeerEventHandler } from "../../../types";
 
@@ -54,10 +54,10 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose } = props;
   const { state, dispatch } = useChat();
 
-  useEffectOnce(() => {
+  useEffect(() => {
     const handleEnteredDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_DIRECT_CONVERSATION"> = ({
-      messages,
       error,
+      messages,
       isMemberClick,
       scopeId,
     }) => {
@@ -67,7 +67,17 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       if (isMemberClick) {
         document.getElementById(scopeId)?.scrollIntoView({ behavior: "smooth" });
       }
-      dispatch({ type: "SET_MESSAGES", payload: messages });
+      const convo = state.directConversations?.find((convo) => convo.scopeId === scopeId);
+      if (!convo) {
+        return console.error(`[DirectMessagesDrawer]::handleEnteredDirectConversatoin : unable to locate convo in state!`, { scopeId });
+      }
+      dispatch({
+        type: "ENTERED_DIRECT_CONVERSATION",
+        payload: {
+          messages,
+          chatScope: { id: scopeId, userId: convo.userId, userName: convo.userName, scopeName: convo.userName, type: "DirectConversation" },
+        },
+      });
     };
 
     websocketeer.on("ENTERED_DIRECT_CONVERSATION", handleEnteredDirectConversation);
@@ -75,10 +85,14 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     return (): void => {
       websocketeer.off("ENTERED_DIRECT_CONVERSATION", handleEnteredDirectConversation);
     };
-  });
+  }, [dispatch, state.directConversations]);
 
   const handleOpenJoinDirectConversationModal = useCallback(() => {
     dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
+  }, [dispatch]);
+
+  const handleOpenLeaveDirectConversationModal = useCallback(() => {
+    dispatch({ type: "SET_IS_LEAVE_DIRECT_CONVERSATION_MODAL_OPEN", payload: true });
   }, [dispatch]);
 
   const handleClose = useCallback(() => {
@@ -139,12 +153,23 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       <div className="card-footer">
         <div className="row">
           <div className="col-4 d-flex p-1">
-            <button onClick={handleOpenJoinDirectConversationModal} className="btn btn-success shadow flex-grow-1" type="button" title="New">
+            <button
+              onClick={handleOpenJoinDirectConversationModal}
+              className="btn btn-success shadow flex-grow-1"
+              type="button"
+              title="New Direct Message"
+            >
               <i className="bi bi-person-plus-fill"></i>
             </button>
           </div>
           <div className="col-4 d-flex p-1">
-            <button className="btn btn-warning shadow flex-grow-1" type="button" title="Leave">
+            <button
+              onClick={handleOpenLeaveDirectConversationModal}
+              disabled={state.chatScope?.type !== "DirectConversation"}
+              className="btn btn-warning shadow flex-grow-1"
+              type="button"
+              title="Leave Direct Message"
+            >
               <i className="bi bi-person-dash-fill"></i>
             </button>
           </div>

@@ -118,14 +118,7 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
             <button onClick={handleCloseModal} className="btn btn-close" tabIndex={-1} type="button"></button>
           </ModalHeader>
           <ModalBody>
-            <Alert
-              isOpen={alert.shown}
-              icon={alert.icon}
-              type={alert.type}
-              onClose={handleCloseAlert}
-              rootClassName="d-flex flex-row align-items-center justify-content-between mh-100"
-              messageClassName="mb-0 max-h-100px overf-scroll"
-            >
+            <Alert isOpen={alert.shown} icon={alert.icon} type={alert.type} onClose={handleCloseAlert}>
               {alert.message}
             </Alert>
             <input onChange={handleSearchInput} value={searchText} className="form-control" type="text" placeholder="Search Rooms" />

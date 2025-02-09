@@ -77,6 +77,7 @@ export interface DirectConversationsRepository<DB> {
   delete(id: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<PublicDirectConversation[]>;
   selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]>;
+  removeUserFromDirectConversation(idOfUserThatRequestedRemoval: string, convoId: string): Promise<boolean>;
 }
 
 export interface DirectMessagesRepository<DB> {
