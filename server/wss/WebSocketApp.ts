@@ -19,6 +19,9 @@ export default class WebSocketApp extends EventEmitter {
   private catchFn: WebSocketAppCatchHandler = (_error: Error, _socket: WebSocket) => {};
   //Look at cache as containers that hold items. For example, chat rooms that hold members/users.
   private static cache: WebSocketAppCache = new Map();
+  public static get appCache(): WebSocketAppCache {
+    return WebSocketApp.cache;
+  }
 
   /**
    * Parses a raw incoming websocket message.

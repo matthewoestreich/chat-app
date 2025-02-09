@@ -187,7 +187,7 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
         userName: m.userName,
         userId: m.userId,
         scopeId: m.scopeId,
-        isActive: wsapp.getCachedContainer(id)!.has(m.userId),
+        isActive: wsapp.isItemCached(m.userId),
       })),
     });
   } catch (e) {
@@ -331,6 +331,7 @@ wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
 wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { scopeId, isMemberClick }) => {
   try {
     const messages = await DATABASE.directMessages.selectByDirectConversationId(scopeId);
+    wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
     const container = wsapp.addClientToCache(client, scopeId);
     client.setActiveIn(scopeId, container);
     client.send("ENTERED_DIRECT_CONVERSATION", { messages, scopeId, isMemberClick });

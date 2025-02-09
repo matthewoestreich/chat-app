@@ -7,6 +7,7 @@ import { generateSessionToken } from "@server/generateTokens.js";
 import morgan from "morgan";
 import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@server/middleware";
 import clearAllCookies from "./clearAllCookies";
+import WebSocketApp from "./wss/WebSocketApp";
 
 const app = express();
 export const setDatabaseProvider = attachDatabaseProvider(app);
@@ -29,6 +30,20 @@ if (process.env.NODE_ENV !== "test") {
   const morganSkip = (req: Request): boolean => req.url === "./favicon.ico" || (req.url || "").startsWith("/public");
   app.use(morgan(morganSchema, { skip: morganSkip }));
 }
+
+// TODO : remove this
+app.get("/wsapp-cache", (_req: Request, res: Response) => {
+  // eslint-disable-next-line
+  const cache: { [K: string]: any } = {};
+  for (const [containerId, container] of WebSocketApp.appCache) {
+    cache[containerId] = {};
+    for (const [clientId, client] of container) {
+      cache[containerId][clientId] = client.user;
+    }
+  }
+  console.log(cache);
+  res.status(200).json(cache);
+});
 
 /**
  * @route {POST} /auth/validate
