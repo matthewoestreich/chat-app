@@ -18,13 +18,16 @@ export default function Alert(props: AlertProperties): React.JSX.Element {
   }
 
   function setAlertMessageClasses(): string {
-    return "" + props.messageClassName + " " + (props.icon === undefined ? "" : "ms-2");
+    return "" + props.messageClassName + " " + (props.icon === undefined ? "" : "ms-2 mb-0 max-h-100px overf-scroll");
   }
 
   return (
     <>
       {props.isOpen && (
-        <div className={`alert ${props.rootClassName} ${props.type && formatType(props.type)}`} role="alert">
+        <div
+          className={`alert d-flex flex-row align-items-center justify-content-between mh-100 ${props.rootClassName !== undefined ? props.rootClassName : ""} ${props.type && formatType(props.type)}`}
+          role="alert"
+        >
           <i className={`bi ${props.icon ?? props.icon}`}></i>
           <div id="alert-message" className={setAlertMessageClasses()}>
             {props?.children}

@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WebSocketeerEventHandler } from "@client/types";
-import { ChatScope, PublicMember } from "@root/types.shared";
+import { PublicMember } from "@root/types.shared";
 import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
@@ -11,6 +11,7 @@ import JoinRoomModal from "./JoinRoomModal";
 import CreateRoomModal from "./CreateRoomModal";
 import CreateDirectConversationModal from "./CreateDirectConversationModal";
 import DirectMessagesDrawer from "./DirectMessagesDrawer";
+import LeaveDirectConversationModal from "./LeaveDirectConversationModal";
 
 const RoomMemo = memo(Room);
 const MessageMemo = memo(Message);
@@ -20,6 +21,7 @@ const CreateDirectConversationModalMemo = memo(CreateDirectConversationModal);
 const LeaveRoomModalMemo = memo(LeaveRoomModal);
 const JoinRoomModalMemo = memo(JoinRoomModal);
 const DirectMessagesDrawerMemo = memo(DirectMessagesDrawer);
+const LeaveDirectConversationModalMemo = memo(LeaveDirectConversationModal);
 const LoadingSpinnerMemo = memo(LoadingSpinner);
 const TopbarMemo = memo(Topbar);
 
@@ -102,13 +104,6 @@ export default function ChatView(): React.JSX.Element {
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: false } });
     };
 
-    const handleListRooms: WebSocketeerEventHandler<WebSocketEvents, "LIST_ROOMS"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
-      dispatch({ type: "SET_ROOMS", payload: rooms });
-    };
-
     const handleJoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "JOINED_ROOM"> = ({ rooms, error }) => {
       if (error) {
         return console.error(error);
@@ -142,7 +137,6 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("ENTERED_ROOM", handleEnteredRoom);
     websocketeer.on("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
     websocketeer.on("MEMBER_LEFT_ROOM", handleMemberLeftRoom);
-    websocketeer.on("LIST_ROOMS", handleListRooms);
     websocketeer.on("JOINED_ROOM", handleJoinedRoom);
     websocketeer.on("UNJOINED_ROOM", handleUnjoinedRoom);
     websocketeer.on("CREATED_ROOM", handleCreatedRoom);
@@ -156,7 +150,6 @@ export default function ChatView(): React.JSX.Element {
       websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
       websocketeer.off("MEMBER_LEFT_ROOM", handleMemberLeftRoom);
-      websocketeer.off("LIST_ROOMS", handleListRooms);
       websocketeer.off("JOINED_ROOM", handleJoinedRoom);
       websocketeer.off("UNJOINED_ROOM", handleUnjoinedRoom);
       websocketeer.off("CREATED_ROOM", handleCreatedRoom);
@@ -167,38 +160,30 @@ export default function ChatView(): React.JSX.Element {
   });
 
   useEffect(() => {
-    const handleJoinedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "JOINED_DIRECT_CONVERSATION"> = ({
-      directConversationId,
+    const handleCreatedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "CREATED_DIRECT_CONVERSATION"> = ({
+      scopeId,
       directConversations,
-      withUserId,
       error,
     }) => {
       if (error) {
         return console.error(error);
       }
-      const member = state.members?.find((member) => member.userId === withUserId);
-      if (!member) {
+      // Let the create direct convo modal handle the event.
+      if (state.isCreateDirectConversationModalOpen) {
         return;
       }
-      const scope: ChatScope = {
-        id: directConversationId,
-        userId: member.userId,
-        userName: member.userName,
-        type: "DirectConversation",
-        scopeName: member.userName,
-      };
-      dispatch({ type: "JOINED_DIRECT_CONVERSATION", payload: { directConversations, scope } });
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scope.id, isMemberClick: true });
+      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId, isMemberClick: true });
       setIsDirectMessagesShown(true);
     };
 
-    websocketeer.on("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+    websocketeer.on("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
 
     return (): void => {
       console.log("[ChatState]::cleaning up useEffect with deps : '[dispatch, state.members]'");
-      websocketeer.off("JOINED_DIRECT_CONVERSATION", handleJoinedDirectConversation);
+      websocketeer.off("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
     };
-  }, [dispatch, state.members]);
+  }, [dispatch, state.isCreateDirectConversationModalOpen]);
 
   function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
@@ -259,6 +244,10 @@ export default function ChatView(): React.JSX.Element {
     dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
   }, [dispatch]);
 
+  const handleCloseLeaveDirectConversationModal = useCallback(() => {
+    dispatch({ type: "SET_IS_LEAVE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
+  }, [dispatch]);
+
   /**
    * Messages render function
    */
@@ -276,24 +265,20 @@ export default function ChatView(): React.JSX.Element {
    * Member click handler
    */
   // prettier-ignore
-  const handleMemberClick = useCallback(({ scopeId, userId, userName }: PublicMember) => {
+  const handleMemberClick = useCallback(({ scopeId, userId }: PublicMember) => {
     if (!state.directConversations) {
-      return websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: userId });
+      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: userId });
     }
-
     // See if we are already in a direct convo with this member.
     const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === userId);
     if (convoIndex === -1) {
       // It's a new direct convo
-      return websocketeer.send("JOIN_DIRECT_CONVERSATION", { withUserId: userId });
+      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: userId });
     }
-
     // It's an existing convo. Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
-    const scope: ChatScope = { id: scopeId, userId: userId, userName: userName, scopeName: userName, type: "DirectConversation" };
-    dispatch({ type: "SET_CHAT_SCOPE", payload: scope });
     setIsDirectMessagesShown(true);
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scope.id, isMemberClick: true });
-  }, [state.directConversations, dispatch]);
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scopeId, isMemberClick: true });
+  }, [state.directConversations]);
 
   /**
    * Member Click Handlers map
@@ -367,6 +352,7 @@ export default function ChatView(): React.JSX.Element {
       <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
+      <LeaveDirectConversationModalMemo isOpen={state.isLeaveDirectConversationModalOpen} onClose={handleCloseLeaveDirectConversationModal} />
       <CreateDirectConversationModalMemo isOpen={state.isCreateDirectConversationModalOpen} onClose={handleCloseDirectConversationModal} />
       <TopbarMemo onLogout={handleLogout} />
       <div className="container-fluid h-100 d-flex flex-column" style={{ paddingTop: "4em" }}>

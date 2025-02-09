@@ -16,7 +16,7 @@ const MemberMemo = memo(Member);
 export default function CreateDirectConversationModal(props: CreateDirectConversationModalProperties): React.JSX.Element {
   const { dispatch } = useChat();
   const [alert, setAlert] = useState<AlertState>({ type: null, shown: false, icon: null });
-  const [directConversations, setDirectConversations] = useState<PublicMember[] | null>(null);
+  const [joinableDirectConversations, setJoinableDirectConversations] = useState<PublicMember[] | null>(null);
   const [selectedUser, setSelectedUser] = useState<PublicMember | null>(null);
   const [searchText, setSearchText] = useState("");
 
@@ -37,18 +37,25 @@ export default function CreateDirectConversationModal(props: CreateDirectConvers
       if (!isOpen) {
         return;
       }
-      setDirectConversations(sortMembers(conversations, true));
+      setJoinableDirectConversations(sortMembers(conversations, true));
     };
 
-    // prettier-ignore
-    const handleCreatedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "CREATED_DIRECT_CONVERSATION"> = ({ joinableDirectConversations, directConversations, error }) => {
-      if (error || !isOpen) {
+    const handleCreatedDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "CREATED_DIRECT_CONVERSATION"> = ({
+      joinableDirectConversations,
+      directConversations,
+      error,
+    }) => {
+      if (error) {
+        setAlert({ type: "danger", message: "Something went wrong!", shown: true, icon: "bi-emoji-frown-fill" });
+        return console.error(error);
+      }
+      // If we got this event while modal is closed, it most likely means a convo was created elsewhere, so let them handle the event.
+      if (!isOpen) {
         return;
       }
-      // Local modal state
-      setDirectConversations(joinableDirectConversations);
-      // "Global" context state
+      setJoinableDirectConversations(joinableDirectConversations);
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+      setAlert({ type: "success", message: "Success!", shown: true, icon: "bi-emoji-smile-fill" });
     };
 
     websocketeer.on("LIST_JOINABLE_DIRECT_CONVERSATIONS", handleListJoinableDirectConvos);
@@ -70,6 +77,9 @@ export default function CreateDirectConversationModal(props: CreateDirectConvers
   function handleCloseModal(): void {
     dispatch({ type: "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
     onClose();
+    setAlert({ type: null, message: "", shown: false, icon: "" });
+    setSearchText("");
+    setJoinableDirectConversations(null);
   }
 
   function handleCloseAlert(): void {
@@ -81,30 +91,30 @@ export default function CreateDirectConversationModal(props: CreateDirectConvers
   }
 
   // prettier-ignore
-  const handleUserClick = useCallback((user: PublicMember) => {
+  const handleJoinableConversationClick = useCallback((user: PublicMember) => {
     setSelectedUser(user);
   }, []);
 
   // If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
-  const userClickHandlers = useMemo(() => {
-    return new Map(directConversations?.map((user) => [user.userId, (): void => handleUserClick(user)]));
-  }, [directConversations, handleUserClick]);
+  const joinableConversationClickHandlers = useMemo(() => {
+    return new Map(joinableDirectConversations?.map((user) => [user.userId, (): void => handleJoinableConversationClick(user)]));
+  }, [joinableDirectConversations, handleJoinableConversationClick]);
 
   // prettier-ignore
-  const renderInvitableUsers = useCallback(() => {
+  const renderJoinableConversations = useCallback(() => {
     console.log("rendering members")
-    return directConversations?.filter((user) => user.userName.includes(searchText)).map((user) => (
+    return joinableDirectConversations?.filter((user) => user.userName.includes(searchText)).map((user) => (
       <MemberMemo 
         key={user.userId} 
         isButton={true} 
-        onClick={userClickHandlers.get(user.userId)} 
+        onClick={joinableConversationClickHandlers.get(user.userId)} 
         memberName={user.userName} 
         memberId={user.userId} 
         isOnline={user.isActive} 
         className={selectedUser?.userId === user.userId ? "active" : ""} 
       />
     ));
-  }, [searchText, directConversations, selectedUser?.userId, userClickHandlers]);
+  }, [searchText, joinableDirectConversations, selectedUser?.userId, joinableConversationClickHandlers]);
 
   return (
     <Modal shown={props.isOpen} className="fade mh-100" tabIndex={-1} dataBsBackdrop="static" dataBsKeyboard={false}>
@@ -123,7 +133,7 @@ export default function CreateDirectConversationModal(props: CreateDirectConvers
             <input onChange={handleSearchInput} value={searchText} className="form-control" placeholder="Search People" type="text" />
             <div className="border mt-3">
               <ul className="list-group" style={{ maxHeight: "35vh", overflowY: "scroll" }}>
-                {renderInvitableUsers()}
+                {renderJoinableConversations()}
               </ul>
             </div>
           </ModalBody>

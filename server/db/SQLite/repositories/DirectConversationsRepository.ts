@@ -89,7 +89,33 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     throw new Error("Method not implemented.");
   }
 
+  // Remove direct conversation for user
+  async removeUserFromDirectConversation(idOfUserThatRequestedRemoval: string, convoId: string): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+
+    // TODO we prob need to restructure the database.
+    // As it stands, if I am in a direct convo with you, and you leave the convo, it also removes the convo
+    // from my display.
+    return new Promise((resolve, reject) => {
+      try {
+        const query = `DELETE from direct_conversation WHERE id = ? AND userA_Id = ? OR userB_Id = ?`;
+        const params = [convoId, idOfUserThatRequestedRemoval];
+        db.run(query, params, function (err) {
+          if (err) {
+            release();
+            return reject(err);
+          }
+          release();
+          return resolve(true);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
+  }
+
   delete(_id: string): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    throw new Error("Method not implemented!");
   }
 }

@@ -144,19 +144,6 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
 
 /**
  *
- * @event {GET_ROOM}
- *
- */
-wsapp.on("GET_ROOMS", async (client) => {
-  const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
-  client.send("LIST_ROOMS", { rooms });
-  rooms.forEach((room) => wsapp.addContainerToCache(room.id));
-  const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
-  client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
-});
-
-/**
- *
  * @event {ENTER_ROOM}
  *
  * ENTER_ROOM is for when a user enters an already joined room.
@@ -276,17 +263,44 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
  */
 wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
-    await DATABASE.directConversations.create(client.user.id, withUserId);
+    const newConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
     const joinableConvos = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
 
     client.send("CREATED_DIRECT_CONVERSATION", {
       joinableDirectConversations: joinableConvos.map((u) => ({ ...u, isActive: wsapp.isItemCached(u.userId) })),
       directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
+      scopeId: newConvo.id,
     });
   } catch (e) {
     console.error(e);
-    client.send("CREATED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversations: [], joinableDirectConversations: [] });
+    client.send("CREATED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversations: [], joinableDirectConversations: [], scopeId: "" });
+  }
+});
+
+/**
+ *
+ * @event {LEAVE_DIRECT_CONVERSATION}
+ *
+ * Leaves a direct convo
+ *
+ */
+wsapp.on("LEAVE_DIRECT_CONVERSATION", async (client, { id }) => {
+  try {
+    const result = await DATABASE.directConversations.removeUserFromDirectConversation(client.user.id, id);
+    const convos = await DATABASE.directConversations.selectByUserId(client.user.id);
+    if (!result) {
+      return client.send("LEFT_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversations: [] });
+    }
+    if (client.activeIn.id === id) {
+      wsapp.deleteCachedItem(client.user.id, id);
+      client.setActiveIn(WebSocketApp.ID_UNASSIGNED, wsapp.getCachedContainer(WebSocketApp.ID_UNASSIGNED));
+    }
+    client.send("LEFT_DIRECT_CONVERSATION", {
+      directConversations: convos.map((convo) => ({ ...convo, isActive: wsapp.isItemCached(convo.userId) })),
+    });
+  } catch (e) {
+    client.send("LEFT_DIRECT_CONVERSATION", { error: (e as Error).message || String(e), directConversations: [] });
   }
 });
 
@@ -318,32 +332,6 @@ wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
     client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })) });
   } catch (e) {
     client.send("LIST_DIRECT_CONVERSATIONS", { error: e as Error, directConversations: [] });
-  }
-});
-
-/**
- *
- * @event {JOIN_DIRECT_CONVERSATION}
- *
- * Joined direct conversation is used when a user is in a chat room and clicks on a member they wish to have
- * a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
- * That is how it differs from CREATE_DIRECT_CONVERSATION (which is used to explicitly create a new convo via the
- * join direct convos modal).
- *
- */
-wsapp.on("JOIN_DIRECT_CONVERSATION", async (client, { withUserId }) => {
-  try {
-    const newDirectConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
-    const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
-
-    client.send("JOINED_DIRECT_CONVERSATION", {
-      directConversations: directConvos.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })),
-      directConversationId: newDirectConvo.id,
-      withUserId,
-    });
-  } catch (e) {
-    console.error(e);
-    client.send("JOINED_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversationId: "", directConversations: [], withUserId: "" });
   }
 });
 

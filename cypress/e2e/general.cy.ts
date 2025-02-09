@@ -46,6 +46,7 @@ describe("Homepage", () => {
 describe("Global", () => {
   const USER = generateAccountInfo();
   const NEW_ROOM_NAME = getRandomString(7);
+  let DIRECT_CONVERSATION_NAME;
 
   before(() => {
     cy.createAccount(USER.name, USER.email, USER.password);
@@ -126,6 +127,58 @@ describe("Global", () => {
   it("should open direct conversations", () => {
     cy.getOpenDirectConversationsDrawerButton().click();
     cy.get(".card-header div").contains("Direct Messages").should("exist").should("be.visible");
+  });
+
+  it("should create a direct conversation via Modal", () => {
+    cy.getOpenDirectConversationsDrawerButton().click();
+    cy.get("button[title='New Direct Message']").should("exist").should("be.visible").click();
+    cy.get(".modal.show ul")
+      .should("exist")
+      .should("be.visible")
+      .children()
+      .first()
+      .then(($el) => {
+        DIRECT_CONVERSATION_NAME = $el.text().trim();
+        $el.trigger("click");
+        cy.get(".modal.show button").contains("Add").click();
+        cy.get(".modal.show button").contains("Close").wait(100).click();
+        cy.get(".modal-backdrop").should("not.exist");
+        cy.get(".offcanvas-start .card-body").last().should("be.visible");
+        cy.get(".offcanvas-start .card-body").last().children().first().children().should("have.length.greaterThan", 0);
+      });
+  });
+
+  it("should enter a direct conversation via Drawer", () => {
+    cy.getOpenDirectConversationsDrawerButton().click();
+    cy.get(".offcanvas-start .card-body").last().should("exist").should("be.visible");
+    cy.get(".offcanvas-start .card-body").last().children().first().children().first().should("exist").click();
+    cy.get(".chat-title").should("contain.text", DIRECT_CONVERSATION_NAME);
+  });
+
+  it("should enter a direct conversation via clicking on room member", () => {
+    let secondDM;
+    cy.enterRoom("#general");
+    cy.get("#members-container").children().first().should("be.visible");
+    cy.get("#members-container")
+      .children()
+      .first()
+      .children()
+      .last()
+      .then(($el) => {
+        secondDM = $el.text().trim();
+        $el.trigger("click");
+        cy.get(".offcanvas-start .card-body").last().should("exist").children().first().should("be.visible").children().last().should("contain.text", secondDM);
+      });
+  });
+
+  it("should send a direct message", () => {
+    const message = "Hello, from DM!";
+    cy.getOpenDirectConversationsDrawerButton().click();
+    cy.get(".offcanvas-start .card-body").last().should("exist").should("be.visible");
+    cy.get(".offcanvas-start .card-body").last().children().first().children().first().should("exist").click();
+    cy.getChatInput().type(message);
+    cy.getSendChatMessageButton().click();
+    cy.getChatDisplay().children().should("have.length.greaterThan", 0).last().children().last().should("contain.text", message);
   });
 });
 
