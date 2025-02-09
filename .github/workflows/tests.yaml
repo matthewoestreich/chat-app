@@ -42,4 +42,4 @@ jobs:
         start: npm start
         wait-on: 'http://localhost:3000'  # Adjust to the port your app runs on
         wait-on-timeout: 60 # Wait time for the app to be fully available
-        record: true # record results to cypress cloud
+        record: false # record results to cypress cloud
