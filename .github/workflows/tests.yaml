@@ -20,7 +20,6 @@ jobs:
       EXPRESS_PORT: ${{ secrets.EXPRESS_PORT }}
       NODE_ENV: ${{ secrets.NODE_ENV }}
       DATABASE_PROVIDER: ${{ secrets.DATABASE_PROVIDER }}
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
     steps:
     - name: Checkout code
