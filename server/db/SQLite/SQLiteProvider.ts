@@ -366,14 +366,9 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
           db.run(`
             CREATE TABLE IF NOT EXISTS direct_conversation (
               id TEXT PRIMARY KEY,
-              userA_Id TEXT NOT NULL,
-              userB_Id TEXT NOT NULL
-            );`);
-          db.run(`
-            CREATE UNIQUE INDEX IF NOT EXISTS unique_userA_Id_userB_Id_pair
-            ON direct_conversation (
-                CASE WHEN userA_Id < userB_Id THEN userA_Id ELSE userB_Id END,
-                CASE WHEN userA_Id < userB_Id THEN userB_Id ELSE userA_Id END
+              createdByUserId TEXT NOT NULL,
+              otherParticipantUserId TEXT NOT NULL,
+              UNIQUE (createdByUserId, otherParticipantUserId)
             );`);
           db.run(`
             CREATE TABLE IF NOT EXISTS direct_messages (

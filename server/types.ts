@@ -215,8 +215,8 @@ export interface FakeDirectMessage {
 
 export interface FakeDirectConversation {
   id: string;
-  userA: FakeUser;
-  userB: FakeUser;
+  createdByUser: FakeUser;
+  otherParticipant: FakeUser;
 }
 
 export type FakeDataFrequency = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;

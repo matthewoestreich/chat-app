@@ -149,9 +149,9 @@ export async function insertFakeChatRoomMessages(db: sqlite3.Database, messages:
 export async function insertFakeDirectConversations(db: sqlite3.Database, convos: FakeDirectConversation[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO direct_conversation (id, userA_id, userB_id) VALUES (?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO direct_conversation (id, createdByUserId, otherParticipantUserId) VALUES (?, ?, ?)`);
       for (const convo of convos) {
-        stmt.run(convo.id, convo.userA.id, convo.userB.id);
+        stmt.run(convo.id, convo.createdByUser.id, convo.otherParticipant.id);
       }
       stmt.finalize((err) => {
         if (err) {
