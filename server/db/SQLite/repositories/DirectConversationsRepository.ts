@@ -4,6 +4,7 @@ import { DirectConversation, PublicDirectConversation, PublicMember } from "@roo
 import { DatabasePool, DirectConversationsRepository } from "@server/types";
 
 export default class DirectConversationsRepositorySQLite implements DirectConversationsRepository<sqlite3.Database> {
+  private TABLE_NAME = "direct_conversations";
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -15,8 +16,8 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     return new Promise((resolve, reject) => {
       const query = `
       SELECT dc.id AS scopeId, u.id AS userId, u.name AS userName
-      FROM direct_conversation dc
-      JOIN "user" u 
+      FROM ${this.TABLE_NAME} dc
+      JOIN users u 
       ON u.id = CASE WHEN dc.userA_Id = ? THEN dc.userB_Id ELSE dc.userA_Id END
       WHERE ? IN (dc.userA_Id, dc.userB_Id)
       ORDER BY userName ASC;
@@ -38,9 +39,9 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
       const query = `
       SELECT u.id as userId, u.name AS userName FROM "user" u WHERE u.id != ?
       AND u.id NOT IN (
-          SELECT userA_Id FROM direct_conversation WHERE userB_Id = ?
+          SELECT userA_Id FROM ${this.TABLE_NAME} WHERE userB_Id = ?
           UNION
-          SELECT userB_Id FROM direct_conversation WHERE userA_Id = ?
+          SELECT userB_Id FROM ${this.TABLE_NAME} WHERE userA_Id = ?
       )
       ORDER BY u.name ASC;
       `;
@@ -69,7 +70,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
 
     return new Promise((resolve, reject) => {
       try {
-        const query = `INSERT INTO direct_conversation (id, userA_id, userB_id) VALUES (?, ?, ?)`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (id, userA_id, userB_id) VALUES (?, ?, ?)`;
         db.run(query, [entity.id, entity.userA_id, entity.userB_id], async (err) => {
           if (err) {
             release();
@@ -98,7 +99,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     // from my display.
     return new Promise((resolve, reject) => {
       try {
-        const query = `DELETE from direct_conversation WHERE id = ? AND userA_Id = ? OR userB_Id = ?`;
+        const query = `DELETE from ${this.TABLE_NAME} WHERE id = ? AND userA_Id = ? OR userB_Id = ?`;
         const params = [convoId, idOfUserThatRequestedRemoval];
         db.run(query, params, function (err) {
           if (err) {

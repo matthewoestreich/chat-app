@@ -5,6 +5,7 @@ import { User } from "@root/types.shared";
 import { AccountsRepository, DatabasePool } from "@server/types";
 
 export default class AccountsRepositorySQLite implements AccountsRepository<sqlite3.Database> {
+  private TABLE_NAME = "users";
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -14,7 +15,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async selectByEmail(email: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM "user" WHERE email = ?`, [email], (err, row) => {
+      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE email = ?`, [email], (err, row) => {
         if (err) {
           release();
           return reject(err);
@@ -32,7 +33,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async getById(id: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM "user" WHERE id = ?`, [id], (err, row) => {
+      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE id = ?`, [id], (err, row) => {
         if (err) {
           release();
           return reject(err);
@@ -51,7 +52,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
         const hashedPw = await bcrypt.hash(passwd, salt);
         const entity: User = { id: uuidV7(), userName: name, password: hashedPw, email };
 
-        const query = `INSERT INTO "user" (id, name, password, email) VALUES (?, ?, ?, ?)`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (id, name, password, email) VALUES (?, ?, ?, ?)`;
         db.run(query, [entity.id, entity.userName, hashedPw, entity.email], (err) => {
           if (err) {
             release();

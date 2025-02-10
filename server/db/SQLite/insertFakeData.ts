@@ -49,7 +49,7 @@ export async function insertFakeData(db: sqlite3.Database, fakeData: FakeData): 
 export async function insertFakeUsers(db: sqlite3.Database, users: FakeUser[]): Promise<boolean> {
   return new Promise(async (resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO "user" (id, name, email, password) VALUES (?, ?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO users (id, user_name, email, password) VALUES (?, ?, ?, ?)`);
       for (const user of users) {
         const salt = await bcrypt.genSalt(10);
         const pw = await bcrypt.hash(user.password, salt);
@@ -75,7 +75,7 @@ export async function insertFakeUsers(db: sqlite3.Database, users: FakeUser[]): 
 export async function insertFakeChatRooms(db: sqlite3.Database, rooms: FakeChatRoom[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO room (id, name, isPrivate) VALUES (?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO rooms (id, name, isPrivate) VALUES (?, ?, ?)`);
       for (const room of rooms) {
         stmt.run(room.id, room.name, room.isPrivate);
       }
@@ -92,14 +92,14 @@ export async function insertFakeChatRooms(db: sqlite3.Database, rooms: FakeChatR
 }
 
 /**
- * Insert/add/join users to chat rooms in database.
+ * Set room memberships
  * @param db
  * @param roomsWithMembers
  */
 export async function insertFakeUsersIntoFakeChatRooms(db: sqlite3.Database, roomsWithMembers: FakeChatRoomWithMembers[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO chat (userId, roomId) VALUES (?, ?)`);
+      const stmt = db.prepare(`INSERT INTO room_memberships (userId, roomId) VALUES (?, ?)`);
       for (const { room, members } of roomsWithMembers) {
         for (const member of members) {
           stmt.run(member.id, room.id);
@@ -125,7 +125,7 @@ export async function insertFakeUsersIntoFakeChatRooms(db: sqlite3.Database, roo
 export async function insertFakeChatRoomMessages(db: sqlite3.Database, messages: FakeChatRoomMessage[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO room_messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`);
       for (const message of messages) {
         stmt.run(message.id, message.room.id, message.user.id, message.message);
       }
@@ -149,7 +149,7 @@ export async function insertFakeChatRoomMessages(db: sqlite3.Database, messages:
 export async function insertFakeDirectConversations(db: sqlite3.Database, convos: FakeDirectConversation[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO direct_conversation (id, createdByUserId, otherParticipantUserId) VALUES (?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO direct_conversations (id, createdByUserId, otherParticipantUserId) VALUES (?, ?, ?)`);
       for (const convo of convos) {
         stmt.run(convo.id, convo.createdByUser.id, convo.otherParticipant.id);
       }
@@ -160,7 +160,7 @@ export async function insertFakeDirectConversations(db: sqlite3.Database, convos
         resolve(true);
       });
     } catch (e) {
-      reject(`error inserting direct_conversation ${e}`);
+      reject(`error inserting direct_conversations ${e}`);
     }
   });
 }

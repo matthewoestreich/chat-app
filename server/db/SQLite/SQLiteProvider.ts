@@ -16,6 +16,7 @@ import {
   RoomsRepositorySQLite, 
   SessionsRepositorySQLite
 } from "./repositories/index";
+import appRootPath from "@root/appRootPath";
 sqlite3.verbose();
 
 export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database> {
@@ -53,7 +54,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
 
     return new Promise((resolve) => {
       try {
-        db.get(`SELECT * FROM "room" WHERE id = ?`, [WebSocketApp.ID_UNASSIGNED], async (err, row) => {
+        db.get(`SELECT * FROM rooms WHERE id = ?`, [WebSocketApp.ID_UNASSIGNED], async (err, row) => {
           if (err) {
             release();
             return resolve();
@@ -106,6 +107,8 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
             maxMessageLength: 20,
           },
         });
+
+        nodeFs.writeFileSync(appRootPath + "/directConversations.json", JSON.stringify(fakeData.directConversations, null, 2));
 
         // Add #general Room and add everyone to it
         const generalRoom = {
@@ -310,79 +313,87 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         db.serialize(() => {
           db.run("BEGIN TRANSACTION");
           db.run(`
-            CREATE TABLE IF NOT EXISTS "user" (
+            CREATE TABLE IF NOT EXISTS users (
               id TEXT PRIMARY KEY,
-              name TEXT NOT NULL, 
+              user_name TEXT NOT NULL, 
               password TEXT NOT NULL,
               email TEXT NOT NULL UNIQUE,
+              first_name TEXT,
+              last_name TEXT,
               CHECK(length(id) = 36)
             );`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS room (
+            CREATE TABLE IF NOT EXISTS rooms (
               id TEXT PRIMARY KEY,
               name TEXT NOT NULL,
               isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
               CHECK(length(id) = 36)
             );`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS chat (
+            CREATE TABLE IF NOT EXISTS room_memberships (
               roomId TEXT NOT NULL,
               userId TEXT NOT NULL,
               PRIMARY KEY (userId, roomId),
-              CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES room(id),
-              CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
+              CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES rooms(id),
+              CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES users(id),
               CHECK(length(roomId) = 36 AND length(userId) = 36)
             );`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_room_memberships_roomId ON room_memberships (roomId);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_room_memberships_userId ON room_memberships (userId);`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS session (
+            CREATE TABLE IF NOT EXISTS sessions (
               userId TEXT PRIMARY KEY,
               token TEXT NOT NULL,
-              CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
+              CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES users(id),
               CHECK(length(userId) = 36)
             );`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions (token);`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS messages (
+            CREATE TABLE IF NOT EXISTS room_messages (
               id TEXT PRIMARY KEY,
               roomId TEXT NOT NULL,
               userId TEXT NOT NULL,
               message TEXT NOT NULL,
               timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON room_messages (roomId, timestamp);`);
           db.run(` -- Trigger to only store 50 messages per room.
-            CREATE TRIGGER IF NOT EXISTS enforce_messages_limit 
-            AFTER INSERT ON messages 
-            WHEN (SELECT COUNT(*) FROM messages WHERE roomId = NEW.roomId) > 50 
+            CREATE TRIGGER IF NOT EXISTS enforce_room_messages_message_limit 
+            AFTER INSERT ON room_messages 
+            WHEN (SELECT COUNT(*) FROM room_messages WHERE roomId = NEW.roomId) > 50 
             BEGIN
-              DELETE FROM messages
+              DELETE FROM room_messages
               WHERE id = (
                 SELECT id
-                FROM messages
+                FROM room_messages
                 WHERE roomId = NEW.roomId
                 ORDER BY timestamp ASC
                 LIMIT 1
               );
             END;`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS direct_conversation (
+            CREATE TABLE IF NOT EXISTS direct_conversations (
               id TEXT PRIMARY KEY,
               createdByUserId TEXT NOT NULL,
               otherParticipantUserId TEXT NOT NULL,
+              CHECK (createdByUserId <> otherParticipantUserId),
               UNIQUE (createdByUserId, otherParticipantUserId)
             );`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS direct_messages (
+            CREATE TABLE direct_messages (
               id TEXT PRIMARY KEY,
               directConversationId TEXT NOT NULL,
               fromUserId TEXT NOT NULL,
               toUserId TEXT NOT NULL,
               message TEXT NOT NULL,
-              isRead BOOLEAN NOT NULL CHECK (isRead IN (0, 1)),
-              "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT direct_messages_direct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
+              isRead BOOLEAN NOT NULL DEFAULT 0,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (directConversationId) REFERENCES direct_conversations(id),
+              FOREIGN KEY (fromUserId) REFERENCES users(id),
+              FOREIGN KEY (toUserId) REFERENCES users(id),
+              CHECK (fromUserId <> toUserId) -- Ensure a user cannot send messages to themselves
             );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_timestamp ON direct_messages (fromUserId, timestamp);`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_toUserId_timestamp ON direct_messages (fromUserId, toUserId, timestamp);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_directConversationId_timestamp ON direct_messages (directConversationId, timestamp);`);
           db.run(` -- Trigger to only store 50 messages per DM.
             CREATE TRIGGER IF NOT EXISTS enforce_direct_messages_message_limit 
             AFTER INSERT ON direct_messages 
