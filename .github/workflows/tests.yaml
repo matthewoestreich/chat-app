@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     # All pull request are automatically tested, so we can safely (I hope) skip testing again after merge..
     # Therefore, only run tests on main if it isn't a merged PR.
-    if: ${{ github.event.pull_request && github.event.pull_request.merged == 'false' }}
+    if: ${{ github.ref != 'refs/heads/main' || github.event.head_commit.message != 'Merge pull request' }}
     environment:
       name: tests
     env:
@@ -22,8 +22,8 @@ jobs:
       DATABASE_PROVIDER: ${{ secrets.DATABASE_PROVIDER }}
     steps:
     - name: Check if PR is merged
-      if: ${{ github.event.pull_request && github.event.pull_request.merged == 'false' }}
-      run: echo "This pull request is not merged, running job."
+      if: ${{ github.ref != 'refs/heads/main' || github.event.head_commit.message != 'Merge pull request' }}
+      run: echo "This merge is not from a PR that is being merged, running job."
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set up Node.js
