@@ -73,7 +73,7 @@ describe("Global", () => {
     // Get join room modal <ul> element
     cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0);
     // Find close button
-    cy.get(".modal.show .modal-footer button").should("be.visible").contains("button", "Close").should("exist").should("be.visible").wait(500).click();
+    cy.get(".modal.show .modal-footer button").should("be.visible").contains("button", "Close").should("exist").should("be.visible").wait(300).click();
   });
 
   it("should join the #general room", () => {
@@ -121,7 +121,7 @@ describe("Global", () => {
     cy.enterRoom(NEW_ROOM_NAME);
     cy.getOpenLeaveRoomModalButton().should("be.enabled").click();
     // Click leave room
-    cy.get(".modal.show .modal-footer button").contains("Leave").should("be.visible").wait(500).click();
+    cy.get(".modal.show .modal-footer button").contains("Leave").should("be.visible").wait(300).click();
     cy.get(".modal.show").should("not.exist");
     cy.isRoomMember(NEW_ROOM_NAME).should("not.exist");
   });

@@ -60,7 +60,6 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
             return resolve();
           }
           if (!row) {
-            console.log("seeding");
             await this.seed();
             release();
             return resolve();
