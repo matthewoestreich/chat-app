@@ -1,8 +1,10 @@
 import { DatabasePool, SessionsRepository } from "@server/types";
 import { Session } from "@root/types.shared";
 import sqlite3 from "sqlite3";
+import tableNames from "../../tableNames";
 
 export default class SessionsRepositorySQLite implements SessionsRepository<sqlite3.Database> {
+  private TABLE_NAME = tableNames.sessions;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -12,7 +14,7 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
   async selectByUserId(userId: string): Promise<Session | undefined> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM session WHERE userId = ?`, [userId], (err, row: Session) => {
+      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE userId = ?`, [userId], (err, row: Session) => {
         if (err) {
           release();
           return reject(err);
@@ -28,7 +30,7 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     const entity: Session = { userId, token };
     return new Promise(async (resolve, reject) => {
       try {
-        const query = `INSERT INTO session (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
         db.run(query, [entity.userId, entity.token], function (err) {
           if (err) {
             release();
@@ -48,7 +50,7 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.serialize(() => {
-        db.run(`DELETE FROM session WHERE userId = ?`, userId, function (err) {
+        db.run(`DELETE FROM ${this.TABLE_NAME} WHERE userId = ?`, userId, function (err) {
           if (err) {
             release();
             return reject(err);
@@ -78,7 +80,7 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
 
     return new Promise(async (resolve, reject) => {
       try {
-        const query = `INSERT INTO session (userId, token) VALUES (?, ?)`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (userId, token) VALUES (?, ?)`;
         db.run(query, [entity.userId, entity.token], (err) => {
           if (err) {
             release();
@@ -103,7 +105,7 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     return new Promise((resolve, reject) => {
       try {
         db.serialize(() => {
-          db.run(`DELETE FROM session WHERE token = ?`, token, function (err) {
+          db.run(`DELETE FROM ${this.TABLE_NAME} WHERE token = ?`, token, function (err) {
             if (err) {
               release();
               return reject(err);

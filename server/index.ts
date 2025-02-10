@@ -118,11 +118,11 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     }
 
     clearAllCookies(req, res);
-    const { name, id, email: foundEmail } = foundUser;
-    const jwt = generateSessionToken(name, id, foundEmail);
+    const { user_name, id, email: foundEmail } = foundUser;
+    const jwt = generateSessionToken(user_name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
-    res.status(200).send({ ok: true, session: jwt.signed, id, userName: name, email });
+    res.status(200).send({ ok: true, session: jwt.signed, id, userName: user_name, email });
   } catch (_e) {
     clearAllCookies(req, res);
     res.status(500).send({ ok: false });

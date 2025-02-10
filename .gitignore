@@ -7,6 +7,7 @@ inMemoryData.json
 database.json
 manualSeed.ts
 www
+.db-journal
 # Logs
 logs
 *.log

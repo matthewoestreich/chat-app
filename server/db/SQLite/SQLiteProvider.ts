@@ -7,6 +7,7 @@ import { generateFakeData } from "@server/fakerService";
 import { getGistFiles, updateGist } from "@server/gistService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
+import tableNames from "../tableNames";
 // prettier-ignore
 import { 
   AccountsRepositorySQLite, 
@@ -53,12 +54,13 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
 
     return new Promise((resolve) => {
       try {
-        db.get(`SELECT * FROM "room" WHERE id = ?`, [WebSocketApp.ID_UNASSIGNED], async (err, row) => {
+        db.get(`SELECT * FROM ${tableNames.rooms} WHERE id = ?`, [WebSocketApp.ID_UNASSIGNED], async (err, row) => {
           if (err) {
             release();
             return resolve();
           }
           if (!row) {
+            console.log("seeding");
             await this.seed();
             release();
             return resolve();
@@ -309,92 +311,95 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         db.serialize(() => {
           db.run("BEGIN TRANSACTION");
           db.run(`
-            CREATE TABLE IF NOT EXISTS "user" (
+            CREATE TABLE IF NOT EXISTS ${tableNames.users} (
               id TEXT PRIMARY KEY,
-              name TEXT NOT NULL, 
+              user_name TEXT NOT NULL, 
               password TEXT NOT NULL,
               email TEXT NOT NULL UNIQUE,
+              first_name TEXT,
+              last_name TEXT,
               CHECK(length(id) = 36)
             );`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS room (
+            CREATE TABLE IF NOT EXISTS ${tableNames.rooms} (
               id TEXT PRIMARY KEY,
               name TEXT NOT NULL,
               isPrivate BOOLEAN NOT NULL CHECK (isPrivate IN (0, 1)),
               CHECK(length(id) = 36)
             );`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS chat (
+            CREATE TABLE IF NOT EXISTS ${tableNames.roomMemberships} (
               roomId TEXT NOT NULL,
               userId TEXT NOT NULL,
               PRIMARY KEY (userId, roomId),
-              CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES room(id),
-              CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
+              CONSTRAINT chat_room_FK FOREIGN KEY (roomId) REFERENCES ${tableNames.rooms}(id),
+              CONSTRAINT chat_user_FK FOREIGN KEY (userId) REFERENCES ${tableNames.users}(id),
               CHECK(length(roomId) = 36 AND length(userId) = 36)
             );`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_room_memberships_roomId ON ${tableNames.roomMemberships} (roomId);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_room_memberships_userId ON ${tableNames.roomMemberships} (userId);`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS session (
+            CREATE TABLE IF NOT EXISTS ${tableNames.sessions} (
               userId TEXT PRIMARY KEY,
               token TEXT NOT NULL,
-              CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES "user"(id),
+              CONSTRAINT session_user_FK FOREIGN KEY (userId) REFERENCES ${tableNames.users}(id),
               CHECK(length(userId) = 36)
             );`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_sessions_token ON ${tableNames.sessions} (token);`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS messages (
+            CREATE TABLE IF NOT EXISTS ${tableNames.roomMessages} (
               id TEXT PRIMARY KEY,
               roomId TEXT NOT NULL,
               userId TEXT NOT NULL,
               message TEXT NOT NULL,
               timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON messages (roomId, timestamp);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_roomId_timestamp ON ${tableNames.roomMessages} (roomId, timestamp);`);
           db.run(` -- Trigger to only store 50 messages per room.
-            CREATE TRIGGER IF NOT EXISTS enforce_messages_limit 
-            AFTER INSERT ON messages 
-            WHEN (SELECT COUNT(*) FROM messages WHERE roomId = NEW.roomId) > 50 
+            CREATE TRIGGER IF NOT EXISTS enforce_room_messages_message_limit 
+            AFTER INSERT ON ${tableNames.roomMessages} 
+            WHEN (SELECT COUNT(*) FROM ${tableNames.roomMessages} WHERE roomId = NEW.roomId) > 50 
             BEGIN
-              DELETE FROM messages
+              DELETE FROM ${tableNames.roomMessages}
               WHERE id = (
                 SELECT id
-                FROM messages
+                FROM ${tableNames.roomMessages}
                 WHERE roomId = NEW.roomId
                 ORDER BY timestamp ASC
                 LIMIT 1
               );
             END;`);
           db.run(`
-            CREATE TABLE IF NOT EXISTS direct_conversation (
+            CREATE TABLE IF NOT EXISTS ${tableNames.directConversations} (
               id TEXT PRIMARY KEY,
-              userA_Id TEXT NOT NULL,
-              userB_Id TEXT NOT NULL
+              createdByUserId TEXT NOT NULL,
+              otherParticipantUserId TEXT NOT NULL,
+              CHECK (createdByUserId <> otherParticipantUserId),
+              UNIQUE (createdByUserId, otherParticipantUserId)
             );`);
           db.run(`
-            CREATE UNIQUE INDEX IF NOT EXISTS unique_userA_Id_userB_Id_pair
-            ON direct_conversation (
-                CASE WHEN userA_Id < userB_Id THEN userA_Id ELSE userB_Id END,
-                CASE WHEN userA_Id < userB_Id THEN userB_Id ELSE userA_Id END
-            );`);
-          db.run(`
-            CREATE TABLE IF NOT EXISTS direct_messages (
+            CREATE TABLE IF NOT EXISTS ${tableNames.directMessages} (
               id TEXT PRIMARY KEY,
               directConversationId TEXT NOT NULL,
               fromUserId TEXT NOT NULL,
               toUserId TEXT NOT NULL,
               message TEXT NOT NULL,
-              isRead BOOLEAN NOT NULL CHECK (isRead IN (0, 1)),
-              "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT direct_messages_direct_conversation_FK FOREIGN KEY (directConversationId) REFERENCES direct_conversation(id)
+              isRead BOOLEAN NOT NULL DEFAULT 0,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (directConversationId) REFERENCES ${tableNames.directConversations}(id),
+              FOREIGN KEY (fromUserId) REFERENCES ${tableNames.users}(id),
+              FOREIGN KEY (toUserId) REFERENCES ${tableNames.users}(id),
+              CHECK (fromUserId <> toUserId) -- Ensure a user cannot send messages to themselves
             );`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_timestamp ON direct_messages (fromUserId, timestamp);`);
-          db.run(`CREATE INDEX IF NOT EXISTS idx_fromUserId_toUserId_timestamp ON direct_messages (fromUserId, toUserId, timestamp);`);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_directConversationId_timestamp ON ${tableNames.directMessages} (directConversationId, timestamp);`);
           db.run(` -- Trigger to only store 50 messages per DM.
             CREATE TRIGGER IF NOT EXISTS enforce_direct_messages_message_limit 
-            AFTER INSERT ON direct_messages 
-            WHEN (SELECT COUNT(*) FROM direct_messages WHERE directConversationId = NEW.directConversationId) > 50 
+            AFTER INSERT ON ${tableNames.directMessages} 
+            WHEN (SELECT COUNT(*) FROM ${tableNames.directMessages} WHERE directConversationId = NEW.directConversationId) > 50 
             BEGIN 
-              DELETE FROM direct_messages WHERE id = (
+              DELETE FROM ${tableNames.directMessages} WHERE id = (
                 SELECT id
-                FROM direct_messages
+                FROM ${tableNames.directMessages}
                 WHERE directConversationId = NEW.directConversationId
                 ORDER BY timestamp ASC
                 LIMIT 1

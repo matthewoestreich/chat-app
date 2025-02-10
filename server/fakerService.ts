@@ -157,7 +157,7 @@ export function addFakeUsersToFakeChatRooms(users: FakeUser[], chatRooms: FakeCh
 }
 
 /**
- * Generate direct conversations between users (min not guaranteed here)
+ * Generate direct conversations between users
  * @param users
  * @param minConversationsPerUser
  * @param maxConversationsPerUser
@@ -179,28 +179,11 @@ export function generateFakeDirectConversations(users: FakeUser[], minConversati
     const uniqueUsers = getUniqueItems(users, numOfConversations, user);
 
     for (let j = 0; j < uniqueUsers.length; j++) {
-      const otherUser = uniqueUsers[j];
-
-      // This is why a min is not guaranteed here. I am too lazy to make sure a
-      // min amount is provided becuase this is just for fake data anyway.
-      //
-      // The following direct conversations are redundant:
-      //  - directConvo1 = { userA: "Joe", userB: "Amy" };
-      //  - directConvo2 = { userA: "Amy", userB: "Joe" };
-      // This filters out redundant direct conversations.
-      const existingDirectConversations = directConversations.filter((dc) => {
-        if ((dc.userA.id === user.id && dc.userB.id === otherUser.id) || (dc.userA.id === otherUser.id && dc.userB.id === user.id)) {
-          return dc;
-        }
+      directConversations.push({
+        id: uuidV7(),
+        createdByUser: user,
+        otherParticipant: uniqueUsers[j],
       });
-      // If convo with "these" members does not already exist, add to output array.
-      if (existingDirectConversations.length === 0) {
-        directConversations.push({
-          id: uuidV7(),
-          userA: user,
-          userB: otherUser,
-        });
-      }
     }
   }
 
@@ -229,8 +212,8 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
     const dc = directConversations[i];
     // So we can randomly pick who is sending/receiving.
     const options = [
-      { from: dc.userA, to: dc.userB },
-      { from: dc.userB, to: dc.userA },
+      { from: dc.createdByUser, to: dc.otherParticipant },
+      { from: dc.otherParticipant, to: dc.createdByUser },
     ];
     const numOfMessages = getRandomIntInclusive(minMessagesPerConversation, maxMessagesPerConversation);
 

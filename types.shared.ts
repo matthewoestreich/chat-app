@@ -29,8 +29,8 @@ export interface ChatScope {
 
 export interface DirectConversation {
   id: string;
-  userA_id: string;
-  userB_id: string;
+  createdByUserId: string;
+  otherParticipantUserId: string;
 }
 
 export interface User {
