@@ -102,7 +102,6 @@ export default function CreateDirectConversationModal(props: CreateDirectConvers
 
   // prettier-ignore
   const renderJoinableConversations = useCallback(() => {
-    console.log("rendering members")
     return joinableDirectConversations?.filter((user) => user.userName.includes(searchText)).map((user) => (
       <MemberMemo 
         key={user.userId} 

@@ -25,7 +25,6 @@ export default function ChatPage(): React.JSX.Element {
     websocketeer.on("CONNECTED", handleConnectionEstablished);
 
     return (): void => {
-      console.log(`useEffectOnce in LoginPage : cleaning up`);
       websocketeer.off("CONNECTED", handleConnectionEstablished);
     };
   });

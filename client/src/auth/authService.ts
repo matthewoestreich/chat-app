@@ -48,7 +48,6 @@ export async function sendRegisterRequest(name: string, password: string, email:
     }),
   });
   const result = await response.json();
-  console.log({ result });
   if (response.status !== 200 || !result.ok) {
     return { ok: false };
   }

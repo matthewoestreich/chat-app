@@ -144,7 +144,6 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
 
     return (): void => {
-      console.log(`[ChatView]::useEffect : tearing down`);
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
       websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -180,7 +179,6 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
 
     return (): void => {
-      console.log("[ChatState]::cleaning up useEffect with deps : '[dispatch, state.members]'");
       websocketeer.off("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
     };
   }, [dispatch, state.isCreateDirectConversationModalOpen]);
@@ -252,7 +250,6 @@ export default function ChatView(): React.JSX.Element {
    * Messages render function
    */
   const renderMessages = useCallback(() => {
-    console.log("[ChatView] in 'renderMessages' (this does not mean messages ae rendering)");
     if (state.isEnteringRoom) {
       return <LoadingSpinnerMemo />;
     }
@@ -292,7 +289,6 @@ export default function ChatView(): React.JSX.Element {
    * Members render function
    */
   const renderMembers = useCallback(() => {
-    console.log("[ChatView] in 'renderMembers' (this does not mean members ae rendering)");
     if (state.isEnteringRoom) {
       return <></>;
     }
@@ -336,7 +332,6 @@ export default function ChatView(): React.JSX.Element {
    * Rooms render function
    */
   const renderRooms = useCallback(() => {
-    console.log("[ChatView] in 'renderRooms' (this does not mean rooms ae rendering)");
     return state.rooms?.map((room) => (
       <RoomMemo
         key={room.id}
@@ -350,7 +345,7 @@ export default function ChatView(): React.JSX.Element {
 
   return (
     <>
-      <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} selectedRoom={state.chatScope} />
+      <LeaveRoomModalMemo isOpen={isLeaveRoomModalShown} onClose={handleCloseLeaveRoomModal} />
       <CreateRoomModalMemo isOpen={isCreateRoomModalShown} onClose={handleCloseCreateRoomModal} />
       <JoinRoomModalMemo isOpen={isJoinRoomModalShown} onClose={handleCloseJoinRoomModal} />
       <LeaveDirectConversationModalMemo isOpen={state.isLeaveDirectConversationModalOpen} onClose={handleCloseLeaveDirectConversationModal} />

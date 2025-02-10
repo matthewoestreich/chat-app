@@ -60,8 +60,7 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
     const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
     client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
   } catch (e) {
-    console.log(e);
-    client.send("CONNECTED", { error: "Something went wrong!", rooms: [], directConversations: [] });
+    client.send("CONNECTED", { error: `Something went wrong! ${String(e)}`, rooms: [], directConversations: [] });
   }
 });
 
@@ -350,7 +349,6 @@ wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { scopeId, isMemberClick })
     client.setActiveIn(scopeId, container);
     client.send("ENTERED_DIRECT_CONVERSATION", { messages, scopeId, isMemberClick });
   } catch (e) {
-    console.log(e);
     client.send("ENTERED_DIRECT_CONVERSATION", { error: (e as Error).message, messages: [], scopeId: "", isMemberClick });
   }
 });

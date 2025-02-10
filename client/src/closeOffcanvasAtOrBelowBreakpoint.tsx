@@ -58,7 +58,6 @@ export default function closeOffcanvasAtOrBelowBreakpoint(offcanvasRef: RefObjec
 
   if (current.index <= target) {
     const BsOffcanvas = Offcanvas.getOrCreateInstance(offcanvasRef.current);
-    console.log(BsOffcanvas);
     BsOffcanvas.hide();
   }
 }

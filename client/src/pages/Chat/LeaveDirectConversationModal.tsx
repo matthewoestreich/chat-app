@@ -2,7 +2,7 @@ import React, { HTMLAttributes, useCallback, useEffect } from "react";
 import { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat } from "@hooks";
-import { WebSocketeerEventHandler } from "../../../types";
+import { WebSocketeerEventHandler } from "@client/types";
 
 interface LeaveDirectConversationModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -36,7 +36,6 @@ export default function LeaveDirectConversationModal(props: LeaveDirectConversat
   }, [isOpen, dispatch, handleModalClose]);
 
   function handleOnLeave(): void {
-    console.log(state.chatScope);
     if (state.chatScope && state.chatScope.type === "DirectConversation") {
       websocketeer.send("LEAVE_DIRECT_CONVERSATION", { id: state.chatScope.id });
     }
