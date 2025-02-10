@@ -136,7 +136,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
  */
 app.post("/auth/logout", async (req: Request, res: Response) => {
   try {
-    const { session } = req.cookies.session;
+    const { session } = req.cookies;
     await req.databaseProvider.sessions.delete(session);
     res.clearCookie("session");
     res.status(200).send({ ok: true });

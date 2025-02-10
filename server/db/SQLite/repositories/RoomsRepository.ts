@@ -65,7 +65,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
           ${tableNames.roomMemberships} c ON r.id = c.roomId AND c.userId = ?
       WHERE 
           c.roomId IS NULL
-      ORDER BY r.name ASC;
+      ORDER BY r.name COLLATE NOCASE ASC;
       `;
       db.all(query, [userId], (err, rows: Room[]) => {
         if (err) {
@@ -109,7 +109,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
             ${tableNames.users} u ON c2.userId = u.id
         WHERE 
             c1.userId = ?
-        ORDER BY roomName ASC;
+        ORDER BY roomName COLLATE NOCASE ASC;
         `;
 
         // Execute the query
@@ -169,7 +169,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       AND 
         u.id != ?
       ORDER BY
-        u.user_name ASC;
+        u.user_name COLLATE NOCASE ASC;
     `;
 
       db.all(query, [excludingUserId, roomId, excludingUserId], (err, rows: PublicMember[]) => {
@@ -272,7 +272,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
         FROM ${this.TABLE_NAME} r
         JOIN ${tableNames.roomMemberships} c ON r.id = c.roomId
         WHERE c.userId = ?
-        ORDER BY r.name ASC
+        ORDER BY r.name COLLATE NOCASE ASC
       `;
 
       db.all(query, [userId], (err, rows: Room[]) => {
