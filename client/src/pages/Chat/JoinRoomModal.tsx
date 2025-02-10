@@ -29,19 +29,16 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
       if (!isOpen) {
         return;
       }
-      console.log({ rooms });
       setRooms(rooms);
       setIsLoading(false);
     };
 
     if (isOpen === true) {
-      console.log("getting joinable rooms");
       websocketeer.send("GET_JOINABLE_ROOMS");
       websocketeer.on("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
     }
 
     return (): void => {
-      console.log("[JoinRoomModal]::useEffect : Tearing Down", { isOpen });
       websocketeer.off("LIST_JOINABLE_ROOMS", handleListJoinableRooms);
     };
   }, [isOpen]);
@@ -96,7 +93,6 @@ export default function JoinRoomModal(props: JoinRoomModalProperties): React.JSX
   }, [rooms, handleRoomClick]);
 
   const renderRooms = useCallback(() => {
-    console.log("[JoinRoomModal]::renderRooms", { rooms, isLoading, selectedRoom, roomClickHandlers });
     if (!rooms || isLoading) {
       return <div>Loading..</div>;
     }

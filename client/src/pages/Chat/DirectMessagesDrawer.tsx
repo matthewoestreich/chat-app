@@ -137,10 +137,8 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   const renderConversations = useCallback(() => {
     if (!state.directConversations) {
-      console.log("[DirectMessagesDrawer]::renderConversations : no 'state.directConversations' found");
       return;
     }
-    console.log("[DirectMessagesDrawer]::renderConversations : found 'state.directConversations'", { dcs: state.directConversations });
     return state.directConversations.map((convo) => {
       return (
         <MemberMemo

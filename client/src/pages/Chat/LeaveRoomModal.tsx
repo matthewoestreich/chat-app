@@ -1,16 +1,17 @@
 import React, { HTMLAttributes } from "react";
 import { Modal, ModalDialog, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@components";
 import { websocketeer } from "@src/ws";
-import { ChatScope } from "@root/types.shared";
+import { useChat } from "@hooks";
 
 interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onClose: () => void;
-  selectedRoom?: ChatScope | null;
 }
 
 // LeaveRoomModal
 export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.JSX.Element {
+  const { state } = useChat();
+
   websocketeer.on("UNJOINED_ROOM", ({ error }) => {
     if (error) {
       return console.error(error);
@@ -23,8 +24,8 @@ export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.J
   }
 
   function handleOnLeave(): void {
-    if (props.selectedRoom) {
-      websocketeer.send("UNJOIN_ROOM", { id: props.selectedRoom.id });
+    if (state.chatScope && state.chatScope.type === "Room") {
+      websocketeer.send("UNJOIN_ROOM", { id: state.chatScope.id });
     }
   }
 

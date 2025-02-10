@@ -36,7 +36,6 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
    * Validate existing cookie.
    */
   async function validateSession(): Promise<void> {
-    console.log("validating");
     if (session) {
       // Already validated.
       return;

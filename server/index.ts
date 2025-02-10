@@ -41,7 +41,6 @@ app.get("/wsapp-cache", (_req: Request, res: Response) => {
       cache[containerId][clientId] = client.user;
     }
   }
-  console.log(cache);
   res.status(200).json(cache);
 });
 
@@ -75,14 +74,12 @@ app.post("/auth/register", async (req: Request, res: Response) => {
   try {
     const { u: username, p: password, e: email } = req.body;
     if (!username) {
-      console.log(`[POST /register] missing username (as 'p') in request body!`, { user: req.body });
       res.status(403).send({ ok: false });
       return;
     }
     const result = await req.databaseProvider.accounts.create(username, password, email);
     res.status(200).send({ ok: true, id: result.id, userName: result.name, email: result.email });
-  } catch (e) {
-    console.log(`[POST /register][ERROR]`, { e });
+  } catch (_e) {
     res.status(200).send({ ok: false });
   }
 });
@@ -100,7 +97,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
   try {
     const { p: password, e: email } = req.body;
     if (!password || !email) {
-      console.log(`[POST /login] missing either email or password from body!`, { email, password });
       clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
@@ -109,7 +105,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     const foundUser = await req.databaseProvider.accounts.selectByEmail(email);
 
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
-      console.log(`[POST /login][ERROR] found user from database is missing either email or password`, { foundUser, password, email });
       clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
@@ -117,7 +112,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
-      console.log(`[POST /login][ERROR] incorrect password!`);
       clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
@@ -129,9 +123,8 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
 
     res.status(200).send({ ok: true, session: jwt.signed, id, userName: name, email });
-  } catch (e) {
+  } catch (_e) {
     clearAllCookies(req, res);
-    console.log(`[POST /login][ERROR]`, e);
     res.status(500).send({ ok: false });
   }
 });
@@ -159,8 +152,7 @@ app.post("/auth/logout", async (req: Request, res: Response) => {
  *
  * @route {GET} *
  */
-app.get("*", (req: Request, res: Response) => {
-  console.log("serving", req.url);
+app.get("*", (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 
