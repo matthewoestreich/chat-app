@@ -1,7 +1,7 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WebSocketeerEventHandler } from "@client/types";
 import { PublicMember } from "@root/types.shared";
-import closeOffcanvasAtOrBelowBreakpoint from "@src/closeOffcanvasAtOrBelowBreakpoint";
+import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
 import { websocketeer, WebSocketEvents } from "@src/ws";
@@ -46,6 +46,21 @@ export default function ChatView(): React.JSX.Element {
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const chatMessageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const offcanvasRoomsRef = useRef<HTMLDivElement | null>(null);
+  const offcanvasMembersRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto close direct convos drawer and members offcanvas on "md" or lower breakpoint
+  function autoCloseDirectMessagesAndMembersOnSmallScreens(): void {
+    closeOffcanvasAtOrBelowBreakpoint(offcanvasMembersRef, "md");
+    const breakpoint = new BootstrapBreakpointDetector().detect();
+    if (!breakpoint) {
+      // If no breakpoint, play it safe and open drawer..
+      return setIsDirectMessagesShown(true);
+    }
+    if (breakpoint.index <= 2) {
+      return setIsDirectMessagesShown(false);
+    }
+    setIsDirectMessagesShown(true);
+  }
 
   // Scroll to bottom of chat display when we send/receive a message
   useEffect(() => {
@@ -56,9 +71,7 @@ export default function ChatView(): React.JSX.Element {
 
   useEffectOnce(() => {
     const handleSentMessage: WebSocketeerEventHandler<WebSocketEvents, "SENT_MESSAGE"> = ({ message, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "SENT_MESSAGE", payload: message });
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
@@ -66,9 +79,7 @@ export default function ChatView(): React.JSX.Element {
     };
 
     const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "RECEIVE_MESSAGE", payload: message });
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
@@ -76,9 +87,7 @@ export default function ChatView(): React.JSX.Element {
     };
 
     const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({
         type: "ENTERED_ROOM",
         payload: {
@@ -91,37 +100,27 @@ export default function ChatView(): React.JSX.Element {
     };
 
     const handleMemberEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_ENTERED_ROOM"> = ({ id, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: true } });
     };
 
     const handleMemberLeftRoom: WebSocketeerEventHandler<WebSocketEvents, "MEMBER_LEFT_ROOM"> = ({ id, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId: id, isActive: false } });
     };
 
     const handleJoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "JOINED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
     const handleUnjoinedRoom: WebSocketeerEventHandler<WebSocketEvents, "UNJOINED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "AFTER_UNJOINED_ROOM", payload: rooms });
     };
 
     const handleCreatedRoom: WebSocketeerEventHandler<WebSocketEvents, "CREATED_ROOM"> = ({ rooms, error }) => {
-      if (error) {
-        return console.error(error);
-      }
+      if (error) return console.error(error);
       dispatch({ type: "SET_ROOMS", payload: rooms });
     };
 
@@ -174,7 +173,8 @@ export default function ChatView(): React.JSX.Element {
       }
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
       websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId, isMemberClick: true });
-      setIsDirectMessagesShown(true);
+      // Don't open direct convos drawer if on small screen
+      autoCloseDirectMessagesAndMembersOnSmallScreens();
     };
 
     websocketeer.on("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
@@ -276,8 +276,9 @@ export default function ChatView(): React.JSX.Element {
       return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: userId });
     }
     // It's an existing convo. Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
-    setIsDirectMessagesShown(true);
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scopeId, isMemberClick: true });
+    // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
+    autoCloseDirectMessagesAndMembersOnSmallScreens();
   }, [state.directConversations]);
 
   /**
@@ -363,6 +364,7 @@ export default function ChatView(): React.JSX.Element {
         </div>
         <div className="row g-0 flex-fill justify-content-center min-h-0">
           <div
+            ref={offcanvasMembersRef}
             id="members-offcanvas"
             className="card col-xl-3 col-xxl-2 col-3 d-lg-flex flex-column h-lg-90pct min-h-0 overf-hide offcanvas-lg offcanvas-start"
           >
@@ -377,7 +379,11 @@ export default function ChatView(): React.JSX.Element {
             </div>
             <div id="members-container" className="card-body overf-y-scroll p-0 m-1">
               <ul className="list-group list-group-flush">{renderMembers()}</ul>
-              <DirectMessagesDrawerMemo isShown={isDirectMessagesShown} onClose={handleCloseDirectMessagesDrawer} />
+              <DirectMessagesDrawerMemo
+                isShown={isDirectMessagesShown}
+                onClose={handleCloseDirectMessagesDrawer}
+                offcanvasRef={offcanvasMembersRef}
+              />
             </div>
             <div className="card-footer">
               <div className="row">
