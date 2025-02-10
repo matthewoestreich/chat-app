@@ -27,7 +27,6 @@ export default function Modal(props: ModalProperties): React.JSX.Element {
   const modalSize = props?.size === undefined ? "modal-md" : `modal-${props.size}`;
 
   useEffect(() => {
-    console.log(`modalRef || modalRef.current changed`, { modalRef, current: modalRef.current });
     if (modalRef.current) {
       bsModalInstance.current = BsModal.getOrCreateInstance(modalRef.current);
     }

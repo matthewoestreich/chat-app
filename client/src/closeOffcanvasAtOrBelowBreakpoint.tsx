@@ -2,7 +2,7 @@ import { RefObject } from "react";
 import { Offcanvas } from "bootstrap";
 import { BootstrapBreakpointString } from "@client/types";
 
-class BootstrapBreakpointDetector {
+export class BootstrapBreakpointDetector {
   private breakpointNames: string[];
   private breakpointValues: Record<string, string> | null;
 

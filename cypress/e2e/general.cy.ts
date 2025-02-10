@@ -7,12 +7,14 @@ describe("Homepage", () => {
     cy.visit(BASE_URL);
     cy.title().should("eq", "RTChat | Welcome!");
   });
+
   it("should display invalid feedback without entering username or password", () => {
     cy.visit(BASE_URL);
     cy.getLoginButton().click();
     cy.getLoginInputEmail().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
     cy.getLoginInputPassword().parent().children().last().should("not.have.css", "display", "none").should("contain.text", "required");
   });
+
   it("should toggle theme", () => {
     cy.visit(BASE_URL);
     cy.getToggleThemeButton().as("toggleBtn");
@@ -179,6 +181,19 @@ describe("Global", () => {
     cy.getChatInput().type(message);
     cy.getSendChatMessageButton().click();
     cy.getChatDisplay().children().should("have.length.greaterThan", 0).last().children().last().should("contain.text", message);
+  });
+
+  it("should leave a direct conversation", () => {
+    cy.getOpenDirectConversationsDrawerButton().click();
+    cy.get("button[title='Leave Direct Message']").should("be.disabled");
+    cy.get(".offcanvas-start .card-body").last().should("exist").should("be.visible");
+    cy.get(".offcanvas-start .card-body").last().children().contains("li.list-group-item", DIRECT_CONVERSATION_NAME).should("exist").click();
+    cy.get("button[title='Leave Direct Message']").should("be.enabled").click();
+    cy.get(".modal-backdrop").should("exist");
+    cy.get(".modal.show button").contains("Leave Direct Message").wait(300).click();
+    cy.get(".modal.show").should("not.exist");
+    cy.get(".modal-backdrop").should("not.exist");
+    cy.get(".offcanvas-start .card-body").last().children().contains("li.list-group-item", DIRECT_CONVERSATION_NAME).should("not.exist");
   });
 });
 

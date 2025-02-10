@@ -1,9 +1,10 @@
-import React, { CSSProperties, memo, useCallback, useEffect, useMemo } from "react";
+import React, { CSSProperties, memo, RefObject, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat } from "@hooks";
 import { ChatScope, PublicDirectConversation } from "@root/types.shared";
-import { WebSocketeerEventHandler } from "../../../types";
+import { WebSocketeerEventHandler } from "@client/types";
+import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -48,10 +49,11 @@ const MemberMemo = memo(Member);
 interface DirectMessagesDrawerProperties {
   isShown: boolean;
   onClose: () => void;
+  offcanvasRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperties): React.JSX.Element {
-  const { isShown, onClose } = props;
+  const { isShown, onClose, offcanvasRef } = props;
   const { state, dispatch } = useChat();
 
   useEffect(() => {
@@ -99,6 +101,21 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     onClose();
   }, [onClose]);
 
+  /**
+   * If screen is "md" breakpoint or below, auto close drawer after a user selects a
+   * direct convo via clicking a member or clicking on convo directly.
+   */
+  const autoCloseDrawerOnSmallScreens = useCallback(() => {
+    if (offcanvasRef !== undefined && offcanvasRef.current) {
+      closeOffcanvasAtOrBelowBreakpoint(offcanvasRef, "md");
+    }
+    const breakpoint = new BootstrapBreakpointDetector().detect();
+    // index 2 is "md" breakpoint, so "<= 2" means "md" or below.
+    if (breakpoint && breakpoint.index <= 2) {
+      onClose();
+    }
+  }, [offcanvasRef, onClose]);
+
   // prettier-ignore
   const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
     // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well as rendering the messages.
@@ -111,7 +128,8 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     };
     dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: directConvo.scopeId, isMemberClick: false });
-  }, [dispatch]);
+    autoCloseDrawerOnSmallScreens();
+  }, [dispatch, autoCloseDrawerOnSmallScreens]);
 
   const directConversationClickHandlers = useMemo(() => {
     return new Map(state.directConversations?.map((dc) => [dc.scopeId, (): void => handleDirectConversationClick(dc)]));
