@@ -2,8 +2,10 @@ import { DatabasePool, RoomsMessagesRepository } from "@server/types";
 import { Message, PublicMessage } from "@root/types.shared";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
+import tableNames from "../../tableNames";
 
 export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepository<sqlite3.Database> {
+  private TABLE_NAME = tableNames.roomMessages;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -16,21 +18,21 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
       try {
         const query = `
         SELECT
-          messages.id AS id,
-          messages.roomId AS scopeId,
-          user.id AS userId,
-          user.name AS userName,
-          messages.message,
-          messages.timestamp
+          m.id AS id,
+          m.roomId AS scopeId,
+          u.id AS userId,
+          u.user_name AS userName,
+          m.message,
+          m.timestamp
         FROM
-          messages
+          ${this.TABLE_NAME} m
         JOIN 
-            "user"
+            ${tableNames.users} u
         ON
-          messages.userId = user.id
+          m.userId = u.id
         WHERE
-          messages.roomId = ?
-        ORDER BY messages.timestamp ASC;`;
+          m.roomId = ?
+        ORDER BY m.timestamp ASC;`;
 
         db.all(query, [roomId], (err, rows: PublicMessage[]) => {
           if (err) {
@@ -69,7 +71,7 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
       try {
         const messageId = uuidV7();
         // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
-        const query = `INSERT INTO messages (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
         const params = [messageId, roomId, userId, message];
         db.run(query, params, function (err) {
           if (err) {

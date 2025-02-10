@@ -3,9 +3,10 @@ import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
 import { User } from "@root/types.shared";
 import { AccountsRepository, DatabasePool } from "@server/types";
+import tableNames from "../../tableNames";
 
 export default class AccountsRepositorySQLite implements AccountsRepository<sqlite3.Database> {
-  private TABLE_NAME = "users";
+  private TABLE_NAME = tableNames.users;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -52,7 +53,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
         const hashedPw = await bcrypt.hash(passwd, salt);
         const entity: User = { id: uuidV7(), userName: name, password: hashedPw, email };
 
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, name, password, email) VALUES (?, ?, ?, ?)`;
+        const query = `INSERT INTO ${this.TABLE_NAME} (id, user_name, password, email) VALUES (?, ?, ?, ?)`;
         db.run(query, [entity.id, entity.userName, hashedPw, entity.email], (err) => {
           if (err) {
             release();
