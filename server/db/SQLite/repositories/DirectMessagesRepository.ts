@@ -71,7 +71,6 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
           resolve(entity);
         });
       } catch (e) {
-        console.log(e);
         release();
         reject(e);
       }
