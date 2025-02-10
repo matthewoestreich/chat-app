@@ -146,7 +146,7 @@ describe("Global", () => {
         cy.get(".modal.show button").contains("Close").wait(100).click();
         cy.get(".modal-backdrop").should("not.exist");
         cy.get(".offcanvas-start .card-body").last().should("be.visible");
-        cy.get(".offcanvas-start .card-body").last().children().first().children().should("have.length.greaterThan", 0);
+        cy.get(".offcanvas-start .card-body").last().children().first().children().should("have.length", 1);
       });
   });
 
@@ -157,7 +157,7 @@ describe("Global", () => {
     cy.get(".chat-title").should("contain.text", DIRECT_CONVERSATION_NAME);
   });
 
-  it("should enter a direct conversation via clicking on room member", () => {
+  it("should create and then enter a direct conversation via clicking on room member", () => {
     let secondDM;
     cy.enterRoom("#general");
     cy.get("#members-container").children().first().should("be.visible");
@@ -169,6 +169,7 @@ describe("Global", () => {
       .then(($el) => {
         secondDM = $el.text().trim();
         $el.trigger("click");
+        cy.get(".offcanvas-start .card-body").last().should("exist").children().first().children().should("have.length", 2);
         cy.get(".offcanvas-start .card-body").last().should("exist").children().first().should("be.visible").children().last().should("contain.text", secondDM);
       });
   });

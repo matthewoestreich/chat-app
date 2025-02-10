@@ -15,11 +15,11 @@ export default function sortMembers(members: PublicMember[], toSorted: boolean):
   const compareFn = (a: PublicMember, b: PublicMember): number => {
     // If both are active just sort alphabetically
     if (a.isActive && b.isActive) {
-      return a.userId.localeCompare(b.userName);
+      return a.userName.toLowerCase().localeCompare(b.userName.toLowerCase());
     }
     // If both are inactive, sort alphabetically
     if (!a.isActive && !b.isActive) {
-      return a.userName.localeCompare(b.userName);
+      return a.userName.toLowerCase().localeCompare(b.userName.toLowerCase());
     }
     // Here, if 'a' is active, 'b' has to be inactive.
     if (a.isActive) {
