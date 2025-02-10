@@ -12,7 +12,8 @@ jobs:
   test:
     # All pull request are automatically tested, so we can safely (I hope) skip testing again after merge..
     # Therefore, only run tests on main if it isn't a merged PR.
-    if: ${{ github.event.pull_request.merged == false }}
+    if: |
+      github.event.pull_request.merged == false
     runs-on: ubuntu-latest
 
     environment:
