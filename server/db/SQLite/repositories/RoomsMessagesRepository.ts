@@ -2,10 +2,9 @@ import { DatabasePool, RoomsMessagesRepository } from "@server/types";
 import { Message, PublicMessage } from "@root/types.shared";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
-import tableNames from "../../tableNames";
+import TABLE from "../../tables";
 
 export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepository<sqlite3.Database> {
-  private TABLE_NAME = tableNames.roomMessages;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -25,9 +24,9 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
           m.message,
           m.timestamp
         FROM
-          ${this.TABLE_NAME} m
+          ${TABLE.roomMessages} m
         JOIN 
-            ${tableNames.users} u
+            ${TABLE.users} u
         ON
           m.userId = u.id
         WHERE
@@ -70,7 +69,7 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
       try {
         const messageId = uuidV7();
         // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
+        const query = `INSERT INTO ${TABLE.roomMessages} (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
         const params = [messageId, roomId, userId, message];
         db.run(query, params, function (err) {
           release();

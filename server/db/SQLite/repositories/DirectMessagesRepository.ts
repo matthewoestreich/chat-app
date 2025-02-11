@@ -2,11 +2,10 @@ import { PublicMessage } from "@root/types.shared";
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
-import tableNames from "../../tableNames";
+import TABLE from "../../tables";
 sqlite3.verbose();
 
 export default class DirectMessagesRepositorySQLite implements DirectMessagesRepository<sqlite3.Database> {
-  private TABLE_NAME = tableNames.directMessages;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -19,8 +18,8 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
       try {
         const query = `
           SELECT dm.id, dm.directConversationId AS scopeId, dm.message, dm.timestamp, dm.fromUserId as userId, u.user_name AS userName
-          FROM ${this.TABLE_NAME} dm 
-          JOIN ${tableNames.users} u
+          FROM ${TABLE.directMessages} dm 
+          JOIN ${TABLE.users} u
           ON u.id = dm.fromUserId 
           WHERE dm.directConversationId = ?
           ORDER BY timestamp ASC;`;
@@ -55,7 +54,7 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
         const [isReadQueryColumn, isReadQueryPlaceholderValue] = isRead === undefined ? ["", ""] : [", isRead", ", ?"];
 
         const query = `
-          INSERT INTO ${this.TABLE_NAME} 
+          INSERT INTO ${TABLE.directMessages} 
             (id, directConversationId, fromUserId, toUserId, message${isReadQueryColumn}) 
           VALUES 
             (?, ?, ?, ?, ?${isReadQueryPlaceholderValue});`;
