@@ -78,7 +78,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
       return;
     }
     const result = await req.databaseProvider.accounts.create(username, password, email);
-    //await req.databaseProvider.rooms.addUserToRoom(result.id, WebSocketApp.ID_UNASSIGNED);
+    await req.databaseProvider.rooms.addUserToRoom(result.id, WebSocketApp.ID_UNASSIGNED);
     res.status(200).send({ ok: true, id: result.id, userName: result.name, email: result.email });
   } catch (_e) {
     res.status(200).send({ ok: false });

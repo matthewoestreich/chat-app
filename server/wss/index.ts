@@ -48,16 +48,28 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
 
     const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
+    const generalRoom = rooms.find((room) => room.name === "#general");
+    const members = await DATABASE.rooms.selectRoomMembersExcludingUser(generalRoom!.id, client.user.id);
+    const messages = await DATABASE.roomMessages.selectByRoomId(generalRoom!.id);
 
     client.send("CONNECTED", {
       rooms,
       directConversations: directConvos.map((dc) => ({ ...dc, isActive: wsapp.isItemCached(dc.userId) })),
+      defaultRoom: {
+        room: generalRoom!,
+        members: members.map((m) => ({ ...m, isActive: wsapp.isItemCached(m.userId) })),
+        messages,
+      },
     });
+
+    if (generalRoom === undefined) {
+      client.setActiveIn(WebSocketApp.ID_UNASSIGNED, wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED));
+    } else {
+      client.setActiveIn(generalRoom.id, wsapp.addClientToCache(client, generalRoom.id));
+    }
 
     // Blast a message to everyone that someone came online, so they can update status display bubble thingy.
     wsapp.blast("USER_CONNECTED", { userId: client.user.id }, client);
-    const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
-    client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
   } catch (e) {
     client.send("CONNECTED", { error: `Something went wrong! ${String(e)}`, rooms: [], directConversations: [] });
   }
@@ -76,7 +88,9 @@ wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
   // TODO find better solution. like redis? For now just 'blast' a message to every single person,
   // telling them a user disconnected
   wsapp.blast("USER_DISCONNECTED", { userId: client.user.id }, client);
-  wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
+  if (client.activeIn) {
+    wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
+  }
 });
 
 /**
