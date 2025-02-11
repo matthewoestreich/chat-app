@@ -7,7 +7,7 @@ import { generateFakeData } from "@server/fakerService";
 import { getGistFiles, updateGist } from "@server/gistService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
-import tableNames from "../TABLE";
+import tableNames from "../tables";
 // prettier-ignore
 import { 
   AccountsRepositorySQLite, 

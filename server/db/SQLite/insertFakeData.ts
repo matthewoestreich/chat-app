@@ -2,7 +2,7 @@ import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
 import { v7 as uuidV7 } from "uuid";
 import { FakeData, FakeUser, FakeChatRoom, FakeDirectMessage, FakeChatRoomMessage, FakeChatRoomWithMembers, FakeDirectConversation } from "@server/types";
-import tableNames from "../TABLE";
+import tableNames from "../tables";
 
 /**
  * =================================
