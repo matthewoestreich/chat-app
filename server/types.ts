@@ -75,18 +75,17 @@ export interface DirectConversationsRepository<DB> {
   create(userAId: string, userBId: string): Promise<DirectConversation>;
   update(id: string, entity: DirectConversation): Promise<DirectConversation | null>;
   delete(id: string): Promise<boolean>;
-  addUserToConversation(directConversationId: string, userId: string): Promise<boolean>;
-  removeUserFromConversation(directConversationId: string, userId: string): Promise<boolean>;
+  addUserToDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
+  removeUserFromDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<PublicDirectConversation[]>;
   selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]>;
-  removeUserFromDirectConversation(idOfUserThatRequestedRemoval: string, convoId: string): Promise<boolean>;
 }
 
 export interface DirectMessagesRepository<DB> {
   databasePool: DatabasePool<DB>;
   getAll(): Promise<PublicMessage[]>;
   getById(id: string): Promise<PublicMessage>;
-  create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<PublicMessage>;
+  create(directConversationId: string, fromUserId: string, toUserId: string, message: string, isRead?: boolean): Promise<PublicMessage>;
   update(id: string, entity: PublicMessage): Promise<PublicMessage | null>;
   delete(id: string): Promise<boolean>;
   selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]>;
@@ -132,11 +131,13 @@ export interface DatabaseProvider<T = any> {
 export interface GenerateFakeUsersParams {
   numberOfUsers: number;
   makeIdentical: boolean;
+  lowerCaseUserName: boolean;
 }
 
 export interface GenerateFakeChatRoomsParams {
   numberOfRooms: number;
   longNameFrequency: FakeDataFrequency;
+  lowerCase: boolean;
 }
 
 export interface AddFakeUsersToFakeChatRoomsParams {

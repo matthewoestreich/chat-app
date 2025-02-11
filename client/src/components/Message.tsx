@@ -5,6 +5,7 @@ interface MessageProperties extends HTMLAttributes<HTMLDivElement> {
   messageId?: string;
   message: string;
   from: string;
+  isRead?: boolean;
   headerProps?: HTMLAttributes<HTMLSpanElement>;
   messageProps?: HTMLAttributes<HTMLDivElement>;
 }

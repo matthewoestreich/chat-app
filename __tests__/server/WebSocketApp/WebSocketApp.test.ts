@@ -87,7 +87,7 @@ describe("WebSocketApp", () => {
       done();
     });
     // Simulate the message event
-    CLIENT.send("SEND_MESSAGE", { message: "hello", scope: { type: "Room", userName: USER.name, userId: USER.id, id: "1", scopeName: "room1" } });
+    CLIENT.send("SEND_MESSAGE", { message: "hello", scope: { type: "Room", id: "1", scopeName: "room1" } });
   });
 
   it("should add client to cache", (done) => {

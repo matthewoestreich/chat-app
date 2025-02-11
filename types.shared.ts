@@ -54,6 +54,7 @@ export type Message = {
   scopeId: string; // roomId/directConvoId,etc..
   message: string;
   timestamp: Date;
+  isRead?: boolean;
 };
 
 export type PublicMessage = Message & {

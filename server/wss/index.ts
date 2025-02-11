@@ -119,7 +119,12 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
       if (!scope.otherParticipantUserId) {
         throw new Error("Missing other participants userId!");
       }
-      sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message);
+      let isRead = false;
+      // If user is actively in convo, mark as read
+      if (wsapp.getCachedContainer(scope.id).has(scope.otherParticipantUserId)) {
+        isRead = true;
+      }
+      sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message, isRead);
       publicMessage = {
         message: sentMessage.message,
         id: sentMessage.id,
@@ -127,6 +132,7 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
         timestamp: sentMessage.timestamp,
         userId: client.user.id,
         userName: client.user.userName,
+        isRead: sentMessage.isRead,
       };
     }
 
@@ -264,6 +270,8 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
 wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
     const newConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
+    console.log("create_direct_conversation", { newConvo });
+    await DATABASE.directConversations.addUserToDirectConversation(newConvo.id, client.user.id);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
     const joinableConvos = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
 
@@ -287,7 +295,8 @@ wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
  */
 wsapp.on("LEAVE_DIRECT_CONVERSATION", async (client, { id }) => {
   try {
-    const result = await DATABASE.directConversations.removeUserFromDirectConversation(client.user.id, id);
+    console.log(`Removing user ${client.user.id} from conversation ${id}`);
+    const result = await DATABASE.directConversations.removeUserFromDirectConversation(id, client.user.id);
     const convos = await DATABASE.directConversations.selectByUserId(client.user.id);
     if (!result) {
       return client.send("LEFT_DIRECT_CONVERSATION", { error: "Something went wrong!", directConversations: [] });

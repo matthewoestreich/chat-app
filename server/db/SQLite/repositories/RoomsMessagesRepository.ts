@@ -35,11 +35,10 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
         ORDER BY m.timestamp ASC;`;
 
         db.all(query, [roomId], (err, rows: PublicMessage[]) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(rows);
         });
       } catch (e) {
@@ -74,11 +73,10 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
         const query = `INSERT INTO ${this.TABLE_NAME} (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
         const params = [messageId, roomId, userId, message];
         db.run(query, params, function (err) {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
           return resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
         });

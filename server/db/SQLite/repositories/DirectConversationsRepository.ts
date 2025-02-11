@@ -12,12 +12,22 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     this.databasePool = dbpool;
   }
 
-  async addUserToConversation(directConversationId: string, userId: string): Promise<boolean> {
+  async addUserToDirectConversation(directConversationId: string, userId: string): Promise<boolean> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
-        const query = `INSERT OR IGNORE INTO ${tableNames.directConversationMemberships} (directConversationId, userId, isMember) VALUES (?, ?, ?)`;
-        const params = [directConversationId, userId, true];
+        const query = `
+          INSERT INTO ${tableNames.directConversationMemberships} 
+            (id, directConversationId, userId, isMember) 
+          VALUES 
+            (?, ?, ?, ?)
+          ON 
+            CONFLICT(directConversationId, userId) 
+          DO 
+            UPDATE 
+          SET 
+            isMember = true, leftAt = NULL;`;
+        const params = [uuidV7(), directConversationId, userId, true];
         db.run(query, params, (error: Error | null) => {
           release();
           if (error) {
@@ -32,7 +42,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     });
   }
 
-  async removeUserFromConversation(directConversationId: string, userId: string): Promise<boolean> {
+  async removeUserFromDirectConversation(directConversationId: string, userId: string): Promise<boolean> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
@@ -43,11 +53,10 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
         `;
         const params = [directConversationId, userId];
         db.run(query, params, (error: Error | null) => {
+          release();
           if (error) {
-            release();
             reject(error);
           }
-          release();
           resolve(true);
         });
       } catch (e) {
@@ -60,49 +69,72 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
   async selectByUserId(userId: string): Promise<PublicDirectConversation[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      const query = `
+      try {
+        const query = `
         SELECT 
           dc.id AS scopeId, 
           u.id AS userId, 
           u.user_name AS userName
-        FROM ${this.TABLE_NAME} dc
-        JOIN ${tableNames.directConversationMemberships} dcm
+        FROM direct_conversations dc
+        JOIN direct_conversation_memberships dcm 
           ON dc.id = dcm.directConversationId
-        JOIN ${tableNames.users} u
-          ON dcm.userId = u.id
-        WHERE dcm.isMember = true AND dcm.userId <> ?
-        ORDER BY userName ASC;
+        JOIN users u
+          ON u.id = CASE 
+            WHEN dc.userAId = dcm.userId THEN dc.userBId 
+            ELSE dc.userAId 
+          END
+        WHERE dcm.userId = ?
+          AND dcm.isMember = true
+        ORDER BY u.user_name COLLATE NOCASE ASC;
       `;
-      db.all(query, [userId], (err, rows: PublicDirectConversation[]) => {
-        if (err) {
+        db.all(query, [userId], (err, rows: PublicDirectConversation[]) => {
           release();
-          return reject(err);
-        }
+          if (err) {
+            return reject(err);
+          }
+          return resolve(rows);
+        });
+      } catch (e) {
         release();
-        return resolve(rows);
-      });
+        reject(e);
+      }
     });
   }
 
   async selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      const query = `
-      SELECT u.id as userId, u.user_name AS userName FROM ${tableNames.users} u WHERE u.id != ?
-      AND u.id NOT IN (
-        SELECT dc.userAId from ${this.TABLE_NAME} dc WHERE dc.userBId = ?
-      )
-      ORDER BY u.user_name ASC;
+      try {
+        const query = `
+        SELECT 
+          u.id AS userId, 
+          u.user_name AS userName
+        FROM ${tableNames.users} u
+        WHERE u.id != ?
+        AND u.id NOT IN (
+          SELECT 
+            CASE 
+              WHEN dc.userAId = ? THEN dc.userBId
+              ELSE dc.userAId
+            END
+          FROM ${this.TABLE_NAME} dc
+          JOIN ${tableNames.directConversationMemberships} dcm
+            ON dc.id = dcm.directConversationId
+          WHERE dcm.userId = ? AND dcm.isMember = true
+        )
+        ORDER BY u.user_name COLLATE NOCASE ASC;
       `;
-      db.all(query, [userId, userId], (err, rows: PublicMember[]) => {
-        if (err) {
+        db.all(query, [userId, userId, userId], (err, rows: PublicMember[]) => {
           release();
-          console.log(err);
-          return reject(err);
-        }
+          if (err) {
+            return reject(err);
+          }
+          return resolve(rows);
+        });
+      } catch (e) {
         release();
-        return resolve(rows);
-      });
+        reject(e);
+      }
     });
   }
 
@@ -114,19 +146,55 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     throw new Error("Method not implemented.");
   }
 
+  /**
+   * CALLER IS EXPECTED TO RELEASE DB CONNECTION
+   * @param userAId
+   * @param userBId
+   * @param db
+   * @returns
+   */
+  private async selectDirectConversationByParticipantIds(userAId: string, userBId: string, db: sqlite3.Database): Promise<DirectConversation | null> {
+    return new Promise((resolve, reject) => {
+      try {
+        const query = `
+          SELECT * FROM direct_conversations dc 
+          WHERE 
+            (dc.userAId = ? AND dc.userBId = ?)
+            OR
+            (dc.userAId = ? AND dc.userBId = ?);
+        `;
+        db.get(query, [userAId, userBId, userBId, userAId], (err: Error | null, row: DirectConversation) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(row);
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
   async create(userAId: string, userBId: string): Promise<DirectConversation> {
     const { db, release } = await this.databasePool.getConnection();
     const entity: DirectConversation = { id: uuidV7(), userAId, userBId };
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, userAId, userBId) VALUES (?, ?, ?)`;
+        const existing = await this.selectDirectConversationByParticipantIds(userAId, userBId, db);
+        if (existing) {
+          return resolve(existing);
+        }
+        const query = `
+          INSERT INTO ${this.TABLE_NAME} 
+            (id, userAId, userBId) 
+          VALUES 
+            (?, ?, ?);`;
         db.run(query, [entity.id, entity.userAId, entity.userBId], async (err) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(entity);
         });
       } catch (e) {
@@ -138,32 +206,6 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
 
   update(_id: string, _entity: DirectConversation): Promise<DirectConversation | null> {
     throw new Error("Method not implemented.");
-  }
-
-  // Remove direct conversation for user
-  async removeUserFromDirectConversation(idOfUserThatRequestedRemoval: string, convoId: string): Promise<boolean> {
-    const { db, release } = await this.databasePool.getConnection();
-
-    // TODO we prob need to restructure the database.
-    // As it stands, if I am in a direct convo with you, and you leave the convo, it also removes the convo
-    // from my display.
-    return new Promise((resolve, reject) => {
-      try {
-        const query = `DELETE from ${this.TABLE_NAME} WHERE id = ? AND userAId = ?`;
-        const params = [convoId, idOfUserThatRequestedRemoval];
-        db.run(query, params, function (err) {
-          if (err) {
-            release();
-            return reject(err);
-          }
-          release();
-          return resolve(true);
-        });
-      } catch (e) {
-        release();
-        reject(e);
-      }
-    });
   }
 
   delete(_id: string): Promise<boolean> {

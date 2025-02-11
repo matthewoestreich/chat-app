@@ -68,11 +68,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       ORDER BY r.name COLLATE NOCASE ASC;
       `;
       db.all(query, [userId], (err, rows: Room[]) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(rows);
       });
     });
@@ -114,8 +113,8 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
 
         // Execute the query
         db.all(query, [userId], (err: Error, rows: Row[]) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
 
@@ -129,7 +128,6 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
             return acc;
           }, [] as ChatScopeWithMembers[]);
 
-          release();
           return resolve(result);
         });
       } catch (e) {
@@ -173,11 +171,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     `;
 
       db.all(query, [excludingUserId, roomId, excludingUserId], (err, rows: PublicMember[]) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(rows);
       });
     });
@@ -203,11 +200,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     `;
 
       db.all(query, [roomId], (err, rows: PublicUser[]) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(rows);
       });
     });
@@ -217,11 +213,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.all(`SELECT * FROM ${this.TABLE_NAME} ORDER BY name ASC`, [], (err, rows: Room[]) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(rows);
       });
     });
@@ -231,11 +226,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE id = ?`, [id], (err, row: Room) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(row);
       });
     });
@@ -250,11 +244,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       try {
         const query = `INSERT INTO ${this.TABLE_NAME} (id, name, isPrivate) VALUES (?, ?, ?)`;
         db.run(query, [entity.id, entity.name, privateStatus], (err) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(entity);
         });
       } catch (e) {
@@ -276,11 +269,10 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
       `;
 
       db.all(query, [userId], (err, rows: Room[]) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(rows);
       });
     });

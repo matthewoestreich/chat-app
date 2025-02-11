@@ -82,10 +82,12 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
           userParams: {
             numberOfUsers: 100,
             makeIdentical: true,
+            lowerCaseUserName: true,
           },
           chatRoomsParams: {
             numberOfRooms: 50,
             longNameFrequency: 5,
+            lowerCase: true,
           },
           chatRoomsWithMembersParams: {
             minUsersPerRoom: 10,
@@ -372,9 +374,14 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
             CREATE TABLE IF NOT EXISTS ${tableNames.directConversations} (
               id TEXT PRIMARY KEY,
               userAId TEXT NOT NULL,
-              userBId TEXT NOT NULL,
-              CHECK (userAId <> userBId),
-              UNIQUE (userAId, userBId)
+              userBId TEXT NOT NULL --,
+              --UNIQUE (userAId, userBId)
+            );`);
+          db.run(`
+            CREATE UNIQUE INDEX IF NOT EXISTS unique_user_pair
+            ON ${tableNames.directConversations} (
+              CASE WHEN userAId < userBId THEN userAId ELSE userBId END,
+              CASE WHEN userAId < userBId THEN userBId ELSE userAId END
             );`);
           db.run(`
             CREATE TABLE IF NOT EXISTS ${tableNames.directConversationMemberships} (
