@@ -1,4 +1,5 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Offcanvas as BsOffcanvas } from "bootstrap";
 import { WebSocketeerEventHandler } from "@client/types";
 import { PublicMember } from "@root/types.shared";
 import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
@@ -50,13 +51,16 @@ export default function ChatView(): React.JSX.Element {
 
   // Auto close direct convos drawer and members offcanvas on "md" or lower breakpoint
   function autoCloseDirectMessagesAndMembersOnSmallScreens(): void {
-    closeOffcanvasAtOrBelowBreakpoint(offcanvasMembersRef, "md");
     const breakpoint = new BootstrapBreakpointDetector().detect();
     if (!breakpoint) {
       // If no breakpoint, play it safe and open drawer..
       return setIsDirectMessagesShown(true);
     }
+    // Index 2 is "md", 1 is "sm", 0 is "xs", etc...
     if (breakpoint.index <= 2) {
+      if (offcanvasMembersRef !== null && offcanvasMembersRef.current !== null) {
+        BsOffcanvas.getOrCreateInstance(offcanvasMembersRef.current).hide();
+      }
       return setIsDirectMessagesShown(false);
     }
     setIsDirectMessagesShown(true);
