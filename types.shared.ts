@@ -144,6 +144,7 @@ export interface WebSocketAppEventRegistry {
   CONNECTED: {
     rooms: Room[];
     directConversations: PublicDirectConversation[];
+    defaultRoom?: { room: Room; members: PublicMember[]; messages: PublicMessage[] };
     error?: WebSocketAppError;
   };
   // We logged out.

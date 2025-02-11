@@ -76,19 +76,27 @@ describe("Global", () => {
     cy.get(".modal.show .modal-footer button").should("be.visible").contains("button", "Close").should("exist").should("be.visible").wait(300).click();
   });
 
-  it("should join the #general room", () => {
+  it("should join a room", () => {
     cy.getOpenJoinRoomModalButton().click();
     // Get join room modal <ul> element
     cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0);
     // Find #general room and click it
-    cy.get(".modal.show .list-group").should("be.visible").children().should("have.length.greaterThan", 0).get("li").contains("#general").click();
-    // Find join room button and click it
-    cy.get(".modal.show .modal-footer button").contains("Join").should("exist").should("be.visible").click();
-    // Find alert message, verify it contiains success
-    cy.get(".modal-body").get("div").contains("Success").should("contain.text", "Success");
-    // Find close button
-    cy.get(".modal.show .modal-footer button").contains("Close").should("exist").should("be.visible").click();
-    cy.isRoomMember("#general");
+    cy.get(".modal.show .list-group")
+      .should("be.visible")
+      .children()
+      .should("have.length.greaterThan", 0)
+      .children()
+      .first()
+      .then(($el) => {
+        $el.trigger("click");
+        // Find join room button and click it
+        cy.get(".modal.show .modal-footer button").contains("Join").should("exist").should("be.visible").click();
+        // Find alert message, verify it contiains success
+        cy.get(".modal-body").get("div").contains("Success").should("contain.text", "Success");
+        // Find close button
+        cy.get(".modal.show .modal-footer button").contains("Close").should("exist").should("be.visible").click();
+        cy.isRoomMember($el.text().trim());
+      });
   });
 
   it("should enter the #general room", () => {
@@ -117,7 +125,6 @@ describe("Global", () => {
   });
 
   it("should leave a room", () => {
-    cy.getOpenLeaveRoomModalButton().should("be.disabled");
     cy.enterRoom(NEW_ROOM_NAME);
     cy.getOpenLeaveRoomModalButton().should("be.enabled").click();
     // Click leave room.

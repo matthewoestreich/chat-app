@@ -13,7 +13,14 @@ export interface ChatState {
 }
 
 export type ChatStateAction =
-  | { type: "AFTER_CONNECTION_ESTABLISHED"; payload: { rooms: Room[]; directConversations: PublicDirectConversation[] } }
+  | {
+      type: "AFTER_CONNECTION_ESTABLISHED";
+      payload: {
+        rooms: Room[];
+        directConversations: PublicDirectConversation[];
+        defaultRoom?: { room: Room; members: PublicMember[]; messages: PublicMessage[] };
+      };
+    }
   | { type: "SET_ROOMS"; payload: Room[] | null }
   | { type: "SET_MEMBERS"; payload: PublicMember[] | null }
   | { type: "SET_MESSAGES"; payload: PublicMessage[] | null }
@@ -34,7 +41,18 @@ export type ChatStateAction =
 export default function chatReducer(state: ChatState, action: ChatStateAction): ChatState {
   switch (action.type) {
     case "AFTER_CONNECTION_ESTABLISHED": {
-      return { ...state, rooms: action.payload.rooms, directConversations: action.payload.directConversations };
+      const newState = {
+        ...state,
+        rooms: action.payload.rooms,
+        directConversations: action.payload.directConversations,
+      };
+      if (action.payload.defaultRoom !== undefined) {
+        newState.members = action.payload.defaultRoom.members;
+        newState.messages = action.payload.defaultRoom.messages;
+        const { id, name } = action.payload.defaultRoom!.room;
+        newState.chatScope = { id, type: "Room", scopeName: name };
+      }
+      return newState;
     }
     case "SET_ROOMS": {
       return { ...state, rooms: action.payload };
