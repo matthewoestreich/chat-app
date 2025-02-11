@@ -5,7 +5,7 @@ import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
-import { Message, PublicMessage, Room } from "@root/types.shared";
+import { Message, PublicMessage, Room, User } from "@root/types.shared";
 
 let DATABASE: DatabaseProvider;
 const wsapp = new WebSocketApp();
@@ -43,7 +43,8 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
   }
 
   try {
-    client.user = jsonwebtoken.decode(cookies.session) as AuthenticatedUser;
+    const decoded = jsonwebtoken.decode(cookies.session) as User;
+    client.user = { userName: decoded.userName, id: decoded.id, email: decoded.email };
 
     const rooms = await DATABASE.rooms.selectByUserId(client.user.id);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
@@ -52,11 +53,9 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
       rooms,
       directConversations: directConvos.map((dc) => ({ ...dc, isActive: wsapp.isItemCached(dc.userId) })),
     });
+
     // Blast a message to everyone that someone came online, so they can update status display bubble thingy.
     wsapp.blast("USER_CONNECTED", { userId: client.user.id }, client);
-
-    rooms.forEach((room) => wsapp.addContainerToCache(room.id));
-
     const container = wsapp.addClientToCache(client, WebSocketApp.ID_UNASSIGNED);
     client.setActiveIn(WebSocketApp.ID_UNASSIGNED, container);
   } catch (e) {
@@ -117,14 +116,16 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
         userName: client.user.userName,
       };
     } else if (scope.type === "DirectConversation") {
-      sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.userId, message);
+      if (!scope.otherParticipantUserId) {
+        throw new Error("Missing other participants userId!");
+      }
+      sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message);
       publicMessage = {
         message: sentMessage.message,
         id: sentMessage.id,
         scopeId: sentMessage.scopeId,
         timestamp: sentMessage.timestamp,
         userId: client.user.id,
-        // TODO gather userName!
         userName: client.user.userName,
       };
     }
@@ -151,7 +152,7 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
  */
 wsapp.on("ENTER_ROOM", async (client, { id }) => {
   // Notify existing room (which user is now leaving) that user is leaving.
-  if (client.activeIn) {
+  if (client.activeIn && id !== client.activeIn.id) {
     client.broadcast("MEMBER_LEFT_ROOM", { id: client.user.id });
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
   }
@@ -345,8 +346,7 @@ wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { scopeId, isMemberClick })
   try {
     const messages = await DATABASE.directMessages.selectByDirectConversationId(scopeId);
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
-    const container = wsapp.addClientToCache(client, scopeId);
-    client.setActiveIn(scopeId, container);
+    client.setActiveIn(scopeId, wsapp.addClientToCache(client, scopeId));
     client.send("ENTERED_DIRECT_CONVERSATION", { messages, scopeId, isMemberClick });
   } catch (e) {
     client.send("ENTERED_DIRECT_CONVERSATION", { error: (e as Error).message, messages: [], scopeId: "", isMemberClick });

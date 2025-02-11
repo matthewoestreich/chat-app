@@ -2,7 +2,7 @@ import React, { CSSProperties, memo, RefObject, useCallback, useEffect, useMemo 
 import { Member } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { useChat } from "@hooks";
-import { ChatScope, PublicDirectConversation } from "@root/types.shared";
+import { PublicDirectConversation } from "@root/types.shared";
 import { WebSocketeerEventHandler } from "@client/types";
 import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
 
@@ -77,7 +77,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
         type: "ENTERED_DIRECT_CONVERSATION",
         payload: {
           messages,
-          chatScope: { id: scopeId, userId: convo.userId, userName: convo.userName, scopeName: convo.userName, type: "DirectConversation" },
+          chatScope: { id: scopeId, scopeName: convo.userName, otherParticipantUserId: convo.userId, type: "DirectConversation" },
         },
       });
     };
@@ -118,18 +118,9 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   // prettier-ignore
   const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
-    // ChatView page will take care of handling "LIST_DIRECT_MESSAGES" event as well as rendering the messages.
-    const chatScope: ChatScope = {
-      scopeName: directConvo.userName,
-      id: directConvo.scopeId,
-      userId: directConvo.userId,
-      userName: directConvo.userName,
-      type: "DirectConversation",
-    };
-    dispatch({ type: "SET_CHAT_SCOPE", payload: chatScope });
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: directConvo.scopeId, isMemberClick: false });
     autoCloseDrawerOnSmallScreens();
-  }, [dispatch, autoCloseDrawerOnSmallScreens]);
+  }, [autoCloseDrawerOnSmallScreens]);
 
   const directConversationClickHandlers = useMemo(() => {
     return new Map(state.directConversations?.map((dc) => [dc.scopeId, (): void => handleDirectConversationClick(dc)]));

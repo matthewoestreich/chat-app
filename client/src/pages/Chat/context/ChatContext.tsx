@@ -9,13 +9,12 @@ export interface ChatContextValue {
 export const initialChatState: ChatState = {
   rooms: null,
   directConversations: null,
-  directMessages: null,
   members: null,
   messages: null,
   chatScope: null,
   isEnteringRoom: false,
   isCreateDirectConversationModalOpen: false,
-  selectedDirectConversationToJoin: null,
+  isLeaveDirectConversationModalOpen: false,
 };
 
 const ChatContext = createContext<ChatContextValue>({

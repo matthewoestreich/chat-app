@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
+import { v7 as uuidV7 } from "uuid";
 import { FakeData, FakeUser, FakeChatRoom, FakeDirectMessage, FakeChatRoomMessage, FakeChatRoomWithMembers, FakeDirectConversation } from "@server/types";
 import tableNames from "../tableNames";
 
@@ -23,6 +24,7 @@ export async function insertFakeData(db: sqlite3.Database, fakeData: FakeData): 
         await insertFakeUsersIntoFakeChatRooms(db, fakeData.roomsWithMembers);
         await insertFakeChatRoomMessages(db, fakeData.chatRoomMessages);
         await insertFakeDirectConversations(db, fakeData.directConversations);
+        await insertFakeDirectConversationMemberships(db, fakeData.directConversations);
         await insertFakeDirectMessages(db, fakeData.directMessages);
         db.run("COMMIT", (_results: sqlite3.RunResult, err: Error | null) => {
           if (err) {
@@ -150,9 +152,9 @@ export async function insertFakeChatRoomMessages(db: sqlite3.Database, messages:
 export async function insertFakeDirectConversations(db: sqlite3.Database, convos: FakeDirectConversation[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
-      const stmt = db.prepare(`INSERT INTO ${tableNames.directConversations} (id, createdByUserId, otherParticipantUserId) VALUES (?, ?, ?)`);
+      const stmt = db.prepare(`INSERT INTO ${tableNames.directConversations} (id, userAId, userBId) VALUES (?, ?, ?)`);
       for (const convo of convos) {
-        stmt.run(convo.id, convo.createdByUser.id, convo.otherParticipant.id);
+        stmt.run(convo.id, convo.userA.id, convo.userB.id);
       }
       stmt.finalize((err) => {
         if (err) {
@@ -162,6 +164,34 @@ export async function insertFakeDirectConversations(db: sqlite3.Database, convos
       });
     } catch (e) {
       reject(`error inserting ${tableNames.directConversations} ${e}`);
+    }
+  });
+}
+
+/**
+ * Insert memberships for direct conversations
+ * @param db
+ * @param convos
+ * @returns
+ */
+export async function insertFakeDirectConversationMemberships(db: sqlite3.Database, convos: FakeDirectConversation[]): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO ${tableNames.directConversationMemberships} (id, directConversationId, userId, isMember) VALUES (?, ?, ?, ?)
+      `);
+      for (const convo of convos) {
+        stmt.run(uuidV7(), convo.id, convo.userA.id, true);
+        stmt.run(uuidV7(), convo.id, convo.userB.id, true);
+      }
+      stmt.finalize((err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(true);
+      });
+    } catch (e) {
+      reject(e);
     }
   });
 }

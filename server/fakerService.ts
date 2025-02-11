@@ -181,8 +181,8 @@ export function generateFakeDirectConversations(users: FakeUser[], minConversati
     for (let j = 0; j < uniqueUsers.length; j++) {
       directConversations.push({
         id: uuidV7(),
-        createdByUser: user,
-        otherParticipant: uniqueUsers[j],
+        userA: user,
+        userB: uniqueUsers[j],
       });
     }
   }
@@ -212,8 +212,8 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
     const dc = directConversations[i];
     // So we can randomly pick who is sending/receiving.
     const options = [
-      { from: dc.createdByUser, to: dc.otherParticipant },
-      { from: dc.otherParticipant, to: dc.createdByUser },
+      { from: dc.userA, to: dc.userB },
+      { from: dc.userB, to: dc.userA },
     ];
     const numOfMessages = getRandomIntInclusive(minMessagesPerConversation, maxMessagesPerConversation);
 

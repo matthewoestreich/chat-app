@@ -371,10 +371,21 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
           db.run(`
             CREATE TABLE IF NOT EXISTS ${tableNames.directConversations} (
               id TEXT PRIMARY KEY,
-              createdByUserId TEXT NOT NULL,
-              otherParticipantUserId TEXT NOT NULL,
-              CHECK (createdByUserId <> otherParticipantUserId),
-              UNIQUE (createdByUserId, otherParticipantUserId)
+              userAId TEXT NOT NULL,
+              userBId TEXT NOT NULL,
+              CHECK (userAId <> userBId),
+              UNIQUE (userAId, userBId)
+            );`);
+          db.run(`
+            CREATE TABLE IF NOT EXISTS ${tableNames.directConversationMemberships} (
+              id TEXT PRIMARY KEY,
+              directConversationId TEXT NOT NULL,
+              userId TEXT NOT NULL,
+              isMember BOOLEAN DEFAULT 1 CHECK (isMember IN (0, 1)),
+              joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+              leftAt DATETIME,
+              FOREIGN KEY (directConversationId) REFERENCES ${tableNames.directConversations} (id),
+              UNIQUE (directConversationId, userId)
             );`);
           db.run(`
             CREATE TABLE IF NOT EXISTS ${tableNames.directMessages} (
