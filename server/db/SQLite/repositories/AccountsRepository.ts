@@ -3,10 +3,9 @@ import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
 import { User } from "@root/types.shared";
 import { AccountsRepository, DatabasePool } from "@server/types";
-import tableNames from "../../tableNames";
+import TABLE from "../../tables";
 
 export default class AccountsRepositorySQLite implements AccountsRepository<sqlite3.Database> {
-  private TABLE_NAME = tableNames.users;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -16,7 +15,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async selectByEmail(email: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE email = ?`, [email], (err, row) => {
+      db.get(`SELECT * FROM ${TABLE.users} WHERE email = ?`, [email], (err, row) => {
         release();
         if (err) {
           return reject(err);
@@ -33,7 +32,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async getById(id: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE id = ?`, [id], (err, row) => {
+      db.get(`SELECT * FROM ${TABLE.users} WHERE id = ?`, [id], (err, row) => {
         release();
         if (err) {
           return reject(err);
@@ -51,7 +50,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
         const hashedPw = await bcrypt.hash(passwd, salt);
         const entity: User = { id: uuidV7(), userName: name, password: hashedPw, email };
 
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, user_name, password, email) VALUES (?, ?, ?, ?)`;
+        const query = `INSERT INTO ${TABLE.users} (id, user_name, password, email) VALUES (?, ?, ?, ?)`;
         db.run(query, [entity.id, entity.userName, hashedPw, entity.email], (err) => {
           release();
           if (err) {

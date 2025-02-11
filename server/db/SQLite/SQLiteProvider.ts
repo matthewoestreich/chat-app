@@ -7,7 +7,7 @@ import { generateFakeData } from "@server/fakerService";
 import { getGistFiles, updateGist } from "@server/gistService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
-import tableNames from "../tableNames";
+import tableNames from "../tables";
 // prettier-ignore
 import { 
   AccountsRepositorySQLite, 
@@ -217,12 +217,12 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
             });
 
             // Write data
-            db.all(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`, (err, tables) => {
+            db.all(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`, (err, TABLE) => {
               if (err) {
                 return reject(err);
               }
 
-              tables.forEach((table) => {
+              TABLE.forEach((table) => {
                 // @ts-ignore
                 const tableName = table.name;
 

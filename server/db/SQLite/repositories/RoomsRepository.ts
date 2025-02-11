@@ -2,10 +2,9 @@ import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import { DatabasePool, RoomsRepository } from "@server/types";
 import { PublicUser, Room, PublicMember, ChatScopeWithMembers } from "@root/types.shared";
-import tableNames from "../../tableNames";
+import TABLE from "../../tables";
 
 export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Database> {
-  private TABLE_NAME = tableNames.rooms;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -16,7 +15,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       try {
-        const query = `INSERT INTO ${tableNames.roomMemberships} (userId, roomId) VALUES (?, ?)`;
+        const query = `INSERT INTO ${TABLE.roomMemberships} (userId, roomId) VALUES (?, ?)`;
         db.run(query, [userId, roomId], async (err) => {
           if (err) {
             release();
@@ -37,7 +36,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     return new Promise((resolve, reject) => {
       try {
         db.serialize(() => {
-          db.run(`DELETE FROM ${tableNames.roomMemberships} WHERE roomId = ? AND userId = ?`, [roomId, userId], function (err) {
+          db.run(`DELETE FROM ${TABLE.roomMemberships} WHERE roomId = ? AND userId = ?`, [roomId, userId], function (err) {
             if (err) {
               release();
               return reject(err);
@@ -60,9 +59,9 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
           r.id, 
           r.name 
       FROM 
-          ${this.TABLE_NAME} r
+          ${TABLE.rooms} r
       LEFT JOIN 
-          ${tableNames.roomMemberships} c ON r.id = c.roomId AND c.userId = ?
+          ${TABLE.roomMemberships} c ON r.id = c.roomId AND c.userId = ?
       WHERE 
           c.roomId IS NULL
       ORDER BY r.name COLLATE NOCASE ASC;
@@ -99,13 +98,13 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
             u.user_name AS userName,
             u.email AS userEmail
         FROM 
-            ${tableNames.roomMemberships} c1
+            ${TABLE.roomMemberships} c1
         JOIN 
-            ${this.TABLE_NAME} r ON c1.roomId = r.id
+            ${TABLE.rooms} r ON c1.roomId = r.id
         JOIN 
-            ${tableNames.roomMemberships} c2 ON c1.roomId = c2.roomId
+            ${TABLE.roomMemberships} c2 ON c1.roomId = c2.roomId
         JOIN 
-            ${tableNames.users} u ON c2.userId = u.id
+            ${TABLE.users} u ON c2.userId = u.id
         WHERE 
             c1.userId = ?
         ORDER BY roomName COLLATE NOCASE ASC;
@@ -147,13 +146,13 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
         u.id AS userId,
         dc.id AS scopeId
       FROM
-        ${tableNames.roomMemberships} rm
+        ${TABLE.roomMemberships} rm
       JOIN 
-        ${this.TABLE_NAME} r
+        ${TABLE.rooms} r
       ON
         rm.roomId = r.id
       JOIN
-        ${tableNames.users} u 
+        ${TABLE.users} u 
       ON
         rm.userId = u.id
       LEFT JOIN 
@@ -189,11 +188,11 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
           u.user_name AS userName,
           u.id AS userId
       FROM 
-          ${tableNames.roomMemberships} c1
+          ${TABLE.roomMemberships} c1
       JOIN 
-          ${this.TABLE_NAME} r ON c1.roomId = r.id
+          ${TABLE.rooms} r ON c1.roomId = r.id
       JOIN 
-          ${tableNames.users} u ON c1.userId = u.id
+          ${TABLE.users} u ON c1.userId = u.id
       WHERE 
           --c1.userId = ?
           r.id = ? ;
@@ -212,7 +211,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
   async getAll(): Promise<Room[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.all(`SELECT * FROM ${this.TABLE_NAME} ORDER BY name ASC`, [], (err, rows: Room[]) => {
+      db.all(`SELECT * FROM ${TABLE.rooms} ORDER BY name ASC`, [], (err, rows: Room[]) => {
         release();
         if (err) {
           return reject(err);
@@ -225,7 +224,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
   async getById(id: string): Promise<Room> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE id = ?`, [id], (err, row: Room) => {
+      db.get(`SELECT * FROM ${TABLE.rooms} WHERE id = ?`, [id], (err, row: Room) => {
         release();
         if (err) {
           return reject(err);
@@ -242,7 +241,7 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
 
     return new Promise(async (resolve, reject) => {
       try {
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, name, isPrivate) VALUES (?, ?, ?)`;
+        const query = `INSERT INTO ${TABLE.rooms} (id, name, isPrivate) VALUES (?, ?, ?)`;
         db.run(query, [entity.id, entity.name, privateStatus], (err) => {
           release();
           if (err) {
@@ -262,8 +261,8 @@ export default class RoomsRepositorySQLite implements RoomsRepository<sqlite3.Da
     return new Promise((resolve, reject) => {
       const query = `
         SELECT r.id, r.name
-        FROM ${this.TABLE_NAME} r
-        JOIN ${tableNames.roomMemberships} c ON r.id = c.roomId
+        FROM ${TABLE.rooms} r
+        JOIN ${TABLE.roomMemberships} c ON r.id = c.roomId
         WHERE c.userId = ?
         ORDER BY r.name COLLATE NOCASE ASC
       `;

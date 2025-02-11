@@ -2,10 +2,9 @@ import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import { DirectConversation, PublicDirectConversation, PublicMember } from "@root/types.shared";
 import { DatabasePool, DirectConversationsRepository } from "@server/types";
-import tableNames from "../../tableNames";
+import TABLE from "../../tables";
 
 export default class DirectConversationsRepositorySQLite implements DirectConversationsRepository<sqlite3.Database> {
-  private TABLE_NAME = tableNames.directConversations;
   databasePool: DatabasePool<sqlite3.Database>;
 
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
@@ -17,7 +16,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     return new Promise((resolve, reject) => {
       try {
         const query = `
-          INSERT INTO ${tableNames.directConversationMemberships} 
+          INSERT INTO ${TABLE.directConversationMemberships} 
             (id, directConversationId, userId, isMember) 
           VALUES 
             (?, ?, ?, ?)
@@ -47,9 +46,15 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     return new Promise((resolve, reject) => {
       try {
         const query = `
-          UPDATE ${tableNames.directConversationMemberships}
-          SET isMember = 0, leftAt = CURRENT_TIMESTAMP
-          WHERE directConversationId = ? AND userId = ?;
+          UPDATE 
+            ${TABLE.directConversationMemberships}
+          SET 
+            isMember = 0, 
+            leftAt = CURRENT_TIMESTAMP
+          WHERE 
+            directConversationId = ? 
+          AND
+            userId = ?;
         `;
         const params = [directConversationId, userId];
         db.run(query, params, (error: Error | null) => {
@@ -75,16 +80,24 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
           dc.id AS scopeId, 
           u.id AS userId, 
           u.user_name AS userName
-        FROM direct_conversations dc
-        JOIN direct_conversation_memberships dcm 
-          ON dc.id = dcm.directConversationId
-        JOIN users u
-          ON u.id = CASE 
+        FROM 
+          ${TABLE.directConversations} dc
+        JOIN 
+          ${TABLE.directConversationMemberships} dcm 
+        ON 
+            dc.id = dcm.directConversationId
+        JOIN 
+          ${TABLE.users} u
+        ON 
+          u.id = 
+          CASE 
             WHEN dc.userAId = dcm.userId THEN dc.userBId 
             ELSE dc.userAId 
           END
-        WHERE dcm.userId = ?
-          AND dcm.isMember = true
+        WHERE 
+          dcm.userId = ?
+        AND 
+          dcm.isMember = true
         ORDER BY u.user_name COLLATE NOCASE ASC;
       `;
         db.all(query, [userId], (err, rows: PublicDirectConversation[]) => {
@@ -109,19 +122,28 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
         SELECT 
           u.id AS userId, 
           u.user_name AS userName
-        FROM ${tableNames.users} u
-        WHERE u.id != ?
-        AND u.id NOT IN (
-          SELECT 
-            CASE 
-              WHEN dc.userAId = ? THEN dc.userBId
-              ELSE dc.userAId
-            END
-          FROM ${this.TABLE_NAME} dc
-          JOIN ${tableNames.directConversationMemberships} dcm
-            ON dc.id = dcm.directConversationId
-          WHERE dcm.userId = ? AND dcm.isMember = true
-        )
+        FROM 
+          ${TABLE.users} u
+        WHERE 
+          u.id != ?
+        AND 
+          u.id NOT IN (
+            SELECT 
+              CASE 
+                WHEN dc.userAId = ? THEN dc.userBId
+                ELSE dc.userAId
+              END
+            FROM 
+              ${TABLE.directConversations} dc
+            JOIN 
+              ${TABLE.directConversationMemberships} dcm
+            ON 
+              dc.id = dcm.directConversationId
+            WHERE 
+              dcm.userId = ? 
+            AND
+              dcm.isMember = true
+          )
         ORDER BY u.user_name COLLATE NOCASE ASC;
       `;
         db.all(query, [userId, userId, userId], (err, rows: PublicMember[]) => {
@@ -186,7 +208,7 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
           return resolve(existing);
         }
         const query = `
-          INSERT INTO ${this.TABLE_NAME} 
+          INSERT INTO ${TABLE.directConversations} 
             (id, userAId, userBId) 
           VALUES 
             (?, ?, ?);`;
