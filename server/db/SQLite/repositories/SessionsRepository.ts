@@ -15,11 +15,10 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE userId = ?`, [userId], (err, row: Session) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(row);
       });
     });
@@ -32,11 +31,10 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
       try {
         const query = `INSERT INTO ${this.TABLE_NAME} (userId, token) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET token = excluded.token;`;
         db.run(query, [entity.userId, entity.token], function (err) {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(true);
         });
       } catch (e) {
@@ -51,12 +49,11 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
     return new Promise((resolve, reject) => {
       db.serialize(() => {
         db.run(`DELETE FROM ${this.TABLE_NAME} WHERE userId = ?`, userId, function (err) {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
           if (this.changes !== 1) {
-            release();
             return reject(new Error("unable to remove refresh token!"));
           }
           release();
@@ -82,11 +79,10 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
       try {
         const query = `INSERT INTO ${this.TABLE_NAME} (userId, token) VALUES (?, ?)`;
         db.run(query, [entity.userId, entity.token], (err) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(entity);
         });
       } catch (e) {
@@ -106,11 +102,10 @@ export default class SessionsRepositorySQLite implements SessionsRepository<sqli
       try {
         db.serialize(() => {
           db.run(`DELETE FROM ${this.TABLE_NAME} WHERE token = ?`, token, function (err) {
+            release();
             if (err) {
-              release();
               return reject(err);
             }
-            release();
             return resolve(true);
           });
         });

@@ -72,19 +72,20 @@ export interface DirectConversationsRepository<DB> {
   databasePool: DatabasePool<DB>;
   getAll(): Promise<DirectConversation[]>;
   getById(id: string): Promise<DirectConversation>;
-  create(userA_id: string, userB_id: string): Promise<DirectConversation>;
+  create(userAId: string, userBId: string): Promise<DirectConversation>;
   update(id: string, entity: DirectConversation): Promise<DirectConversation | null>;
   delete(id: string): Promise<boolean>;
+  addUserToDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
+  removeUserFromDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<PublicDirectConversation[]>;
   selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]>;
-  removeUserFromDirectConversation(idOfUserThatRequestedRemoval: string, convoId: string): Promise<boolean>;
 }
 
 export interface DirectMessagesRepository<DB> {
   databasePool: DatabasePool<DB>;
   getAll(): Promise<PublicMessage[]>;
   getById(id: string): Promise<PublicMessage>;
-  create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<PublicMessage>;
+  create(directConversationId: string, fromUserId: string, toUserId: string, message: string, isRead?: boolean): Promise<PublicMessage>;
   update(id: string, entity: PublicMessage): Promise<PublicMessage | null>;
   delete(id: string): Promise<boolean>;
   selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]>;
@@ -130,11 +131,13 @@ export interface DatabaseProvider<T = any> {
 export interface GenerateFakeUsersParams {
   numberOfUsers: number;
   makeIdentical: boolean;
+  lowerCaseUserName: boolean;
 }
 
 export interface GenerateFakeChatRoomsParams {
   numberOfRooms: number;
   longNameFrequency: FakeDataFrequency;
+  lowerCase: boolean;
 }
 
 export interface AddFakeUsersToFakeChatRoomsParams {
@@ -215,8 +218,8 @@ export interface FakeDirectMessage {
 
 export interface FakeDirectConversation {
   id: string;
-  createdByUser: FakeUser;
-  otherParticipant: FakeUser;
+  userA: FakeUser;
+  userB: FakeUser;
 }
 
 export type FakeDataFrequency = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;

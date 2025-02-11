@@ -10,11 +10,11 @@ import { GenerateFakeDataParams, FakeChatRoom, FakeChatRoomMessage, FakeChatRoom
  * @param {GenerateFakeDataParams} params
  */
 export function generateFakeData(params: GenerateFakeDataParams): FakeData {
-  const { numberOfUsers, makeIdentical } = params.userParams;
-  const users = generateFakeUsers(numberOfUsers, makeIdentical);
+  const { numberOfUsers, makeIdentical, lowerCaseUserName } = params.userParams;
+  const users = generateFakeUsers(numberOfUsers, makeIdentical, lowerCaseUserName);
 
-  const { numberOfRooms, longNameFrequency } = params.chatRoomsParams;
-  const rooms = generateFakeChatRooms(numberOfRooms, longNameFrequency);
+  const { numberOfRooms, longNameFrequency, lowerCase } = params.chatRoomsParams;
+  const rooms = generateFakeChatRooms(numberOfRooms, longNameFrequency, lowerCase);
 
   const { minUsersPerRoom, maxUsersPerRoom } = params.chatRoomsWithMembersParams;
   const roomsWithMembers = addFakeUsersToFakeChatRooms(users, rooms, minUsersPerRoom, maxUsersPerRoom);
@@ -44,11 +44,12 @@ export function generateFakeData(params: GenerateFakeDataParams): FakeData {
  * @param makeIdentical If true, we set the username, email, and password all to the same thing.
  *                      For example: { username: "joe", email: "joe@joe.com", password: "joe" }
  */
-export function generateFakeUsers(numberOfUsers: number, makeIdentical: boolean): FakeUser[] {
+export function generateFakeUsers(numberOfUsers: number, makeIdentical: boolean, lowerCaseUsername: boolean): FakeUser[] {
   const users = Array.from<FakeUser>({ length: numberOfUsers });
 
   for (let i = 0; i < numberOfUsers; i++) {
-    const username = faker.internet.username();
+    const rawUsername = faker.internet.username();
+    const username = lowerCaseUsername ? rawUsername.toLowerCase() : rawUsername;
 
     const user: FakeUser = {
       username,
@@ -73,7 +74,7 @@ export function generateFakeUsers(numberOfUsers: number, makeIdentical: boolean)
  * @param numberOfRooms
  * @param longNameFrequency The higher the frequency the more often we will generate rooms with longer names
  */
-export function generateFakeChatRooms(numberOfRooms: number, longNameFrequency: FakeDataFrequency): FakeChatRoom[] {
+export function generateFakeChatRooms(numberOfRooms: number, longNameFrequency: FakeDataFrequency, lowerCase: boolean): FakeChatRoom[] {
   // We have to get the "mirror" number - eg, if  frequency is 10, mirror is 1. If frequency is 9 mirror is 2, etc..
   // This is bc we use mod within the loop to determine when we should create a room with a long name.
   const frequency = 10 - longNameFrequency + 1;
@@ -88,6 +89,10 @@ export function generateFakeChatRooms(numberOfRooms: number, longNameFrequency: 
 
     if (i % frequency === 0) {
       room.name = `${faker.word.adjective()} ${room.name}`;
+    }
+
+    if (lowerCase) {
+      room.name = room.name.toLowerCase();
     }
 
     rooms[i] = room;
@@ -181,8 +186,8 @@ export function generateFakeDirectConversations(users: FakeUser[], minConversati
     for (let j = 0; j < uniqueUsers.length; j++) {
       directConversations.push({
         id: uuidV7(),
-        createdByUser: user,
-        otherParticipant: uniqueUsers[j],
+        userA: user,
+        userB: uniqueUsers[j],
       });
     }
   }
@@ -212,8 +217,8 @@ export function generateFakeDirectMessages(directConversations: FakeDirectConver
     const dc = directConversations[i];
     // So we can randomly pick who is sending/receiving.
     const options = [
-      { from: dc.createdByUser, to: dc.otherParticipant },
-      { from: dc.otherParticipant, to: dc.createdByUser },
+      { from: dc.userA, to: dc.userB },
+      { from: dc.userB, to: dc.userA },
     ];
     const numOfMessages = getRandomIntInclusive(minMessagesPerConversation, maxMessagesPerConversation);
 

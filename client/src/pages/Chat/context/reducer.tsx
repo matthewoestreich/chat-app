@@ -57,7 +57,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
     case "JOINED_DIRECT_CONVERSATION": {
       // TODO improve this logic
       // Update member with scopeId
-      const index = state.members?.findIndex((member) => member.userId === action.payload.scope.userId);
+      const index = state.members?.findIndex((member) => member.userId === action.payload.scope.id);
       let copy: PublicMember[] = [];
       if (index && index !== -1) {
         copy = [...(state.members || [])];

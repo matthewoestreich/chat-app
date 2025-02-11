@@ -22,23 +22,23 @@ export type ChatScopeType = "Room" | "DirectConversation";
 export interface ChatScope {
   id: string;
   scopeName: string;
-  userId: string;
   type: ChatScopeType;
-  userName: string;
+  // If in a direct convo
+  otherParticipantUserId?: string;
 }
 
 export interface DirectConversation {
   id: string;
-  createdByUserId: string;
-  otherParticipantUserId: string;
+  userAId: string;
+  userBId: string;
 }
 
-export interface User {
+export type User = {
   userName: string;
   id: string;
   email: string;
   password: string;
-}
+};
 
 export type PublicUser = Omit<User, "email" | "password">;
 
@@ -54,6 +54,7 @@ export type Message = {
   scopeId: string; // roomId/directConvoId,etc..
   message: string;
   timestamp: Date;
+  isRead?: boolean;
 };
 
 export type PublicMessage = Message & {
@@ -77,7 +78,7 @@ export interface PublicMember {
   isActive: boolean;
 }
 
-export type ChatScopeWithMembers = Omit<ChatScope, "userName"> & {
+export type ChatScopeWithMembers = ChatScope & {
   members: PublicMember[];
 };
 

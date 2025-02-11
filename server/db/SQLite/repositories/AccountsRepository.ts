@@ -17,11 +17,10 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE email = ?`, [email], (err, row) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(row as User);
       });
     });
@@ -35,11 +34,10 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
       db.get(`SELECT * FROM ${this.TABLE_NAME} WHERE id = ?`, [id], (err, row) => {
+        release();
         if (err) {
-          release();
           return reject(err);
         }
-        release();
         return resolve(row as User);
       });
     });
@@ -55,11 +53,10 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
 
         const query = `INSERT INTO ${this.TABLE_NAME} (id, user_name, password, email) VALUES (?, ?, ?, ?)`;
         db.run(query, [entity.id, entity.userName, hashedPw, entity.email], (err) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(entity);
         });
       } catch (e) {

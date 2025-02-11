@@ -93,7 +93,7 @@ export default function ChatView(): React.JSX.Element {
         payload: {
           members,
           messages,
-          chatScope: { type: "Room", userId: user!.id, id: room.id, userName: user!.userName, scopeName: room.name },
+          chatScope: { type: "Room", id: room.id, scopeName: room.name },
         },
       });
       setIsDirectMessagesShown(false);

@@ -12,13 +12,7 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
   constructor(dbpool: DatabasePool<sqlite3.Database>) {
     this.databasePool = dbpool;
   }
-  /*
-  id: string;
-  userId: string;
-  scopeId: string; // roomId/directConvoId,etc..
-  message: string;
-  timestamp: Date;
-  */
+
   async selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
@@ -31,11 +25,10 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
           WHERE dm.directConversationId = ?
           ORDER BY timestamp ASC;`;
         db.all(query, [directConversationId], (err, rows: PublicMessage[]) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
-          release();
           return resolve(rows);
         });
       } catch (e) {
@@ -53,21 +46,35 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     throw new Error("Method not implemented.");
   }
 
-  async create(directConversationId: string, fromUserId: string, toUserId: string, message: string): Promise<PublicMessage> {
+  async create(directConversationId: string, fromUserId: string, toUserId: string, message: string, isRead?: boolean): Promise<PublicMessage> {
     const { db, release } = await this.databasePool.getConnection();
+    const directMessageId = uuidV7();
+
     return new Promise((resolve, reject) => {
       try {
-        const directMessageId = uuidV7();
-        const query = `INSERT INTO ${this.TABLE_NAME} (id, directConversationId, fromUserId, toUserId, message, isRead) VALUES (?, ?, ?, ?, ?, ?)`;
-        const params = [directMessageId, directConversationId, fromUserId, toUserId, message, true];
+        const [isReadQueryColumn, isReadQueryPlaceholderValue] = isRead === undefined ? ["", ""] : [", isRead", ", ?"];
+
+        const query = `
+          INSERT INTO ${this.TABLE_NAME} 
+            (id, directConversationId, fromUserId, toUserId, message${isReadQueryColumn}) 
+          VALUES 
+            (?, ?, ?, ?, ?${isReadQueryPlaceholderValue});`;
+
+        const params: (string | boolean)[] = [directMessageId, directConversationId, fromUserId, toUserId, message];
+
+        if (isRead !== undefined) {
+          params.push(isRead);
+        }
 
         db.run(query, params, (err: Error | null) => {
+          release();
           if (err) {
-            release();
             return reject(err);
           }
           const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, userName: "", timestamp: new Date() };
-          release();
+          if (isRead !== undefined) {
+            entity.isRead = isRead;
+          }
           resolve(entity);
         });
       } catch (e) {
