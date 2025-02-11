@@ -294,7 +294,6 @@ wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
  */
 wsapp.on("LEAVE_DIRECT_CONVERSATION", async (client, { id }) => {
   try {
-    console.log(`Removing user ${client.user.id} from conversation ${id}`);
     const result = await DATABASE.directConversations.removeUserFromDirectConversation(id, client.user.id);
     const convos = await DATABASE.directConversations.selectByUserId(client.user.id);
     if (!result) {
