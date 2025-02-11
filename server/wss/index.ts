@@ -270,7 +270,6 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
 wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
     const newConvo = await DATABASE.directConversations.create(client.user.id, withUserId);
-    console.log("create_direct_conversation", { newConvo });
     await DATABASE.directConversations.addUserToDirectConversation(newConvo.id, client.user.id);
     const directConvos = await DATABASE.directConversations.selectByUserId(client.user.id);
     const joinableConvos = await DATABASE.directConversations.selectInvitableUsersByUserId(client.user.id);
