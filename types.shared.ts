@@ -82,6 +82,16 @@ export type ChatScopeWithMembers = ChatScope & {
   members: PublicMember[];
 };
 
+// Used for returning data from direct_conversation_memberships table.
+export interface DirectConversationMembership {
+  id: string;
+  directConversationId: string;
+  userId: string;
+  isMember: boolean;
+  joinedAt: Date | null;
+  leftAt: Date | null;
+}
+
 export interface PublicDirectConversation {
   scopeId: string; // convo id
   userId: string; // other participant id in DM
@@ -105,7 +115,6 @@ export interface WebSocketAppEventRegistry {
   };
   GET_JOINABLE_ROOMS: unknown;
   GET_JOINABLE_DIRECT_CONVERSATIONS: unknown;
-  GET_DIRECT_CONVERSATIONS: unknown;
   // Client sends a message.
   SEND_MESSAGE: {
     message: string;
@@ -116,9 +125,8 @@ export interface WebSocketAppEventRegistry {
     id: string;
   };
   ENTER_DIRECT_CONVERSATION: {
-    scopeId: string;
-    // Was this direct convo entered via clicking on a member inside a room?
-    isMemberClick: boolean;
+    directConversation: PublicMember;
+    isProgrammatic: boolean;
   };
   // Client tells server they want to join a room.
   JOIN_ROOM: {
@@ -168,8 +176,8 @@ export interface WebSocketAppEventRegistry {
   };
   ENTERED_DIRECT_CONVERSATION: {
     messages: PublicMessage[];
-    scopeId: string;
-    isMemberClick: boolean;
+    directConversation: PublicMember;
+    isProgrammatic: boolean;
     error?: WebSocketAppError;
   };
   // Server informs client of join room result, and provides the client with a list of updated rooms.
@@ -207,11 +215,6 @@ export interface WebSocketAppEventRegistry {
   // Server sends client a list of rooms they are a member of.
   LIST_ROOMS: {
     rooms: Room[];
-    error?: WebSocketAppError;
-  };
-  // Server sends clients all direct convos they're in.
-  LIST_DIRECT_CONVERSATIONS: {
-    directConversations: PublicDirectConversation[];
     error?: WebSocketAppError;
   };
   // Server sends client a list of users they are not already in a direct convo with (or any condition, like user hasn't blocked them, etc..)

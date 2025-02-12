@@ -129,6 +129,20 @@ export default class WebSocketApp extends EventEmitter {
   }
 
   /**
+   * Returns a cached client, if exists, otherwise, returns null.
+   * @param id : the id of the cached item.
+   * @returns
+   */
+  getCachedItem(id: string): WebSocketClient | null {
+    for (const [_containerId, container] of WebSocketApp.cache) {
+      if (container.has(id)) {
+        return container.get(id)!;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Removes item from container, if they exist in said container,
    * oherwise we do nothing. No error is thrown.
    * @param itemId ID of item to remove

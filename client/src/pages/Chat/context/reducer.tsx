@@ -81,7 +81,8 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return { ...state, isEnteringRoom: action.payload };
     }
     case "LEFT_DIRECT_CONVERSATION": {
-      return { ...state, directConversations: action.payload, messages: [], chatScope: null };
+      const copy = sortMembers(action.payload, true);
+      return { ...state, directConversations: copy, messages: [], chatScope: null };
     }
     case "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN": {
       return { ...state, isCreateDirectConversationModalOpen: action.payload };
@@ -124,23 +125,25 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return newState;
     }
     case "SET_MEMBER_ACTIVE_STATUS": {
+      const newState = { ...state };
       const memberIndex = state.members?.findIndex((m) => m.userId === action.payload.userId);
       const directConversationIndex = state.directConversations?.findIndex((dc) => dc.userId === action.payload.userId);
-      let tempMembers: PublicMember[] = [];
-      let tempDirectConvos: PublicDirectConversation[] = [];
+      console.log({
+        type: "SET_MEMBER_ACTIVE_STATUS",
+        isMemberFound: memberIndex !== undefined && memberIndex !== -1,
+        isDirectConversationFound: directConversationIndex !== undefined && directConversationIndex !== -1,
+      });
       if (memberIndex !== undefined && memberIndex !== -1) {
-        tempMembers = [...(state.members || [])];
-        tempMembers[memberIndex].isActive = action.payload.isActive;
+        newState.members = [...(state.members || [])];
+        newState.members[memberIndex].isActive = action.payload.isActive;
+        sortMembers(newState.members, false);
       }
       if (directConversationIndex !== undefined && directConversationIndex !== -1) {
-        tempDirectConvos = [...(state.directConversations || [])];
-        tempDirectConvos[directConversationIndex].isActive = action.payload.isActive;
+        newState.directConversations = [...(state.directConversations || [])];
+        newState.directConversations[directConversationIndex].isActive = action.payload.isActive;
+        sortMembers(newState.directConversations, false);
       }
-      return {
-        ...state,
-        members: sortMembers(tempMembers, true),
-        directConversations: sortMembers(tempDirectConvos, true),
-      };
+      return newState;
     }
     default: {
       return state;

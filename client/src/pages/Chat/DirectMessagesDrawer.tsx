@@ -1,10 +1,10 @@
 import React, { CSSProperties, memo, RefObject, useCallback, useEffect, useMemo } from "react";
 import { Member } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
-import { useChat } from "@hooks";
 import { PublicDirectConversation } from "@root/types.shared";
 import { WebSocketeerEventHandler } from "@client/types";
 import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
+import { useChat } from "@hooks";
 
 // TODO pull this out and make a standalone drawer component
 
@@ -56,28 +56,31 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose, offcanvasRef } = props;
   const { state, dispatch } = useChat();
 
+  //useEffect(() => {}, [dispatch, state.directConversations]);
+
   useEffect(() => {
     const handleEnteredDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_DIRECT_CONVERSATION"> = ({
       error,
       messages,
-      isMemberClick,
-      scopeId,
+      directConversation,
+      isProgrammatic,
     }) => {
       if (error) {
         return console.error(error);
       }
-      if (isMemberClick) {
-        document.getElementById(scopeId)?.scrollIntoView({ behavior: "smooth" });
-      }
-      const convo = state.directConversations?.find((convo) => convo.scopeId === scopeId);
-      if (!convo) {
-        return console.error(`[DirectMessagesDrawer]::handleEnteredDirectConversatoin : unable to locate convo in state!`, { scopeId });
+      if (isProgrammatic) {
+        document.getElementById(directConversation.scopeId)?.scrollIntoView({ behavior: "smooth" });
       }
       dispatch({
         type: "ENTERED_DIRECT_CONVERSATION",
         payload: {
           messages,
-          chatScope: { id: scopeId, scopeName: convo.userName, otherParticipantUserId: convo.userId, type: "DirectConversation" },
+          chatScope: {
+            id: directConversation.scopeId,
+            scopeName: directConversation.userName,
+            otherParticipantUserId: directConversation.userId,
+            type: "DirectConversation",
+          },
         },
       });
     };
@@ -118,7 +121,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   // prettier-ignore
   const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: directConvo.scopeId, isMemberClick: false });
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: directConvo, isProgrammatic: false });
     autoCloseDrawerOnSmallScreens();
   }, [autoCloseDrawerOnSmallScreens]);
 

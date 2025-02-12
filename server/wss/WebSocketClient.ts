@@ -2,7 +2,7 @@ import { WebSocket } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
 import WebSocketApp from "./WebSocketApp";
 import { CachedContainer, Container, EventPayload, EventTypes } from "../types";
-import { User } from "@root/types.shared";
+import { PublicMessage, User } from "@root/types.shared";
 
 export default class WebSocketClient {
   private _socket: WebSocket;
@@ -33,6 +33,10 @@ export default class WebSocketClient {
 
   send<K extends EventTypes>(type: K, payload: EventPayload<K>): void {
     this._socket.send(new WebSocketMessage(type, payload).toJSONString());
+  }
+
+  sendDirectMessage(toClient: WebSocketClient, message: PublicMessage): void {
+    toClient.send("RECEIVE_MESSAGE", { message });
   }
 
   broadcast<K extends EventTypes>(type: K, payload: EventPayload<K>): void {

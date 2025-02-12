@@ -5,7 +5,7 @@ import parseCookies from "./parseCookies";
 import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
-import { Message, PublicMessage, Room, User } from "@root/types.shared";
+import { Message, PublicMember, PublicMessage, Room, User } from "@root/types.shared";
 
 let DATABASE: DatabaseProvider;
 const wsapp = new WebSocketApp();
@@ -122,7 +122,6 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
     switch (scope.type) {
       case "Room": {
         sentMessage = await DATABASE.roomMessages.create(client.activeIn.id, client.user.id, message);
-
         publicMessage = {
           scopeId: sentMessage.scopeId,
           userId: client.user.id,
@@ -131,16 +130,18 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
           id: sentMessage.id,
           userName: client.user.userName,
         };
+        client.broadcast("RECEIVE_MESSAGE", { message: publicMessage });
         break;
       }
+
       case "DirectConversation": {
         if (!scope.otherParticipantUserId) {
           throw new Error("Missing other participants userId!");
         }
 
         // If user is actively in convo, mark as read
-        const isRead = wsapp.getCachedContainer(scope.id).has(scope.otherParticipantUserId);
-        sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message, isRead);
+        const isInActiveConvo = wsapp.getCachedContainer(scope.id).has(scope.otherParticipantUserId);
+        sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message, isInActiveConvo);
 
         publicMessage = {
           message: sentMessage.message,
@@ -149,8 +150,24 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
           timestamp: sentMessage.timestamp,
           userId: client.user.id,
           userName: client.user.userName,
-          isRead: sentMessage.isRead,
         };
+
+        if (isInActiveConvo) {
+          // Since they are actively in same scope, we can just broadcast to that scope
+          client.broadcast("RECEIVE_MESSAGE", { message: publicMessage });
+          break;
+        }
+        // Here it doesn't matter if recipient is currently a member of direct convo or not, either way, we need to add them to it.
+        // This query should not throw an error if they already are a member.
+        await DATABASE.directConversations.addUserToDirectConversation(scope.id, scope.otherParticipantUserId);
+
+        // Also, check if recipient is even online, if they are we can include frontend logic to alert them of a new direct convo.
+        const recipient = wsapp.getCachedItem(scope.otherParticipantUserId);
+        if (recipient) {
+          client.sendDirectMessage(recipient, publicMessage);
+          break;
+        }
+
         break;
       }
     }
@@ -158,8 +175,6 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
     if (publicMessage === null) {
       return client.send("SENT_MESSAGE", { error: new Error(`Scope '${scope.type}' is unrecognized.`), message: {} as PublicMessage });
     }
-
-    client.broadcast("RECEIVE_MESSAGE", { message: publicMessage });
     client.send("SENT_MESSAGE", { message: publicMessage });
   } catch (e) {
     console.error(`[ERROR] TODO : handle this error better! From SEND_MESSAGE :`, e);
@@ -345,35 +360,19 @@ wsapp.on("GET_JOINABLE_ROOMS", async (client) => {
 
 /**
  *
- * @event {GET_DIRECT_CONVERSATIONS}
- *
- * Gets all direct conversations (DMs) that a user is currently in.
- *
- */
-wsapp.on("GET_DIRECT_CONVERSATIONS", async (client) => {
-  try {
-    const directConversations = await DATABASE.directConversations.selectByUserId(client.user.id);
-    client.send("LIST_DIRECT_CONVERSATIONS", { directConversations: directConversations.map((c) => ({ ...c, isActive: wsapp.isItemCached(c.userId) })) });
-  } catch (e) {
-    client.send("LIST_DIRECT_CONVERSATIONS", { error: e as Error, directConversations: [] });
-  }
-});
-
-/**
- *
  * @event {ENTER_DIRECT_CONVERSATION}
  *
  * Gets all messages in a direct conversation.
  *
  */
-wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { scopeId, isMemberClick }) => {
+wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { directConversation, isProgrammatic }) => {
   try {
-    const messages = await DATABASE.directMessages.selectByDirectConversationId(scopeId);
+    const messages = await DATABASE.directMessages.selectByDirectConversationId(directConversation.scopeId);
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
-    client.setActiveIn(scopeId, wsapp.addClientToCache(client, scopeId));
-    client.send("ENTERED_DIRECT_CONVERSATION", { messages, scopeId, isMemberClick });
+    client.setActiveIn(directConversation.scopeId, wsapp.addClientToCache(client, directConversation.scopeId));
+    client.send("ENTERED_DIRECT_CONVERSATION", { messages, directConversation, isProgrammatic });
   } catch (e) {
-    client.send("ENTERED_DIRECT_CONVERSATION", { error: (e as Error).message, messages: [], scopeId: "", isMemberClick });
+    client.send("ENTERED_DIRECT_CONVERSATION", { error: (e as Error).message, messages: [], directConversation: {} as PublicMember, isProgrammatic: false });
   }
 });
 
