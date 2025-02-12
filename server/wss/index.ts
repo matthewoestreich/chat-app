@@ -119,35 +119,40 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
     let publicMessage: PublicMessage | null = null;
     let sentMessage: Message | null = null;
 
-    if (scope.type === "Room") {
-      sentMessage = await DATABASE.roomMessages.create(client.activeIn.id, client.user.id, message);
-      publicMessage = {
-        scopeId: sentMessage.scopeId,
-        userId: client.user.id,
-        timestamp: sentMessage.timestamp,
-        message: sentMessage.message,
-        id: sentMessage.id,
-        userName: client.user.userName,
-      };
-    } else if (scope.type === "DirectConversation") {
-      if (!scope.otherParticipantUserId) {
-        throw new Error("Missing other participants userId!");
+    switch (scope.type) {
+      case "Room": {
+        sentMessage = await DATABASE.roomMessages.create(client.activeIn.id, client.user.id, message);
+
+        publicMessage = {
+          scopeId: sentMessage.scopeId,
+          userId: client.user.id,
+          timestamp: sentMessage.timestamp,
+          message: sentMessage.message,
+          id: sentMessage.id,
+          userName: client.user.userName,
+        };
+        break;
       }
-      let isRead = false;
-      // If user is actively in convo, mark as read
-      if (wsapp.getCachedContainer(scope.id).has(scope.otherParticipantUserId)) {
-        isRead = true;
+      case "DirectConversation": {
+        if (!scope.otherParticipantUserId) {
+          throw new Error("Missing other participants userId!");
+        }
+
+        // If user is actively in convo, mark as read
+        const isRead = wsapp.getCachedContainer(scope.id).has(scope.otherParticipantUserId);
+        sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message, isRead);
+
+        publicMessage = {
+          message: sentMessage.message,
+          id: sentMessage.id,
+          scopeId: sentMessage.scopeId,
+          timestamp: sentMessage.timestamp,
+          userId: client.user.id,
+          userName: client.user.userName,
+          isRead: sentMessage.isRead,
+        };
+        break;
       }
-      sentMessage = await DATABASE.directMessages.create(scope.id, client.user.id, scope.otherParticipantUserId, message, isRead);
-      publicMessage = {
-        message: sentMessage.message,
-        id: sentMessage.id,
-        scopeId: sentMessage.scopeId,
-        timestamp: sentMessage.timestamp,
-        userId: client.user.id,
-        userName: client.user.userName,
-        isRead: sentMessage.isRead,
-      };
     }
 
     if (publicMessage === null) {
@@ -276,9 +281,7 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
  *
  * @event {CREATE_DIRECT_CONVERSATION}
  *
- * Create direct convo is used to explicitly create a new direct convo via the join convo modal.
- * JOINED_DIRECT_CONVERSATION is used when a user is in a chat room and clicks on a member they wish to have
- * a direct convo with. If they were not already in a direct convo, join will create the convo and then enter it.
+ * Create direct convo is used to explicitly create a new direct convo.
  *
  */
 wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {

@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import { generateSessionToken } from "@server/generateTokens.js";
-
-const ONE_DAY = 24 * 60 * 60 * 1000;
-
-function formatUser(user: AuthenticatedUser): { id: string; userName: string; email: string } {
-  return { id: user.id, userName: user.userName, email: user.email };
-}
+import setSessionCookie, { COOKIE_NAME } from "@root/server/sessionCookie";
 
 export default async function useJwt(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -17,7 +12,11 @@ export default async function useJwt(req: Request, res: Response, next: NextFunc
 
     const decodedToken = (await verifyJwtAsync(session, process.env.JWT_SIGNATURE || "")) as AuthenticatedUser | null;
     if (decodedToken) {
-      req.user = formatUser(decodedToken);
+      req.user = {
+        id: decodedToken.id,
+        userName: decodedToken.userName,
+        email: decodedToken.email,
+      };
       return next();
     }
 
@@ -25,7 +24,7 @@ export default async function useJwt(req: Request, res: Response, next: NextFunc
     await handleSessionRefresh(session, req, res);
     next();
   } catch (_e) {
-    res.clearCookie("session");
+    res.clearCookie(COOKIE_NAME);
     next();
   }
 }
@@ -64,9 +63,13 @@ async function handleSessionRefresh(receivedSessionToken: string, req: Request, 
     // Update refresh token in db to newly generated refresh token.
     await req.databaseProvider.sessions.upsert(decodedToken.id, sessionToken.signed);
     // Update request object
-    req.user = formatUser(decodedToken);
+    req.user = {
+      id: sessionToken.id,
+      userName: sessionToken.userName,
+      email: sessionToken.email,
+    };
     // Update client side cookie
-    res.cookie("session", sessionToken.signed, { maxAge: ONE_DAY });
+    setSessionCookie(res, sessionToken);
     return true;
   } catch (_e) {
     return false;

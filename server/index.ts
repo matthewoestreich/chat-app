@@ -8,6 +8,7 @@ import morgan from "morgan";
 import { useCookieParser, useCspNonce, attachDatabaseProvider, useJwt, useErrorCatchall } from "@server/middleware";
 import clearAllCookies from "./clearAllCookies";
 import WebSocketApp from "./wss/WebSocketApp";
+import setSessionCookie, { COOKIE_NAME } from "./sessionCookie";
 
 const app = express();
 export const setDatabaseProvider = attachDatabaseProvider(app);
@@ -96,32 +97,30 @@ app.post("/auth/register", async (req: Request, res: Response) => {
  */
 app.post("/auth/login", async (req: Request, res: Response) => {
   try {
+    clearAllCookies(req, res);
+
     const { p: password, e: email } = req.body;
     if (!password || !email) {
-      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
 
     const foundUser = await req.databaseProvider.accounts.selectByEmail(email);
-
     if (!foundUser || !foundUser?.email || !foundUser?.password) {
-      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
 
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
     if (!isValidPassword) {
-      clearAllCookies(req, res);
       res.status(403).send({ ok: false });
       return;
     }
 
-    clearAllCookies(req, res);
     const { user_name, id, email: foundEmail } = foundUser;
     const jwt = generateSessionToken(user_name, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
+    setSessionCookie(res, jwt);
 
     res.status(200).send({ ok: true, session: jwt.signed, id, userName: user_name, email });
   } catch (_e) {
@@ -139,11 +138,11 @@ app.post("/auth/logout", async (req: Request, res: Response) => {
   try {
     const { session } = req.cookies;
     await req.databaseProvider.sessions.delete(session);
-    res.clearCookie("session");
+    res.clearCookie(COOKIE_NAME);
     res.status(200).send({ ok: true });
   } catch (e) {
     console.error("Error during logout", e);
-    res.clearCookie("session");
+    res.clearCookie(COOKIE_NAME);
     res.status(500).send({ ok: false });
   }
 });
