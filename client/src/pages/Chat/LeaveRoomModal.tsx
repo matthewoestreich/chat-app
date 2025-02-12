@@ -8,7 +8,6 @@ interface LeaveRoomModalProperties extends HTMLAttributes<HTMLDivElement> {
   onClose: () => void;
 }
 
-// LeaveRoomModal
 export default function LeaveRoomModal(props: LeaveRoomModalProperties): React.JSX.Element {
   const { state } = useChat();
 

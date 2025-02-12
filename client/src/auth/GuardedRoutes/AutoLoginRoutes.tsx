@@ -10,29 +10,34 @@ import { LoadingSpinner } from "@components";
  *
  * This differs fromm ProtectedRoutes because we redirect *to* protected
  * routes, vs *away* from them.
+ *
+ * We use `attemptedValidation` field in state bc we are using http only cookies. This means we cannot
+ * check for a cookie client-side and must rely on the server for any checks.
  */
 export default function AutoLoginRoutes(): React.JSX.Element | null {
-  const { session, validateSession } = useAuth();
+  const { session, validateSession, attemptedValidation } = useAuth();
 
   useEffect(() => {
-    // If `document.cookie` exists but no session,
-    // we need to validate before letting them through.
-    if (document.cookie && !session) {
+    // If no session exists in state, try to validate cookie (even though we
+    // don't know if one exists).
+    if (!attemptedValidation && !session) {
+      // `attemptedValidation` is set within `validateSession()`
       validateSession();
     }
-  }, [validateSession, session]);
+  }, [validateSession, attemptedValidation, session]);
 
-  // If the user has a cookie but no session stored in state, validate
-  // the cookie to see if we can log them in automatically.
-  if (document.cookie && !session) {
+  // If validation has not been attempted and no session stored in state, try to validate
+  // the users cookie (at this point we aren't even sure if they have one) to see if we
+  // can log them in automatically.
+  //
+  // We can't check for a cookie bc we are using http only cookies, which cannot be accessed
+  // client-side.
+  if (!attemptedValidation && !session) {
     return <LoadingSpinner />;
   }
-  // If the user has a cookie and a session in state, it means they are authenticated
-  // and we can send them to the protected route.
-  // We can safely do this because if the user had a cookie but no session (the `if` above)
-  // and the cookie was bad, the backend removes all cookies. Meaning, they would not
-  // have a `document.cookie` here.
-  if (document.cookie && session) {
+  // If we attempted validation and a session exists in state, it means the cookie was validated
+  // successfully, and we can send them to the protected route.
+  if (attemptedValidation && session) {
     return <Navigate to="/chat" />;
   }
   // If we make it here, it means the user has to authenticate manually.

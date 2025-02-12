@@ -8,10 +8,18 @@ interface AuthProviderProperties {
   children: ReactNode;
 }
 
+/**
+ *
+ * We use `attemptedValidation` field in state bc we are using http only cookies. This means we cannot
+ * check for a cookie client-side and must rely on the server for any checks.
+ *
+ */
+
 export default function AuthProvider(props: AuthProviderProperties): React.JSX.Element {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [session, setSession] = useState<string | null>(null);
-  const { setCookie, clearAllCookies } = useCookies();
+  const [attemptedValidation, setAttemptedValidation] = useState(false);
+  const { clearAllCookies } = useCookies();
   const navigate = useNavigate();
 
   /**
@@ -24,7 +32,6 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
     if (ok && userName && id && email && sessionToken) {
       setUser({ userName, id, email });
       setSession(sessionToken);
-      setCookie("session", sessionToken, 1);
       navigate("/chat");
       return ok;
     }
@@ -41,6 +48,7 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
       return;
     }
     const { ok, userName, id, email, session: sessionToken } = await sendValidateRequest();
+    setAttemptedValidation(true);
     if (ok && userName && id && email && sessionToken) {
       setUser({ userName, id, email });
       setSession(sessionToken);
@@ -62,7 +70,7 @@ export default function AuthProvider(props: AuthProviderProperties): React.JSX.E
 
   // prettier-ignore
   return (
-    <AuthContext.Provider value={{ validateSession, session, user, login, logout }}>
+    <AuthContext.Provider value={{ validateSession, session, user, login, logout, attemptedValidation }}>
       {props.children}
     </AuthContext.Provider>
   )

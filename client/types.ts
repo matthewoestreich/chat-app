@@ -44,6 +44,7 @@ export interface UserData {
 export interface AuthContextValue {
   user: AuthenticatedUser | null;
   session: string | null;
+  attemptedValidation: boolean;
   validateSession: () => void;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
