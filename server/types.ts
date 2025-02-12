@@ -1,15 +1,6 @@
 import { DirectConversation, Message, PublicDirectConversation, PublicMessage, PublicUser, Room, ChatScopeWithMembers, Session, User, WebSocketAppEventRegistry, PublicMember } from "@root/types.shared";
 import type { WebSocket } from "ws";
-
-declare class WebSocketClient {
-  get socket(): WebSocket;
-  get user(): AuthenticatedUser | User;
-  get activeIn(): CachedContainer;
-  set user(account: AuthenticatedUser | User);
-  setActiveIn(id: string, container: Container): void;
-  send<K extends EventTypes>(type: K, payload: EventPayload<K>): void;
-  broadcast<K extends EventTypes>(type: K, payload: EventPayload<K>): void;
-}
+import WebSocketClient from "./wss/WebSocketClient";
 
 export type IWebSocketMessage = {
   type: EventTypes;
@@ -77,6 +68,7 @@ export interface DirectConversationsRepository<DB> {
   delete(id: string): Promise<boolean>;
   addUserToDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
   removeUserFromDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
+  isUserAMemberOfDirectConversation(directConversationId: string, userId: string): Promise<boolean>;
   selectByUserId(userId: string): Promise<PublicDirectConversation[]>;
   selectInvitableUsersByUserId(userId: string): Promise<PublicMember[]>;
 }

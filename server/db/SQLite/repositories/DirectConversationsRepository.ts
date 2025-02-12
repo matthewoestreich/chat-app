@@ -1,6 +1,6 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
-import { DirectConversation, PublicDirectConversation, PublicMember } from "@root/types.shared";
+import { DirectConversation, DirectConversationMembership, PublicDirectConversation, PublicMember } from "@root/types.shared";
 import { DatabasePool, DirectConversationsRepository } from "@server/types";
 import TABLE from "../../tables";
 
@@ -106,6 +106,33 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
             return reject(err);
           }
           return resolve(rows);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
+  }
+
+  async isUserAMemberOfDirectConversation(directConversationId: string, userId: string): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        const query = `
+        SELECT *
+        FROM ${TABLE.directConversationMemberships} dcm
+        WHERE 
+          dcm.directConversationId = ?
+        AND
+          dcm.userId = ?
+        `;
+        const params = [directConversationId, userId];
+        db.get(query, params, (error: Error | null, row: DirectConversationMembership) => {
+          release();
+          if (error) {
+            return reject(error);
+          }
+          resolve(row.isMember);
         });
       } catch (e) {
         release();

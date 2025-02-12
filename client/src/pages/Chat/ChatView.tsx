@@ -84,10 +84,13 @@ export default function ChatView(): React.JSX.Element {
 
     const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
       if (error) return console.error(error);
-      dispatch({ type: "RECEIVE_MESSAGE", payload: message });
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
       }
+      if (state.chatScope === null || message.scopeId === state.chatScope.id) {
+        return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
+      }
+      alert(JSON.stringify(message, null, 2));
     };
 
     const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
@@ -174,8 +177,12 @@ export default function ChatView(): React.JSX.Element {
       if (state.isCreateDirectConversationModalOpen) {
         return;
       }
+      const convo = directConversations.find((convo) => convo.scopeId === scopeId);
+      if (convo === undefined) {
+        return console.error("Unable to find convo", { scopeId });
+      }
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId, isMemberClick: true });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: convo, isProgrammatic: true });
       // Don't open direct convos drawer if on small screen
       autoCloseDirectMessagesAndMembersOnSmallScreens();
     };
@@ -266,18 +273,21 @@ export default function ChatView(): React.JSX.Element {
    * Member click handler
    */
   // prettier-ignore
-  const handleMemberClick = useCallback(({ scopeId, userId }: PublicMember) => {
+  const handleMemberClick = useCallback((member: PublicMember) => {
     if (!state.directConversations) {
-      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: userId });
+      console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
+      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
     }
     // See if we are already in a direct convo with this member.
-    const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === userId);
+    const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === member.userId);
     if (convoIndex === -1) {
       // It's a new direct convo
-      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: userId });
+      console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
+      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
     }
+    console.log({from:"ChatView::handleMemberClick", isNewConvo: false});
     // It's an existing convo. Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { scopeId: scopeId, isMemberClick: true });
+    websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
     // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
     autoCloseDirectMessagesAndMembersOnSmallScreens();
   }, [state.directConversations]);
