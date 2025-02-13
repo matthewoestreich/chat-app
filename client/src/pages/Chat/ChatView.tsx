@@ -454,7 +454,7 @@ export default function ChatView(): React.JSX.Element {
                 {state.chatScope !== null && state.chatScope.scopeName}
               </div>
             </div>
-            <div ref={chatDisplayRef} className="card-body overf-y-scroll">
+            <div id="chat-messages-display" ref={chatDisplayRef} className="card-body overf-y-scroll">
               {renderMessages()}
             </div>
             <div className="card-footer">
