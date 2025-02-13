@@ -56,8 +56,6 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
   const { isShown, onClose, offcanvasRef } = props;
   const { state, dispatch } = useChat();
 
-  //useEffect(() => {}, [dispatch, state.directConversations]);
-
   useEffect(() => {
     const handleEnteredDirectConversation: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_DIRECT_CONVERSATION"> = ({
       error,
@@ -71,6 +69,7 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
       if (isProgrammatic) {
         document.getElementById(directConversation.scopeId)?.scrollIntoView({ behavior: "smooth" });
       }
+
       dispatch({
         type: "ENTERED_DIRECT_CONVERSATION",
         payload: {
@@ -104,10 +103,8 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     onClose();
   }, [onClose]);
 
-  /**
-   * If screen is "md" breakpoint or below, auto close drawer after a user selects a
-   * direct convo via clicking a member or clicking on convo directly.
-   */
+  /*** If screen is "md" breakpoint or below, auto close drawer after a user selects a
+   * direct convo via clicking a member or clicking on convo directly. */
   const autoCloseDrawerOnSmallScreens = useCallback(() => {
     if (offcanvasRef !== undefined && offcanvasRef.current) {
       closeOffcanvasAtOrBelowBreakpoint(offcanvasRef, "md");
@@ -119,12 +116,13 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     }
   }, [offcanvasRef, onClose]);
 
-  // prettier-ignore
-  const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
-    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: directConvo, isProgrammatic: false });
-    autoCloseDrawerOnSmallScreens();
-  }, [autoCloseDrawerOnSmallScreens, dispatch]);
+  const handleDirectConversationClick = useCallback(
+    (directConvo: PublicDirectConversation) => {
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: directConvo, isProgrammatic: false });
+      autoCloseDrawerOnSmallScreens();
+    },
+    [autoCloseDrawerOnSmallScreens],
+  );
 
   const directConversationClickHandlers = useMemo(() => {
     return new Map(state.directConversations?.map((dc) => [dc.scopeId, (): void => handleDirectConversationClick(dc)]));
