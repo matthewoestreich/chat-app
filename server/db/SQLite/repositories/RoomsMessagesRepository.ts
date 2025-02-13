@@ -93,6 +93,7 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
           }
           try {
             const newMessage = await this.getById(messageId);
+            newMessage.scopeId = roomId;
             resolve(newMessage);
           } catch (_e) {
             resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
