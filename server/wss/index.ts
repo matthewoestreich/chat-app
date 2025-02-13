@@ -164,7 +164,12 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
         // Also, check if recipient is even online, if they are we can include frontend logic to alert them of a new direct convo.
         const recipient = wsapp.getCachedItem(scope.otherParticipantUserId);
         if (recipient) {
+          const updatedDirectConvos = await DATABASE.directConversations.selectByUserId(scope.otherParticipantUserId);
           client.sendDirectMessage(recipient, publicMessage);
+          // We also need to update the recipients list of direct convos
+          recipient.send("LIST_DIRECT_CONVERSATIONS", {
+            directConversations: updatedDirectConvos.map((dc) => ({ ...dc, isActive: wsapp.isItemCached(dc.userId) })),
+          });
           break;
         }
 

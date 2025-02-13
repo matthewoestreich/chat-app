@@ -58,7 +58,7 @@ Cypress.Commands.add("getSendChatMessageButton", () => {
 });
 
 Cypress.Commands.add("getChatDisplay", () => {
-  cy.get(".message").first().parent().should("be.visible");
+  cy.get("#chat-messages-display").should("be.visible");
 });
 
 Cypress.Commands.add("createAccount", (name: string, email: string, password: string) => {

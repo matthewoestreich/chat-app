@@ -92,6 +92,17 @@ export interface DirectConversationMembership {
   leftAt: Date | null;
 }
 
+// Raw data used for returning data from direct_messages table.
+export interface DirectMessage {
+  id: string;
+  directConversationId: string;
+  fromUserId: string;
+  toUserId: string;
+  message: string;
+  isRead: boolean;
+  timestamp: Date;
+}
+
 export interface PublicDirectConversation {
   scopeId: string; // convo id
   userId: string; // other participant id in DM
@@ -210,6 +221,10 @@ export interface WebSocketAppEventRegistry {
   // Server sends clients a list of rooms they aren't already a member of (or any conditon, like room is public, etc..)
   LIST_JOINABLE_ROOMS: {
     rooms: Room[];
+    error?: WebSocketAppError;
+  };
+  LIST_DIRECT_CONVERSATIONS: {
+    directConversations: PublicMember[];
     error?: WebSocketAppError;
   };
   // Server sends client a list of rooms they are a member of.

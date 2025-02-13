@@ -50,8 +50,23 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
   getAll(): Promise<Message[]> {
     throw new Error("Method not implemented.");
   }
-  getById(_id: string): Promise<Message> {
-    throw new Error("Method not implemented.");
+
+  async getById(id: string): Promise<Message> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        db.get(`SELECT * FROM ${TABLE.roomMessages} rm WHERE rm.id = ?`, [id], function (err: Error | null, row: Message) {
+          release();
+          if (err) {
+            return reject(err);
+          }
+          resolve(row);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
   }
 
   /**
@@ -71,13 +86,17 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
         // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
         const query = `INSERT INTO ${TABLE.roomMessages} (id, roomId, userId, message) VALUES (?, ?, ?, ?)`;
         const params = [messageId, roomId, userId, message];
-        db.run(query, params, function (err) {
+        db.run(query, params, async (err: Error | null) => {
           release();
           if (err) {
             return reject(err);
           }
-          // FYI LET THE DB HANDLE INSERTING THE TIMESTAMP!
-          return resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
+          try {
+            const newMessage = await this.getById(messageId);
+            resolve(newMessage);
+          } catch (_e) {
+            resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
+          }
         });
       } catch (e) {
         release();
