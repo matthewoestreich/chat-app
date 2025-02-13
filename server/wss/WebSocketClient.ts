@@ -1,6 +1,5 @@
 import { WebSocket } from "ws";
 import WebSocketMessage from "./WebSocketMessage";
-import WebSocketApp from "./WebSocketApp";
 import { CachedContainer, Container, EventPayload, EventTypes } from "../types";
 import { PublicMessage, User } from "@root/types.shared";
 
@@ -40,10 +39,6 @@ export default class WebSocketClient {
   }
 
   broadcast<K extends EventTypes>(type: K, payload: EventPayload<K>): void {
-    if (this.activeIn.id === WebSocketApp.ID_UNASSIGNED) {
-      return;
-    }
-
     const room = this.activeIn.container;
     if (!room) {
       return;

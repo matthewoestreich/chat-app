@@ -102,6 +102,8 @@ export default function ChatView(): React.JSX.Element {
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
       }
+      console.log({ from: "ChatView::handleReceiveMessage", message });
+
       // We are actively in a direct convo with the person that messaged us
       if (state.chatScope === null || message.scopeId === state.chatScope.id) {
         console.log({ from: "ChatView::handleReceiveMessage", message });
