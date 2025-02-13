@@ -276,17 +276,15 @@ export default function ChatView(): React.JSX.Element {
   // prettier-ignore
   const handleMemberClick = useCallback((member: PublicMember) => {
     dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
-    if (!state.directConversations) {
-      console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
-      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
-    }
+
     // See if we are already in a direct convo with this member.
     const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === member.userId);
-    if (convoIndex === -1) {
+    if (convoIndex === undefined || convoIndex === -1) {
       // It's a new direct convo
       console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
       return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
     }
+
     console.log({from:"ChatView::handleMemberClick", isNewConvo: false});
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
     // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
