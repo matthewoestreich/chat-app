@@ -291,7 +291,7 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
     // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
     autoCloseDirectMessagesAndMembersOnSmallScreens();
-  }, [state.directConversations]);
+  }, [state.directConversations, dispatch]);
 
   /**
    * Member Click Handlers map
