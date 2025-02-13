@@ -121,9 +121,10 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   // prettier-ignore
   const handleDirectConversationClick = useCallback((directConvo: PublicDirectConversation) => {
+    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: directConvo, isProgrammatic: false });
     autoCloseDrawerOnSmallScreens();
-  }, [autoCloseDrawerOnSmallScreens]);
+  }, [autoCloseDrawerOnSmallScreens, dispatch]);
 
   const directConversationClickHandlers = useMemo(() => {
     return new Map(state.directConversations?.map((dc) => [dc.scopeId, (): void => handleDirectConversationClick(dc)]));

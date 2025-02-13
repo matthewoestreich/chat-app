@@ -170,6 +170,7 @@ export default function ChatView(): React.JSX.Element {
       directConversations,
       error,
     }) => {
+      dispatch({ type: "SET_IS_ENTERING_ROOM", payload: false });
       if (error) {
         return console.error(error);
       }
@@ -274,6 +275,7 @@ export default function ChatView(): React.JSX.Element {
    */
   // prettier-ignore
   const handleMemberClick = useCallback((member: PublicMember) => {
+    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
     if (!state.directConversations) {
       console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
       return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
@@ -286,7 +288,6 @@ export default function ChatView(): React.JSX.Element {
       return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
     }
     console.log({from:"ChatView::handleMemberClick", isNewConvo: false});
-    // It's an existing convo. Since a direct convo doesn't have a name (like how a room has a name) just use the other persons userName as scopeName
     websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
     // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
     autoCloseDirectMessagesAndMembersOnSmallScreens();
