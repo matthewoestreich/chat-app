@@ -1,4 +1,4 @@
-import { PublicMessage } from "@root/types.shared";
+import { DirectMessage, PublicMessage } from "@root/types.shared";
 import { DatabasePool, DirectMessagesRepository } from "@server/types";
 import sqlite3 from "sqlite3";
 import { v7 as uuidV7 } from "uuid";
@@ -41,8 +41,22 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     throw new Error("Method not implemented.");
   }
 
-  getById(_id: string): Promise<PublicMessage> {
-    throw new Error("Method not implemented.");
+  async getById(id: string): Promise<DirectMessage> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        db.get(`SELECT * FROM ${TABLE.directMessages} dm WHERE dm.id = ?`, [id], function (err: Error | null, row: DirectMessage) {
+          release();
+          if (err) {
+            return reject(err);
+          }
+          resolve(row);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
   }
 
   async create(directConversationId: string, fromUserId: string, toUserId: string, message: string, isRead?: boolean): Promise<PublicMessage> {
@@ -65,16 +79,29 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
           params.push(isRead);
         }
 
-        db.run(query, params, (err: Error | null) => {
+        db.run(query, params, async (err: Error | null) => {
           release();
           if (err) {
             return reject(err);
           }
-          const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, userName: "", timestamp: new Date() };
-          if (isRead !== undefined) {
-            entity.isRead = isRead;
+          try {
+            const newDM = await this.getById(directMessageId);
+            resolve({
+              id: newDM.id,
+              userId: newDM.fromUserId,
+              message: newDM.message,
+              scopeId: newDM.directConversationId,
+              userName: "",
+              timestamp: newDM.timestamp,
+              isRead: newDM.isRead,
+            });
+          } catch (_e) {
+            const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, userName: "", timestamp: new Date() };
+            if (isRead !== undefined) {
+              entity.isRead = isRead;
+            }
+            resolve(entity);
           }
-          resolve(entity);
         });
       } catch (e) {
         release();

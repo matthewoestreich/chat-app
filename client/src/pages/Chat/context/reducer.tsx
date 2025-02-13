@@ -102,7 +102,10 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return { ...state, messages: [...(state.messages || []), action.payload] };
     }
     case "RECEIVE_MESSAGE": {
-      return { ...state, messages: [...(state.messages || []), action.payload] };
+      return {
+        ...state,
+        messages: [...(state.messages || []), action.payload],
+      };
     }
     case "ENTERED_ROOM": {
       return {

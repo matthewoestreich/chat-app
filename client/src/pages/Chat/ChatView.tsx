@@ -1,7 +1,7 @@
 import React, { KeyboardEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Offcanvas as BsOffcanvas } from "bootstrap";
 import { WebSocketeerEventHandler } from "@client/types";
-import { PublicMember } from "@root/types.shared";
+import { PublicMember, PublicMessage } from "@root/types.shared";
 import closeOffcanvasAtOrBelowBreakpoint, { BootstrapBreakpointDetector } from "@src/closeOffcanvasAtOrBelowBreakpoint";
 import { Message, Room, Member, LoadingSpinner } from "@components";
 import { useAuth, useChat, useEffectOnce, useRenderCounter } from "@hooks";
@@ -73,9 +73,24 @@ export default function ChatView(): React.JSX.Element {
     }
   }, [state.messages]);
 
+  useEffect(() => {
+    if (state.chatScope === null) {
+      websocketeer.send("ENTER_ROOM", { id: "_____________UNASSIGNED_____________" });
+    }
+  }, [state.chatScope]);
+
   useEffectOnce(() => {
+    const handleListDirectConversations: WebSocketeerEventHandler<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS"> = ({
+      directConversations,
+      error,
+    }) => {
+      if (error) return console.error(error);
+      dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
+    };
+
     const handleSentMessage: WebSocketeerEventHandler<WebSocketEvents, "SENT_MESSAGE"> = ({ message, error }) => {
       if (error) return console.error(error);
+      console.log({ from: "ChatView::handleSentMessage", message });
       dispatch({ type: "SENT_MESSAGE", payload: message });
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
@@ -87,9 +102,12 @@ export default function ChatView(): React.JSX.Element {
       if (chatMessageInputRef && chatMessageInputRef.current) {
         chatMessageInputRef.current.value = "";
       }
+      // We are actively in a direct convo with the person that messaged us
       if (state.chatScope === null || message.scopeId === state.chatScope.id) {
+        console.log({ from: "ChatView::handleReceiveMessage", message });
         return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
       }
+
       alert(JSON.stringify(message, null, 2));
     };
 
@@ -139,6 +157,7 @@ export default function ChatView(): React.JSX.Element {
       dispatch({ type: "SET_MEMBER_ACTIVE_STATUS", payload: { userId, isActive: true } });
     };
 
+    websocketeer.on("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
     websocketeer.on("SENT_MESSAGE", handleSentMessage);
     websocketeer.on("ENTERED_ROOM", handleEnteredRoom);
     websocketeer.on("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -151,6 +170,7 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
 
     return (): void => {
+      websocketeer.off("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
       websocketeer.off("SENT_MESSAGE", handleSentMessage);
       websocketeer.off("ENTERED_ROOM", handleEnteredRoom);
       websocketeer.off("MEMBER_ENTERED_ROOM", handleMemberEnteredRoom);
@@ -265,10 +285,40 @@ export default function ChatView(): React.JSX.Element {
     if (state.isEnteringRoom) {
       return <LoadingSpinnerMemo />;
     }
+
+    // If person Foo sends 3 messages in a row, we shouldn'nt render their name every time.
+    let prevMessage: PublicMessage | null = null;
+    // So we don't get a long string of messages without a name above the messages, render someones name every 3 CONSECUTIVE messages.
+    let numConsecutiveMessagesBySameMember = 0;
+
     return state.messages?.map((message) => {
-      return <MessageMemo messageId={message.id} key={message.id} message={message.message} from={message.userName || "-"} />;
+      let renderFrom = true;
+
+      if (prevMessage?.userId === message.userId) {
+        renderFrom = false;
+        numConsecutiveMessagesBySameMember++;
+      }
+      if (numConsecutiveMessagesBySameMember >= 3) {
+        numConsecutiveMessagesBySameMember = 0;
+        renderFrom = true;
+      }
+
+      const renderedMessage = (
+        <MessageMemo
+          messageId={message.id}
+          key={message.id}
+          message={message.message}
+          isSender={message.userId === user!.id}
+          from={message.userName || "-"}
+          renderFrom={renderFrom}
+          timestamp={new Date(`${message.timestamp} UTC`)}
+        />
+      );
+
+      prevMessage = message;
+      return renderedMessage;
     });
-  }, [state.messages, state.isEnteringRoom]);
+  }, [state.messages, state.isEnteringRoom, user]);
 
   /*** Member click handler */
   const handleMemberClick = useCallback(
@@ -400,7 +450,7 @@ export default function ChatView(): React.JSX.Element {
           </div>
           <div className="card col-lg-6 offset-lg-0 col-md-12 offset-md-0 h-90pct overf-hide d-flex">
             <div className="card-header d-flex flex-row">
-              <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title chat-title-no-room">
+              <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title display-6">
                 {state.chatScope !== null && state.chatScope.scopeName}
               </div>
             </div>
@@ -459,7 +509,7 @@ export default function ChatView(): React.JSX.Element {
                     className="btn btn-warning shadow flex-grow-1"
                     type="button"
                     title="Leave Current Room"
-                    disabled={state.chatScope === null}
+                    disabled={state.chatScope === null || state.chatScope.scopeName === "#general"}
                   >
                     <i className="bi bi-box-arrow-down-left"></i>
                   </button>
