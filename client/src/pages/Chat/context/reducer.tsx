@@ -73,7 +73,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
         ...state,
         chatScope: action.payload.chatScope,
         messages: action.payload.messages,
-        isEnteringRoom: false,
+        // members: [],
       };
     }
     case "SET_DIRECT_CONVERSATIONS": {

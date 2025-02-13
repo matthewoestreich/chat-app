@@ -170,7 +170,6 @@ export default function ChatView(): React.JSX.Element {
       directConversations,
       error,
     }) => {
-      dispatch({ type: "SET_IS_ENTERING_ROOM", payload: false });
       if (error) {
         return console.error(error);
       }
@@ -178,10 +177,12 @@ export default function ChatView(): React.JSX.Element {
       if (state.isCreateDirectConversationModalOpen) {
         return;
       }
+
       const convo = directConversations.find((convo) => convo.scopeId === scopeId);
       if (convo === undefined) {
         return console.error("Unable to find convo", { scopeId });
       }
+
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
       websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: convo, isProgrammatic: true });
       // Don't open direct convos drawer if on small screen
@@ -189,7 +190,6 @@ export default function ChatView(): React.JSX.Element {
     };
 
     websocketeer.on("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
-
     return (): void => {
       websocketeer.off("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
     };
@@ -207,24 +207,26 @@ export default function ChatView(): React.JSX.Element {
     setIsCreateRoomModalShown(true);
   }
 
-  // prettier-ignore
-  const handleMessageInputKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      e.stopPropagation();
-      if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
-        return;
-      }
-      websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
-    }
-  }, [state.chatScope, chatMessageInputRef]);
-
   function handleSendMessage(): void {
     if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
       return;
     }
     websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
   }
+
+  const handleMessageInputKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chatMessageInputRef.current === null || chatMessageInputRef.current.value === "" || !state.chatScope) {
+          return;
+        }
+        websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
+      }
+    },
+    [state.chatScope, chatMessageInputRef],
+  );
 
   const handleLogout = useCallback(() => {
     websocketeer.send("CONNECTION_LOGOUT");
@@ -258,9 +260,7 @@ export default function ChatView(): React.JSX.Element {
     dispatch({ type: "SET_IS_LEAVE_DIRECT_CONVERSATION_MODAL_OPEN", payload: false });
   }, [dispatch]);
 
-  /**
-   * Messages render function
-   */
+  /*** Messages render function */
   const renderMessages = useCallback(() => {
     if (state.isEnteringRoom) {
       return <LoadingSpinnerMemo />;
@@ -270,37 +270,31 @@ export default function ChatView(): React.JSX.Element {
     });
   }, [state.messages, state.isEnteringRoom]);
 
-  /**
-   * Member click handler
-   */
-  // prettier-ignore
-  const handleMemberClick = useCallback((member: PublicMember) => {
-    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
+  /*** Member click handler */
+  const handleMemberClick = useCallback(
+    (member: PublicMember) => {
+      // See if we are already in a direct convo with this member.
+      const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === member.userId);
+      if (convoIndex === undefined || convoIndex === -1) {
+        // It's a new direct convo
+        console.log({ from: "ChatView::handleMemberClick", isNewConvo: true });
+        return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
+      }
 
-    // See if we are already in a direct convo with this member.
-    const convoIndex = state.directConversations?.findIndex((dc) => dc.userId === member.userId);
-    if (convoIndex === undefined || convoIndex === -1) {
-      // It's a new direct convo
-      console.log({from:"ChatView::handleMemberClick", isNewConvo: true});
-      return websocketeer.send("CREATE_DIRECT_CONVERSATION", { withUserId: member.userId });
-    }
+      console.log({ from: "ChatView::handleMemberClick", isNewConvo: false });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
+      // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
+      autoCloseDirectMessagesAndMembersOnSmallScreens();
+    },
+    [state.directConversations],
+  );
 
-    console.log({from:"ChatView::handleMemberClick", isNewConvo: false});
-    websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
-    // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
-    autoCloseDirectMessagesAndMembersOnSmallScreens();
-  }, [state.directConversations, dispatch]);
-
-  /**
-   * Member Click Handlers map
-   */
+  /*** Member Click Handlers map */
   const memberClickHandlers = useMemo(() => {
     return new Map(state.members?.map((member) => [member.userId, (): void => handleMemberClick(member)]));
   }, [state.members, handleMemberClick]);
 
-  /**
-   * Members render function
-   */
+  /*** Members render function */
   const renderMembers = useCallback(() => {
     if (state.isEnteringRoom) {
       return <></>;
@@ -318,32 +312,28 @@ export default function ChatView(): React.JSX.Element {
     ));
   }, [state.members, state.isEnteringRoom, memberClickHandlers]);
 
-  /**
-   * Room click handler
-   */
-  // prettier-ignore
-  const handleRoomClick = useCallback((roomId: string) => {
-    if (state.chatScope?.id === roomId) {
-      // We're already in this room
-      return;
-    }
-    // No need to update ChatScope here. We only want to do that AFTER we entered the room.
-    dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
-    websocketeer.send("ENTER_ROOM", { id: roomId });
-    closeOffcanvasAtOrBelowBreakpoint(offcanvasRoomsRef, "md");
-  }, [dispatch, state.chatScope?.id]);
+  /*** Room click handler */
+  const handleRoomClick = useCallback(
+    (roomId: string) => {
+      if (state.chatScope?.id === roomId) {
+        // We're already in this room
+        return;
+      }
+      // No need to update ChatScope here. We only want to do that AFTER we entered the room.
+      dispatch({ type: "SET_IS_ENTERING_ROOM", payload: true });
+      websocketeer.send("ENTER_ROOM", { id: roomId });
+      closeOffcanvasAtOrBelowBreakpoint(offcanvasRoomsRef, "md");
+    },
+    [dispatch, state.chatScope?.id],
+  );
 
-  /**
-   * Room click handlers map
-   * If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated.
-   */
+  /*** Room click handlers map
+   * If we don't cache click handlers, rooms rerender a lot due to `onClick` being recreated. */
   const roomClickHandlers = useMemo(() => {
     return new Map(state.rooms?.map((room) => [room.id, (): void => handleRoomClick(room.id)]));
   }, [state.rooms, handleRoomClick]);
 
-  /**
-   * Rooms render function
-   */
+  /*** Rooms render function */
   const renderRooms = useCallback(() => {
     return state.rooms?.map((room) => (
       <RoomMemo
