@@ -110,7 +110,7 @@ export default function ChatView(): React.JSX.Element {
         return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
       }
 
-      alert(JSON.stringify(message, null, 2));
+      console.log(`RECEIVED_MESSAGE`, JSON.stringify(message, null, 2));
     };
 
     const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
