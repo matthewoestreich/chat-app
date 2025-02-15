@@ -88,6 +88,10 @@ Optimized for all devices!
 
 ---
 
+![Responsive Direct Conversations](.github/screenshots/7_responsive_direct_convos.png "Responsive Direct Conversations")
+
+---
+
 <sub><a name="jwt">\*</a>Pseudo-sessions via JWT. I was testing various auth strategies, got sick of testing different strats, and settled with using a JWT as a session-like token. I plan on migrating to full on sessions soon.</sub>
 
 ---

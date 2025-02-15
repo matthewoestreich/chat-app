@@ -73,12 +73,6 @@ export default function ChatView(): React.JSX.Element {
     }
   }, [state.messages]);
 
-  useEffect(() => {
-    if (state.chatScope === null) {
-      websocketeer.send("ENTER_ROOM", { id: "_____________UNASSIGNED_____________" });
-    }
-  }, [state.chatScope]);
-
   useEffectOnce(() => {
     const handleListDirectConversations: WebSocketeerEventHandler<WebSocketEvents, "LIST_DIRECT_CONVERSATIONS"> = ({
       directConversations,
@@ -200,6 +194,10 @@ export default function ChatView(): React.JSX.Element {
   }, [dispatch, state.isCreateDirectConversationModalOpen]);
 
   useEffect(() => {
+    if (state.chatScope === null) {
+      websocketeer.send("ENTER_ROOM", { id: "_____________UNASSIGNED_____________" });
+    }
+
     const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
       if (error) return console.error(error);
       if (!message.scopeId) {
@@ -237,7 +235,9 @@ export default function ChatView(): React.JSX.Element {
     };
 
     websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
-    return (): void => websocketeer.off("RECEIVE_MESSAGE", handleReceiveMessage);
+    return (): void => {
+      websocketeer.off("RECEIVE_MESSAGE", handleReceiveMessage);
+    };
   }, [dispatch, state.chatScope]);
 
   function handleOpenJoinRoomModal(): void {
