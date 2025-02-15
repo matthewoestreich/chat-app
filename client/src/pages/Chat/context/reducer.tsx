@@ -1,5 +1,6 @@
 import { ChatScope, PublicDirectConversation, PublicMessage, Room, PublicMember } from "@root/types.shared";
-import sortMembers from "../sortMembers";
+import sortPublicMembers from "../sortPublicMembers";
+import sortPublicDirectConversations from "../sortPublicDirectConversations";
 
 export interface ChatState {
   rooms: Room[] | null;
@@ -16,7 +17,7 @@ export type ChatStateAction =
   | { type: "SET_ROOMS"; payload: Room[] | null }
   | { type: "SET_MEMBERS"; payload: PublicMember[] | null }
   | { type: "SET_MESSAGES"; payload: PublicMessage[] | null }
-  | { type: "SET_DIRECT_CONVERSATIONS"; payload: PublicDirectConversation[] | null }
+  | { type: "SET_DIRECT_CONVERSATIONS"; payload: PublicDirectConversation[] }
   | { type: "SET_CHAT_SCOPE"; payload: ChatScope | null }
   | { type: "SET_IS_ENTERING_ROOM"; payload: boolean }
   | { type: "SENT_MESSAGE"; payload: PublicMessage }
@@ -69,24 +70,30 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return { ...state, chatScope: action.payload };
     }
     case "ENTERED_DIRECT_CONVERSATION": {
-      return {
+      const newState = {
         ...state,
         chatScope: action.payload.chatScope,
         messages: action.payload.messages,
-        // members: [],
+        members: [],
       };
+      // Find other member of convo so we can set unread messages to 0 (since we have now read them by entering this convo).
+      const otherPersonIndex = newState.directConversations?.findIndex((convo) => convo.scopeId === action.payload.chatScope.id);
+      if (!newState.directConversations || otherPersonIndex === undefined || otherPersonIndex === -1) {
+        return newState;
+      }
+      if (newState.directConversations[otherPersonIndex].unreadMessagesCount > 0) {
+        newState.directConversations[otherPersonIndex].unreadMessagesCount = 0;
+      }
+      return newState;
     }
     case "SET_DIRECT_CONVERSATIONS": {
-      if (!action.payload) {
-        return state;
-      }
-      return { ...state, directConversations: sortMembers(action.payload, true) };
+      return { ...state, directConversations: sortPublicDirectConversations(action.payload, true) };
     }
     case "SET_IS_ENTERING_ROOM": {
       return { ...state, isEnteringRoom: action.payload };
     }
     case "LEFT_DIRECT_CONVERSATION": {
-      const copy = sortMembers(action.payload, true);
+      const copy = sortPublicDirectConversations(action.payload, true);
       return { ...state, directConversations: copy, messages: [], chatScope: null };
     }
     case "SET_IS_CREATE_DIRECT_CONVERSATION_MODAL_OPEN": {
@@ -111,7 +118,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       return {
         ...state,
         messages: action.payload.messages,
-        members: sortMembers(action.payload.members || [], true),
+        members: sortPublicMembers(action.payload.members || [], true),
         chatScope: action.payload.chatScope,
         isEnteringRoom: false,
       };
@@ -121,12 +128,12 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       const newState = {
         ...state,
         rooms: action.payload.rooms,
-        directConversations: sortMembers(action.payload.directConversations, true),
+        directConversations: sortPublicDirectConversations(action.payload.directConversations, true),
       };
       if (action.payload.defaultRoom === undefined) {
         return newState;
       }
-      newState.members = sortMembers(action.payload.defaultRoom.members, true);
+      newState.members = sortPublicMembers(action.payload.defaultRoom.members, true);
       newState.messages = action.payload.defaultRoom.messages;
       const { id, name } = action.payload.defaultRoom!.room;
       newState.chatScope = { id, type: "Room", scopeName: name };
@@ -136,20 +143,15 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       const newState = { ...state };
       const memberIndex = state.members?.findIndex((m) => m.userId === action.payload.userId);
       const directConversationIndex = state.directConversations?.findIndex((dc) => dc.userId === action.payload.userId);
-      console.log({
-        type: "SET_MEMBER_ACTIVE_STATUS",
-        isMemberFound: memberIndex !== undefined && memberIndex !== -1,
-        isDirectConversationFound: directConversationIndex !== undefined && directConversationIndex !== -1,
-      });
       if (memberIndex !== undefined && memberIndex !== -1) {
         newState.members = [...(state.members || [])];
         newState.members[memberIndex].isActive = action.payload.isActive;
-        sortMembers(newState.members, false);
+        sortPublicMembers(newState.members, false);
       }
       if (directConversationIndex !== undefined && directConversationIndex !== -1) {
         newState.directConversations = [...(state.directConversations || [])];
         newState.directConversations[directConversationIndex].isActive = action.payload.isActive;
-        sortMembers(newState.directConversations, false);
+        sortPublicMembers(newState.directConversations, false);
       }
       return newState;
     }

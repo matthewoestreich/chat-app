@@ -37,7 +37,7 @@ export default function ChatView(): React.JSX.Element {
   console.log(renderCount);
 
   const { state, dispatch } = useChat();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const [isLeaveRoomModalShown, setIsLeaveRoomModalShown] = useState(false);
   const [isCreateRoomModalShown, setIsCreateRoomModalShown] = useState(false);
@@ -97,22 +97,6 @@ export default function ChatView(): React.JSX.Element {
       }
     };
 
-    const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
-      if (error) return console.error(error);
-      if (chatMessageInputRef && chatMessageInputRef.current) {
-        chatMessageInputRef.current.value = "";
-      }
-      console.log({ from: "ChatView::handleReceiveMessage", message });
-
-      // We are actively in a direct convo with the person that messaged us
-      if (state.chatScope === null || message.scopeId === state.chatScope.id) {
-        console.log({ from: "ChatView::handleReceiveMessage", message });
-        return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
-      }
-
-      console.log(`RECEIVED_MESSAGE`, JSON.stringify(message, null, 2));
-    };
-
     const handleEnteredRoom: WebSocketeerEventHandler<WebSocketEvents, "ENTERED_ROOM"> = ({ members, messages, room, error }) => {
       if (error) return console.error(error);
       dispatch({
@@ -169,7 +153,6 @@ export default function ChatView(): React.JSX.Element {
     websocketeer.on("CREATED_ROOM", handleCreatedRoom);
     websocketeer.on("USER_DISCONNECTED", handleUserDisconnected);
     websocketeer.on("USER_CONNECTED", handleUserConnected);
-    websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
 
     return (): void => {
       websocketeer.off("LIST_DIRECT_CONVERSATIONS", handleListDirectConversations);
@@ -182,7 +165,6 @@ export default function ChatView(): React.JSX.Element {
       websocketeer.off("CREATED_ROOM", handleCreatedRoom);
       websocketeer.off("USER_DISCONNECTED", handleUserDisconnected);
       websocketeer.off("USER_CONNECTED", handleUserConnected);
-      websocketeer.off("RECEIVE_MESSAGE", handleReceiveMessage);
     };
   });
 
@@ -206,7 +188,7 @@ export default function ChatView(): React.JSX.Element {
       }
 
       dispatch({ type: "SET_DIRECT_CONVERSATIONS", payload: directConversations });
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: convo, isProgrammatic: true });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversationId: convo.scopeId, withUserId: convo.userId, isProgrammatic: true });
       // Don't open direct convos drawer if on small screen
       autoCloseDirectMessagesAndMembersOnSmallScreens();
     };
@@ -216,6 +198,47 @@ export default function ChatView(): React.JSX.Element {
       websocketeer.off("CREATED_DIRECT_CONVERSATION", handleCreatedDirectConversation);
     };
   }, [dispatch, state.isCreateDirectConversationModalOpen]);
+
+  useEffect(() => {
+    const handleReceiveMessage: WebSocketeerEventHandler<WebSocketEvents, "RECEIVE_MESSAGE"> = ({ message, error }) => {
+      if (error) return console.error(error);
+      if (!message.scopeId) {
+        return console.error(`handleReceiveMessage : message has no scope!`);
+      }
+      if (chatMessageInputRef && chatMessageInputRef.current) {
+        chatMessageInputRef.current.value = "";
+      }
+      console.log({ from: "ChatView::handleReceiveMessage", message });
+
+      if (message.type === "Room") {
+        return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
+      }
+
+      if (message.type === "DirectConversation") {
+        // If our state.chatScope is null it HAS to mean someone is sending us a DM. If we had a chatScope, it means we
+        // explicitly entered a "scope" and could be a room or direct convo message.
+        // This is bc a room message only gets broadcast to active members in that room.
+        if (state.chatScope === null) {
+          // We aren't in any scope, so we need to alert you that someone has sent you a message
+          return console.log(`RECEIVE_MESSAGE : someone you are not in a convo with messaged you, this is where the UI should alert you!`);
+        }
+        // See if we are actively in a direct convo with the person that messaged us, if so we can just dispatch new state so the message
+        // can be rendered.
+        console.log("RECEIVE_MESSAGE", { message, stateChatScope: state.chatScope });
+        if (state.chatScope.id === message.scopeId) {
+          return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
+        }
+      }
+      //if (state.chatScope === null) {
+      //  console.log({ from: "ChatView::handleReceiveMessage", message });
+      //  return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
+      //}
+      //console.log(`RECEIVED_MESSAGE`, JSON.stringify(message, null, 2));
+    };
+
+    websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
+    return (): void => websocketeer.off("RECEIVE_MESSAGE", handleReceiveMessage);
+  }, [dispatch, state.chatScope]);
 
   function handleOpenJoinRoomModal(): void {
     setIsJoinRoomModalShown(true);
@@ -334,7 +357,7 @@ export default function ChatView(): React.JSX.Element {
       }
 
       console.log({ from: "ChatView::handleMemberClick", isNewConvo: false });
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: member, isProgrammatic: true });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversationId: member.scopeId, withUserId: member.userId, isProgrammatic: true });
       // Don't open direct convos drawer if on small screens + close members off canvas if on small screen after clicking a member
       autoCloseDirectMessagesAndMembersOnSmallScreens();
     },
@@ -451,10 +474,41 @@ export default function ChatView(): React.JSX.Element {
             </div>
           </div>
           <div className="card col-lg-6 offset-lg-0 col-md-12 offset-md-0 h-90pct overf-hide d-flex">
-            <div className="card-header d-flex flex-row">
-              <div className="d-flex w-100 text-center justify-content-center align-items-center chat-title display-6">
+            <div className="card-header d-flex flex-row display-6 justify-content-lg-between">
+              <div className="d-flex w-100 text-center justify-content-lg-center align-items-center chat-title display-6">
                 {state.chatScope !== null && state.chatScope.scopeName}
               </div>
+              {session !== null && (
+                <div className="d-flex flex-row">
+                  <a
+                    className="navbar-icon d-inline-block d-lg-none"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#members-offcanvas"
+                    onClick={handleOpenDirectMessagesDrawer}
+                  >
+                    <button className="btn btn-secondary shadow" type="button" title="View Members">
+                      <i className="bi bi-chat-dots-fill"></i>
+                    </button>
+                  </a>
+                  &nbsp;
+                  <a
+                    className="navbar-icon d-inline-block d-lg-none"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#members-offcanvas"
+                    onClick={handleCloseDirectMessagesDrawer}
+                  >
+                    <button className="btn btn-secondary shadow" type="button" title="View Members">
+                      <i className="bi bi-people-fill"></i>
+                    </button>
+                  </a>
+                  &nbsp;
+                  <a className="navbar-icon d-inline-block d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#rooms-offcanvas">
+                    <button className="btn btn-secondary shadow" type="button" title="View Rooms">
+                      <i className="bi bi-door-open-fill"></i>
+                    </button>
+                  </a>
+                </div>
+              )}
             </div>
             <div id="chat-messages-display" ref={chatDisplayRef} className="card-body overf-y-scroll">
               {renderMessages()}

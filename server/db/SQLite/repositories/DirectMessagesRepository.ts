@@ -12,6 +12,31 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
     this.databasePool = dbpool;
   }
 
+  public async setAllMessagesFromUserIdAsRead(directConversationId: string, fromUserId: string): Promise<boolean> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        const query = `
+        UPDATE ${TABLE.directMessages}
+        SET isRead = 1
+        WHERE directConversationId = ?
+          AND fromUserId = ?
+          AND isRead = 0;
+        `;
+        db.run(query, [directConversationId, fromUserId], (error: Error | null) => {
+          release();
+          if (error) {
+            return reject(error);
+          }
+          resolve(true);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
+  }
+
   async selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
@@ -91,12 +116,13 @@ export default class DirectMessagesRepositorySQLite implements DirectMessagesRep
               userId: newDM.fromUserId,
               message: newDM.message,
               scopeId: newDM.directConversationId,
+              type: "DirectConversation",
               userName: "",
               timestamp: newDM.timestamp,
               isRead: newDM.isRead,
             });
           } catch (_e) {
-            const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, userName: "", timestamp: new Date() };
+            const entity: PublicMessage = { id: directMessageId, userId: fromUserId, message, scopeId: directConversationId, type: "DirectConversation", userName: "", timestamp: new Date() };
             if (isRead !== undefined) {
               entity.isRead = isRead;
             }

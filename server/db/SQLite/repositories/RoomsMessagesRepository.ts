@@ -96,7 +96,7 @@ export default class RoomsMessagesRepositorySQLite implements RoomsMessagesRepos
             newMessage.scopeId = roomId;
             resolve(newMessage);
           } catch (_e) {
-            resolve({ id: messageId, userId, scopeId: roomId, message, timestamp: new Date() });
+            resolve({ id: messageId, userId, scopeId: roomId, type: "Room", message, timestamp: new Date() });
           }
         });
       } catch (e) {
