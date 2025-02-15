@@ -5,7 +5,7 @@ import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";
 import { WebSocketeerEventHandler } from "@client/types";
-import sortMembers from "./sortPublicMembers";
+import sortPublicDirectConversations from "./sortPublicDirectConversations";
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";
@@ -28,7 +28,7 @@ export default function ChatPage(): React.JSX.Element {
         type: "AFTER_CONNECTION_ESTABLISHED",
         payload: {
           rooms,
-          directConversations: sortMembers(directConversations, true),
+          directConversations: sortPublicDirectConversations(directConversations, true),
           defaultRoom,
         },
       });

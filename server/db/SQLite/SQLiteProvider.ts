@@ -54,6 +54,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
 
     return new Promise((resolve) => {
       try {
+        // If the general room doesn't exist, it means we need to seed..
         db.get(`SELECT * FROM ${tableNames.rooms} WHERE id = ?`, [WebSocketApp.ID_UNASSIGNED], async (err, row) => {
           if (err) {
             release();
@@ -270,9 +271,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
     return new Promise((resolve, reject) => {
       try {
         const db = new sqlite3.Database(backupDatabaseFilePath);
-        // Read 'dump' file.
         const data = nodeFs.readFileSync(this.backupSQLFilePath, "utf-8");
-        // Split the SQL statements and execute them one by one
         const sqlStatements = data.split(this.parseBackupFileDelimiter).map((s) => s.trim());
 
         db.serialize(() => {

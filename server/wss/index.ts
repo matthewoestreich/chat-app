@@ -84,9 +84,9 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
  *
  */
 wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
-  //client.broadcast("USER_DISCONNECTED", { userId: client.user.id });
-  // TODO find better solution. like redis? For now just 'blast' a message to every single person,
-  // telling them a user disconnected
+  if (!client || !client.user || !client.user.id) {
+    return console.log(`Suspicious connection detected : CONNECTION_CLOSED`, { client });
+  }
   wsapp.blast("USER_DISCONNECTED", { userId: client.user.id }, client);
   if (client.activeIn) {
     wsapp.deleteCachedItem(client.user.id, client.activeIn.id);
