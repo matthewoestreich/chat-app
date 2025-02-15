@@ -5,10 +5,6 @@ export interface Cookie {
   value: string;
 }
 
-export type Cookies = {
-  [K: string]: string;
-};
-
 export interface JSONWebToken {
   id: string;
   userName: string;
@@ -33,11 +29,14 @@ export interface DirectConversation {
   userBId: string;
 }
 
+// Used for returning data from users table. This object matches the "users" table schema
 export type User = {
   userName: string;
   id: string;
   email: string;
   password: string;
+  first_name?: string;
+  last_name?: string;
 };
 
 export type PublicUser = Omit<User, "email" | "password">;

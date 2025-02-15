@@ -10,7 +10,7 @@ declare namespace Express {
   }
   export interface Request {
     user: AuthenticatedUser | null;
-    databaseProvider: DatabaseProvider;
+    databaseProvider: import("../server/types").DatabaseProvider;
     cookies: Cookies;
     sessionToken: string;
   }
@@ -21,3 +21,7 @@ interface AuthenticatedUser {
   email: string;
   id: string;
 }
+
+type Cookies = {
+  [K: string]: string;
+};

@@ -16,7 +16,7 @@ import { Container, EventPayload, EventTypes, WebSocketAppCache, WebSocketAppCat
  */
 export default class WebSocketApp extends EventEmitter {
   private server: WebSocketServer;
-  private catchFn: WebSocketAppCatchHandler = (_error: Error, _socket: WebSocket) => {};
+  private catchFn: WebSocketAppCatchHandler = (_error: Error, _client: WebSocketClient) => {};
   //Look at cache as containers that hold items. For example, chat rooms that hold members/users.
   private static cache: WebSocketAppCache = new Map();
   public static get appCache(): WebSocketAppCache {
@@ -64,7 +64,7 @@ export default class WebSocketApp extends EventEmitter {
           const { type, ...data } = this.parseRawMessage(rawMessage);
           this.emit(type, client, data || {});
         } catch (e) {
-          this.catchFn(e as Error, socket);
+          this.catchFn(e as Error, client);
         }
       });
     });

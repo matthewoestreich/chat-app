@@ -1,5 +1,4 @@
 import { DirectConversation, Message, PublicDirectConversation, PublicMessage, PublicUser, Room, ChatScopeWithMembers, Session, User, WebSocketAppEventRegistry, PublicMember, DirectMessage } from "@root/types.shared";
-import type { WebSocket } from "ws";
 import WebSocketClient from "./wss/WebSocketClient";
 
 export type IWebSocketMessage = {
@@ -7,7 +6,7 @@ export type IWebSocketMessage = {
   [key: string]: unknown;
 };
 
-export type WebSocketAppCatchHandler = (error: Error, socket: WebSocket) => void;
+export type WebSocketAppCatchHandler = (error: Error, client: WebSocketClient) => void;
 
 export type WebSocketAppCache = Map<string, Container>;
 

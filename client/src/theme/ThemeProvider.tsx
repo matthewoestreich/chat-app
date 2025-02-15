@@ -1,5 +1,6 @@
 import React, { ReactNode, useState, useEffect } from "react";
 import ThemeContext from "./ThemeContext";
+import { ThemeMode } from "@client/types";
 
 interface ThemeProviderProperties {
   children: ReactNode;

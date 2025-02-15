@@ -1,4 +1,4 @@
-import { WebSocket, ServerOptions } from "ws";
+import { ServerOptions } from "ws";
 import jsonwebtoken from "jsonwebtoken";
 import { WEBSOCKET_ERROR_CODE } from "./websocketErrorCodes";
 import parseCookies from "./parseCookies";
@@ -6,6 +6,7 @@ import isAuthenticated from "./isAuthenticated";
 import WebSocketApp from "./WebSocketApp";
 import { DatabaseProvider } from "../types";
 import { Message, PublicDirectConversation, PublicMessage, Room, User } from "@root/types.shared";
+import WebSocketClient from "./WebSocketClient";
 
 let DATABASE: DatabaseProvider;
 const wsapp = new WebSocketApp();
@@ -22,8 +23,8 @@ export default async function startWebSocketApp<T>(options: ServerOptions, datab
 }
 
 // Catch any errors.
-wsapp.catch((error: Error, socket: WebSocket) => {
-  console.error({ error, user: socket.user! });
+wsapp.catch((error: Error, client: WebSocketClient) => {
+  console.error({ error, client: client });
 });
 
 /**

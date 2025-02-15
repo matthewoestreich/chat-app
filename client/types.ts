@@ -1,4 +1,4 @@
-import { Cookies, Cookie } from "../types.shared";
+import { Cookie } from "../types.shared";
 
 export interface UseCookie {
   setCookie(name: string, value: string, days: number, path?: string): void;
