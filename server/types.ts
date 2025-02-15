@@ -63,6 +63,7 @@ export interface DirectConversationsRepository<DB> {
   databasePool: DatabasePool<DB>;
   getAll(): Promise<DirectConversation[]>;
   getById(id: string): Promise<DirectConversation>;
+  getByIdAndUsers(directConversationId: string, currentUserId: string, otherUserId: string): Promise<PublicDirectConversation>;
   create(userAId: string, userBId: string): Promise<DirectConversation>;
   update(id: string, entity: DirectConversation): Promise<DirectConversation | null>;
   delete(id: string): Promise<boolean>;
@@ -80,6 +81,7 @@ export interface DirectMessagesRepository<DB> {
   create(directConversationId: string, fromUserId: string, toUserId: string, message: string, isRead?: boolean): Promise<PublicMessage>;
   update(id: string, entity: PublicMessage): Promise<PublicMessage | null>;
   delete(id: string): Promise<boolean>;
+  setAllMessagesFromUserIdAsRead(directConversationId: string, fromUserId: string): Promise<boolean>;
   selectByDirectConversationId(directConversationId: string): Promise<PublicMessage[]>;
 }
 

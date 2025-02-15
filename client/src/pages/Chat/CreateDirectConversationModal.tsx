@@ -1,7 +1,7 @@
 import React, { ChangeEvent, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Member, Modal, ModalBody, ModalContent, ModalDialog, ModalFooter, ModalHeader, ModalTitle } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
-import sortMembers from "./sortMembers";
+import sortMembers from "./sortPublicMembers";
 import { PublicMember } from "@root/types.shared";
 import { AlertState, WebSocketeerEventHandler } from "@client/types";
 import { useChat } from "@hooks";

@@ -5,7 +5,7 @@ import { useChat, useEffectOnce } from "@hooks";
 import { LoadingSpinner } from "@components";
 import ChatView from "./ChatView";
 import { WebSocketeerEventHandler } from "@client/types";
-import sortMembers from "./sortMembers";
+import sortMembers from "./sortPublicMembers";
 
 export default function ChatPage(): React.JSX.Element {
   document.title = "RTChat | Chat";

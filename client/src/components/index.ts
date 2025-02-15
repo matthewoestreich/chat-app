@@ -11,3 +11,4 @@ export { default as Message } from "./Message";
 export { default as RenderAs } from "./RenderAs";
 export { default as LightThemeIcon } from "./LightThemeIcon";
 export { default as DarkThemeIcon } from "./DarkThemeIcon";
+export { default as DirectConversation } from "./DirectConversation";

@@ -51,8 +51,9 @@ export interface Room {
 export type Message = {
   id: string;
   userId: string;
-  scopeId: string; // roomId/directConvoId,etc..
   message: string;
+  scopeId: string;
+  type: ChatScopeType;
   timestamp: Date;
   isRead?: boolean;
 };
@@ -108,6 +109,7 @@ export interface PublicDirectConversation {
   userId: string; // other participant id in DM
   userName: string; // other participant name in DM
   isActive: boolean; // is other participant currently online
+  unreadMessagesCount: number; // If there are unread messages in this convo
 }
 
 export type WebSocketAppError = Error | string;
@@ -136,7 +138,8 @@ export interface WebSocketAppEventRegistry {
     id: string;
   };
   ENTER_DIRECT_CONVERSATION: {
-    directConversation: PublicMember;
+    directConversationId: string;
+    withUserId: string;
     isProgrammatic: boolean;
   };
   // Client tells server they want to join a room.
@@ -187,7 +190,7 @@ export interface WebSocketAppEventRegistry {
   };
   ENTERED_DIRECT_CONVERSATION: {
     messages: PublicMessage[];
-    directConversation: PublicMember;
+    directConversation: PublicDirectConversation;
     isProgrammatic: boolean;
     error?: WebSocketAppError;
   };
@@ -224,7 +227,7 @@ export interface WebSocketAppEventRegistry {
     error?: WebSocketAppError;
   };
   LIST_DIRECT_CONVERSATIONS: {
-    directConversations: PublicMember[];
+    directConversations: PublicDirectConversation[];
     error?: WebSocketAppError;
   };
   // Server sends client a list of rooms they are a member of.

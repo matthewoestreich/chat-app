@@ -1,5 +1,5 @@
 import React, { CSSProperties, memo, RefObject, useCallback, useEffect, useMemo } from "react";
-import { Member } from "@components";
+import { DirectConversation } from "@components";
 import { websocketeer, WebSocketEvents } from "@src/ws";
 import { PublicDirectConversation } from "@root/types.shared";
 import { WebSocketeerEventHandler } from "@client/types";
@@ -44,7 +44,7 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-const MemberMemo = memo(Member);
+const DirectConversationMemo = memo(DirectConversation);
 
 interface DirectMessagesDrawerProperties {
   isShown: boolean;
@@ -118,7 +118,11 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
 
   const handleDirectConversationClick = useCallback(
     (directConvo: PublicDirectConversation) => {
-      websocketeer.send("ENTER_DIRECT_CONVERSATION", { directConversation: directConvo, isProgrammatic: false });
+      websocketeer.send("ENTER_DIRECT_CONVERSATION", {
+        directConversationId: directConvo.scopeId,
+        withUserId: directConvo.userId,
+        isProgrammatic: false,
+      });
       autoCloseDrawerOnSmallScreens();
     },
     [autoCloseDrawerOnSmallScreens],
@@ -134,11 +138,12 @@ export default function DirectMessagesDrawer(props: DirectMessagesDrawerProperti
     }
     return state.directConversations.map((convo) => {
       return (
-        <MemberMemo
+        <DirectConversationMemo
           id={convo.scopeId}
           key={convo.scopeId}
           isButton={true}
           onClick={directConversationClickHandlers.get(convo.scopeId)}
+          numUnreadMessages={convo.unreadMessagesCount}
           memberName={convo.userName}
           isOnline={convo.isActive}
           isSelected={state.chatScope?.id === convo.scopeId}

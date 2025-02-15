@@ -11,6 +11,10 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     this.databasePool = dbpool;
   }
 
+  getById(_id: string): Promise<DirectConversation> {
+    throw new Error("Method not implemented.");
+  }
+
   async addUserToDirectConversation(directConversationId: string, userId: string): Promise<boolean> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
@@ -76,31 +80,43 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     return new Promise((resolve, reject) => {
       try {
         const query = `
-        SELECT 
-          dc.id AS scopeId, 
-          u.id AS userId, 
-          u.user_name AS userName
-        FROM 
-          ${TABLE.directConversations} dc
+        SELECT
+            dc.id AS scopeId,
+            u.id AS userId,
+            u.user_name AS userName,
+            COALESCE(unread.unreadMessagesCount, 0) AS unreadMessagesCount
+        FROM
+            ${TABLE.directConversations} dc
         JOIN 
-          ${TABLE.directConversationMemberships} dcm 
-        ON 
-            dc.id = dcm.directConversationId
+            ${TABLE.directConversationMemberships} dcm 
+            ON dc.id = dcm.directConversationId
         JOIN 
-          ${TABLE.users} u
-        ON 
-          u.id = 
-          CASE 
-            WHEN dc.userAId = dcm.userId THEN dc.userBId 
-            ELSE dc.userAId 
-          END
-        WHERE 
-          dcm.userId = ?
-        AND 
-          dcm.isMember = true
-        ORDER BY u.user_name COLLATE NOCASE ASC;
+            ${TABLE.users} u
+            ON u.id = 
+                CASE
+                    WHEN dc.userAId = dcm.userId THEN dc.userBId
+                    ELSE dc.userAId
+                END
+        LEFT JOIN (
+            SELECT
+                dm.directConversationId,
+                COUNT(*) AS unreadMessagesCount
+            FROM
+                ${TABLE.directMessages} dm
+            WHERE
+                dm.isRead = 0
+                AND dm.toUserId = ?
+            GROUP BY
+                dm.directConversationId
+        ) unread
+        ON unread.directConversationId = dc.id
+        WHERE
+            dcm.userId = ?
+            AND dcm.isMember = true
+        ORDER BY
+            u.user_name COLLATE NOCASE ASC;
       `;
-        db.all(query, [userId], (err, rows: PublicDirectConversation[]) => {
+        db.all(query, [userId, userId], (err, rows: PublicDirectConversation[]) => {
           release();
           if (err) {
             return reject(err);
@@ -191,8 +207,54 @@ export default class DirectConversationsRepositorySQLite implements DirectConver
     throw new Error("Method not implemented.");
   }
 
-  getById(_id: string): Promise<DirectConversation> {
-    throw new Error("Method not implemented.");
+  async getByIdAndUsers(directConversationId: string, currentUserId: string, otherUserId: string): Promise<PublicDirectConversation> {
+    const { db, release } = await this.databasePool.getConnection();
+    return new Promise((resolve, reject) => {
+      try {
+        const query = `
+        SELECT
+            dc.id AS scopeId,
+            u.id AS userId,
+            u.user_name AS userName,
+            COALESCE(unread.unreadMessagesCount, 0) AS unreadMessagesCount
+        FROM
+            ${TABLE.directConversations} dc
+        JOIN 
+            ${TABLE.users} u
+            ON u.id = 
+                CASE
+                    WHEN dc.userAId = ? THEN dc.userBId
+                    ELSE dc.userAId
+                END
+        LEFT JOIN (
+            SELECT
+                dm.directConversationId,
+                COUNT(*) AS unreadMessagesCount
+            FROM
+                ${TABLE.directMessages} dm
+            WHERE
+                dm.isRead = 0
+                AND dm.toUserId = ?
+            GROUP BY
+                dm.directConversationId
+        ) unread
+        ON unread.directConversationId = dc.id
+        WHERE
+            dc.id = ?
+            AND u.id = ?;
+        `;
+        db.get(query, [currentUserId, currentUserId, directConversationId, otherUserId], (error: Error | null, row: PublicDirectConversation) => {
+          release();
+          if (error) {
+            return reject(error);
+          }
+          resolve(row);
+        });
+      } catch (e) {
+        release();
+        reject(e);
+      }
+    });
   }
 
   /**
