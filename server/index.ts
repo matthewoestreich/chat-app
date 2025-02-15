@@ -80,7 +80,7 @@ app.post("/auth/register", async (req: Request, res: Response) => {
     }
     const result = await req.databaseProvider.accounts.create(username, password, email);
     await req.databaseProvider.rooms.addUserToRoom(result.id, WebSocketApp.ID_UNASSIGNED);
-    res.status(200).send({ ok: true, id: result.id, userName: result.name, email: result.email });
+    res.status(200).send({ ok: true, id: result.id, userName: result.userName, email: result.email });
   } catch (_e) {
     res.status(200).send({ ok: false });
   }
@@ -117,12 +117,12 @@ app.post("/auth/login", async (req: Request, res: Response) => {
       return;
     }
 
-    const { user_name, id, email: foundEmail } = foundUser;
-    const jwt = generateSessionToken(user_name, id, foundEmail);
+    const { userName, id, email: foundEmail } = foundUser;
+    const jwt = generateSessionToken(userName, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
     setSessionCookie(res, jwt);
 
-    res.status(200).send({ ok: true, session: jwt.signed, id, userName: user_name, email });
+    res.status(200).send({ ok: true, session: jwt.signed, id, userName, email });
   } catch (_e) {
     clearAllCookies(req, res);
     res.status(500).send({ ok: false });
