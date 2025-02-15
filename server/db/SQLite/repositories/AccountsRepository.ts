@@ -1,7 +1,7 @@
 import { v7 as uuidV7 } from "uuid";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
-import { User } from "@root/types.shared";
+import { User, UserRow } from "@root/types.shared";
 import { AccountsRepository, DatabasePool } from "@server/types";
 import TABLE from "../../tables";
 
@@ -15,12 +15,13 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async selectByEmail(email: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM ${TABLE.users} WHERE email = ?`, [email], (err, row) => {
+      db.get(`SELECT * FROM ${TABLE.users} WHERE email = ?`, [email], (err, row: UserRow) => {
         release();
         if (err) {
           return reject(err);
         }
-        return resolve(row as User);
+        const userEntity: User = { id: row.id, userName: row.user_name, email: row.email, password: row.password };
+        return resolve(userEntity);
       });
     });
   }
@@ -32,12 +33,13 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
   async getById(id: string): Promise<User> {
     const { db, release } = await this.databasePool.getConnection();
     return new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM ${TABLE.users} WHERE id = ?`, [id], (err, row) => {
+      db.get(`SELECT * FROM ${TABLE.users} WHERE id = ?`, [id], (err, row: UserRow) => {
         release();
         if (err) {
           return reject(err);
         }
-        return resolve(row as User);
+        const userEntity: User = { id: row.id, userName: row.user_name, email: row.email, password: row.password };
+        return resolve(userEntity);
       });
     });
   }

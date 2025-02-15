@@ -28,16 +28,30 @@ export interface DirectConversation {
   userAId: string;
   userBId: string;
 }
-
-// Used for returning data from users table. This object matches the "users" table schema
+// #41 ENCOMPASSES THESE TWO (I THINK THIS IS ALL) -----------------------------------------|
+// Used for returning data from users table. This object matches the "users" table schema   |
 export type User = {
-  userName: string;
-  id: string;
-  email: string;
-  password: string;
-  first_name?: string;
-  last_name?: string;
-};
+  //                                                                     |
+  userName: string; //                                                                      |
+  id: string; //                                                                            |
+  email: string; //                                                                         |
+  password: string; //                                                                      |
+  first_name?: string; //                                                                   |
+  last_name?: string; //                                                                    |
+}; //                                                                                       |
+//                                                                                          |
+// THIS IS WHAT NEEDS TO BE CLEARED UP - THIS IS WAY TOO CONFUSING!!//                      |
+// SEE #41                                                                                  |
+export type UserRow = {
+  //                                                                  |
+  user_name: string; //                                                                     |
+  id: string; //                                                                            |
+  email: string; //                                                                         |
+  password: string; //                                                                      |
+  first_name?: string; //                                                                   |
+  last_name?: string; //                                                                    |
+}; //                                                                                        |
+//------------------------------------------------------------------------------------------|
 
 export type PublicUser = Omit<User, "email" | "password">;
 

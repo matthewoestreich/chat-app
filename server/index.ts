@@ -118,6 +118,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     }
 
     const { userName, id, email: foundEmail } = foundUser;
+    console.log({ foundUser });
     const jwt = generateSessionToken(userName, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
     setSessionCookie(res, jwt);
