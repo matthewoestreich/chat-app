@@ -24,16 +24,13 @@ export default async function startWebSocketApp<T>(options: ServerOptions, datab
 
 // Catch any errors.
 wsapp.catch((error: Error, client: WebSocketClient) => {
-  console.error({ error, client: client });
+  console.error({ error, client });
 });
 
 /**
- *
  * @event {CONNECTION_ESTABLISHED}
- *
  * CONNECTION_ESTABLISHED fires when a socket first connects to this server.
  * It's kind of like an "initial connection" event.
- *
  */
 wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
   const cookies = parseCookies(request.headers.cookie || "");
@@ -77,12 +74,9 @@ wsapp.on("CONNECTION_ESTABLISHED", async (client, { request }) => {
 });
 
 /**
- *
  * @event {CONNECTION_CLOSED}
- *
  * CONNECTION_CLOSED fires when a socket is closed. This allows us to clean up and
  * log the reason for socket closure.
- *
  */
 wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
   if (!client || !client.user || !client.user.id) {
@@ -95,11 +89,8 @@ wsapp.on("CONNECTION_CLOSED", (client /*{ reason, code }*/) => {
 });
 
 /**
- *
  * @event {CONNECTION_LOGOUT}
- *
  * Fires when someone logs out.
- *
  */
 wsapp.on("CONNECTION_LOGOUT", (client) => {
   // TODO find better solution. like redis? For now just 'blast' a message to every single person,
@@ -109,11 +100,8 @@ wsapp.on("CONNECTION_LOGOUT", (client) => {
 });
 
 /**
- *
  * @event {SEND_MESSAGE}
- *
  * Someone is sending a chat message to a room.
- *
  */
 wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
   try {
@@ -191,12 +179,9 @@ wsapp.on("SEND_MESSAGE", async (client, { message, scope }) => {
 });
 
 /**
- *
  * @event {ENTER_ROOM}
- *
  * ENTER_ROOM is for when a user enters an already joined room.
  * JOIN_ROOM is used when a user has joined a room they were not a member of prior.
- *
  */
 wsapp.on("ENTER_ROOM", async (client, { id }) => {
   // Notify existing room (which user is now leaving) that user is leaving.
@@ -232,12 +217,9 @@ wsapp.on("ENTER_ROOM", async (client, { id }) => {
 });
 
 /**
- *
  * @event {JOIN_ROOM}
- *
  * JOIN_ROOM is used when a user has joined a room they were not a member of prior.
  * ENTER_ROOM is for when a user enters an already joined room.
- *
  */
 wsapp.on("JOIN_ROOM", async (client, { id }) => {
   try {
@@ -250,14 +232,11 @@ wsapp.on("JOIN_ROOM", async (client, { id }) => {
 });
 
 /**
- *
  * @event {UNJOIN_ROOM}
- *
  * UNJOIN_ROOM is named "unjoin" as to not cause confusion with "enter" or "leave/left".
  * UNJOIN_ROOM fires when a user has removed a room from their "memberships", if you will.
  * (NOTE: a "membership" isn't a term/keyword/concept that exists in this app, just using the term for explanation)
  * `*_(LEAVE|LEFT)_*` events are different as the user has just "exited" the chat room.
- *
  */
 wsapp.on("UNJOIN_ROOM", async (client, { id }) => {
   try {
@@ -278,11 +257,8 @@ wsapp.on("UNJOIN_ROOM", async (client, { id }) => {
 });
 
 /**
- *
  * @event {CREATE_ROOM}
- *
  * Creates a new room. The creator of the room is auto-joined.
- *
  */
 wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
   if (isPrivate === undefined) {
@@ -301,11 +277,8 @@ wsapp.on("CREATE_ROOM", async (client, { name, isPrivate }) => {
 });
 
 /**
- *
  * @event {CREATE_DIRECT_CONVERSATION}
- *
  * Create direct convo is used to explicitly create a new direct convo.
- *
  */
 wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
   try {
@@ -326,11 +299,8 @@ wsapp.on("CREATE_DIRECT_CONVERSATION", async (client, { withUserId }) => {
 });
 
 /**
- *
  * @event {LEAVE_DIRECT_CONVERSATION}
- *
  * Leaves a direct convo
- *
  */
 wsapp.on("LEAVE_DIRECT_CONVERSATION", async (client, { id }) => {
   try {
@@ -352,11 +322,8 @@ wsapp.on("LEAVE_DIRECT_CONVERSATION", async (client, { id }) => {
 });
 
 /**
- *
  * @event {GET_JOINABLE_ROOMS}
- *
  * Gets all rooms that a user is not already a member of.
- *
  */
 wsapp.on("GET_JOINABLE_ROOMS", async (client) => {
   try {
@@ -367,11 +334,8 @@ wsapp.on("GET_JOINABLE_ROOMS", async (client) => {
 });
 
 /**
- *
  * @event {ENTER_DIRECT_CONVERSATION}
- *
  * Gets all messages in a direct conversation.
- *
  */
 wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { directConversationId, withUserId, isProgrammatic }) => {
   try {
@@ -391,11 +355,8 @@ wsapp.on("ENTER_DIRECT_CONVERSATION", async (client, { directConversationId, wit
 });
 
 /**
- *
  * @event {GET_JOINABLE_DIRECT_CONVERSATIONS}
- *
  * Gets all users you are not currently in a direct conversation with..
- *
  */
 wsapp.on("GET_JOINABLE_DIRECT_CONVERSATIONS", async (client) => {
   try {

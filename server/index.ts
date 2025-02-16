@@ -11,12 +11,20 @@ import WebSocketApp from "./wss/WebSocketApp";
 import setSessionCookie, { COOKIE_NAME } from "./sessionCookie";
 
 const app = express();
+
 export const setDatabaseProvider = attachDatabaseProvider(app);
+
 export default app;
 
 const helmetConfig: HelmetOptions = {
-  // @ts-ignore
-  contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`] } },
+  contentSecurityPolicy: {
+    directives: {
+      // @ts-ignore
+      scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`],
+      styleSrc: ["'self'"],
+      "require-trusted-types-for": ["'script'"],
+    },
+  },
 };
 
 app.use(express.json());
@@ -27,6 +35,9 @@ app.use(helmet(helmetConfig));
 app.use(express.static(path.resolve(__dirname, "../www")));
 /** * */
 
+/**
+ * Don't log http requests while running tests
+ */
 if (process.env.NODE_ENV !== "test") {
   morgan.token("body", (req: Request) => JSON.stringify(req.body || {}, null, 2));
   const morganSchema = ":date[clf] :method :url :status :response-time ms - :res[content-length] :body";
@@ -34,6 +45,9 @@ if (process.env.NODE_ENV !== "test") {
   app.use(morgan(morganSchema, { skip: morganSkip }));
 }
 
+/**
+ * So I can verify cache, just temp
+ */
 // TODO : remove this
 app.get("/wsapp-cache", (_req: Request, res: Response) => {
   // eslint-disable-next-line
@@ -49,7 +63,6 @@ app.get("/wsapp-cache", (_req: Request, res: Response) => {
 
 /**
  * Serve React to everything else
- *
  * @route {GET} *
  */
 app.get("*", (_req: Request, res: Response) => {
@@ -58,7 +71,6 @@ app.get("*", (_req: Request, res: Response) => {
 
 /**
  * @route {POST} /auth/validate
- *
  * Validates JWT and handles refresh.
  */
 app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
@@ -74,7 +86,6 @@ app.post("/auth/validate", [useJwt], (req: Request, res: Response) => {
 
 /**
  * @route {POST} /auth/register
- *
  * Content-Type: application/json
  * {
  *    u: string, // username
@@ -99,7 +110,6 @@ app.post("/auth/register", async (req: Request, res: Response) => {
 
 /**
  * @route {POST} /auth/login
- *
  * Content-Type: application/json
  * {
  *    e: string, // email
@@ -142,7 +152,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
 /**
  * Logs account out if they have req.cookies.session
- *
  * @route {POST} /logout
  */
 app.post("/auth/logout", async (req: Request, res: Response) => {
