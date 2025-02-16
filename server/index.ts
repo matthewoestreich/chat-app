@@ -19,11 +19,13 @@ const helmetConfig: HelmetOptions = {
   contentSecurityPolicy: { directives: { scriptSrc: ["'self'", (_, res: Response): string => `'nonce-${res.locals.cspNonce}'`] } },
 };
 
-app.use(express.static(path.resolve(__dirname, "../www")));
 app.use(express.json());
 app.use(useCookieParser);
 app.use(useCspNonce);
 app.use(helmet(helmetConfig));
+/*** THIS MUST BE AFTER ALL MIDDLEWARE, BUT BEFORE THE "*" ROUTE!!! */
+app.use(express.static(path.resolve(__dirname, "../www")));
+/** * */
 
 if (process.env.NODE_ENV !== "test") {
   morgan.token("body", (req: Request) => JSON.stringify(req.body || {}, null, 2));
@@ -43,6 +45,15 @@ app.get("/wsapp-cache", (_req: Request, res: Response) => {
     }
   }
   res.status(200).json(cache);
+});
+
+/**
+ * Serve React to everything else
+ *
+ * @route {GET} *
+ */
+app.get("*", (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 
 /**
@@ -118,7 +129,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     }
 
     const { userName, id, email: foundEmail } = foundUser;
-    console.log({ foundUser });
     const jwt = generateSessionToken(userName, id, foundEmail);
     await req.databaseProvider.sessions.upsert(foundUser.id, jwt.signed);
     setSessionCookie(res, jwt);
@@ -146,15 +156,6 @@ app.post("/auth/logout", async (req: Request, res: Response) => {
     res.clearCookie(COOKIE_NAME);
     res.status(500).send({ ok: false });
   }
-});
-
-/**
- * Serve React to everything else
- *
- * @route {GET} *
- */
-app.get("*", (_req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 
 /**
