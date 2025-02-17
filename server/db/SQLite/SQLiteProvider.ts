@@ -1,3 +1,4 @@
+import zlib from "node:zlib";
 import nodeFs from "node:fs";
 import nodePath from "node:path";
 import sqlite3 from "sqlite3";
@@ -134,6 +135,8 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
   }
 
   async backup(): Promise<void> {
+    const GZIPPED_BACKUP_SQL_FILE_PATH = this.backupSQLFilePath + ".gz";
+
     return new Promise(async (resolve, reject) => {
       if (!process.env.GH_GISTS_API_KEY) {
         return reject(new Error("[SQLiteProvider.backup()] gists api key not found (via process.env.GH_GISTS_API_KEY)."));
@@ -143,13 +146,13 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
       }
 
       try {
-        await this.backupDatabaseToFile();
-        await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [this.backupSQLFilePath]);
-        nodeFs.unlinkSync(this.backupSQLFilePath);
+        await this.backupDatabaseToFile(GZIPPED_BACKUP_SQL_FILE_PATH);
+        await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [GZIPPED_BACKUP_SQL_FILE_PATH]);
+        nodeFs.unlinkSync(GZIPPED_BACKUP_SQL_FILE_PATH);
         resolve();
       } catch (e) {
-        if (nodeFs.existsSync(this.backupSQLFilePath)) {
-          nodeFs.unlinkSync(this.backupSQLFilePath);
+        if (nodeFs.existsSync(GZIPPED_BACKUP_SQL_FILE_PATH)) {
+          nodeFs.unlinkSync(GZIPPED_BACKUP_SQL_FILE_PATH);
         }
         reject(e);
       }
@@ -158,6 +161,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
 
   async restore(): Promise<void> {
     const backupSQLFileName = nodePath.basename(this.backupSQLFilePath);
+    const GZIPPED_BACKUP_SQL_FILE_PATH = this.backupSQLFilePath + ".gz";
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -173,20 +177,47 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         if (!file) {
           return reject(new Error(`[SQLiteProvider.restore()] backup file not found in gist.`));
         }
-        nodeFs.writeFileSync(this.backupSQLFilePath, file.content);
-        await this.restoreDatabaseFromFile();
+
+        // Write gzipped Gist content to .gz file
+        nodeFs.writeFileSync(GZIPPED_BACKUP_SQL_FILE_PATH, file.content);
+        // Decompress .gz file
+        await this.decompressGzippedFile(GZIPPED_BACKUP_SQL_FILE_PATH, this.backupSQLFilePath);
+        // Remove the .gz file
+        nodeFs.unlinkSync(GZIPPED_BACKUP_SQL_FILE_PATH);
+
+        // Continue with restore
+        await this.restoreDatabaseFromFile(this.backupSQLFilePath);
         nodeFs.unlinkSync(this.backupSQLFilePath);
         resolve();
       } catch (e) {
         if (nodeFs.existsSync(this.backupSQLFilePath)) {
           nodeFs.unlinkSync(this.backupSQLFilePath);
         }
+        if (nodeFs.existsSync(GZIPPED_BACKUP_SQL_FILE_PATH)) {
+          nodeFs.unlinkSync(GZIPPED_BACKUP_SQL_FILE_PATH);
+        }
         reject(e);
       }
     });
   }
 
-  private backupDatabaseToFile(): Promise<void> {
+  // inputFilePath is the .gz file
+  // outputFilePath is the path where you want to store the decompressed data.
+  private async decompressGzippedFile(inputFilePath: string, outputFilePath: string): Promise<void> {
+    if (nodePath.extname(inputFilePath) !== ".gz") {
+      throw new Error("Cannot decompress! File is not .gz!");
+    }
+    const rstream = nodeFs.createReadStream(inputFilePath);
+    const wstream = nodeFs.createWriteStream(outputFilePath);
+    const gunzip = zlib.createGunzip();
+    rstream.pipe(gunzip).pipe(wstream);
+    return new Promise((resolve, reject) => {
+      wstream.on("finish", resolve);
+      wstream.on("error", reject);
+    });
+  }
+
+  private backupDatabaseToFile(backupOutputFilePath: string): Promise<void> {
     const backupDatabaseFilePath = this.databaseFilePath;
 
     return new Promise((resolve, reject) => {
@@ -196,10 +227,15 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         }
 
         const db = new sqlite3.Database(backupDatabaseFilePath, sqlite3.OPEN_READONLY);
-        const backupStream = nodeFs.createWriteStream(this.backupSQLFilePath);
+        const backupStream = nodeFs.createWriteStream(backupOutputFilePath);
+        const gzip = zlib.createGzip();
+        gzip.pipe(backupStream);
+
+        backupStream.on("finish", resolve);
+        backupStream.on("error", reject);
 
         db.serialize(() => {
-          backupStream.write(`PRAGMA foreign_keys=OFF;${this.parseBackupFileDelimiter}\nBEGIN TRANSACTION;${this.parseBackupFileDelimiter}\n`);
+          gzip.write(`PRAGMA foreign_keys=OFF;${this.parseBackupFileDelimiter}\nBEGIN TRANSACTION;${this.parseBackupFileDelimiter}\n`);
 
           db.all(`SELECT sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger') AND sql NOT NULL`, (err, rows) => {
             if (err) {
@@ -214,7 +250,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
                 .replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
                 .replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
               // @ts-ignore
-              backupStream.write(`${sql};${this.parseBackupFileDelimiter}\n`);
+              gzip.write(`${sql};${this.parseBackupFileDelimiter}\n`);
             });
 
             // Write data
@@ -240,7 +276,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
                     const values = Object.values(row).map((value) => (value === null ? "NULL" : `'${value.toString().replace(/'/g, "''")}'`));
 
                     const insertStmt = `INSERT INTO "${tableName}" (${columns.join(", ")}) VALUES (${values.join(", ")});`;
-                    backupStream.write(insertStmt + this.parseBackupFileDelimiter + "\n");
+                    gzip.write(insertStmt + this.parseBackupFileDelimiter + "\n");
                   },
                   (err) => {
                     if (err) {
@@ -251,10 +287,8 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
               });
 
               db.close(() => {
-                backupStream.write("COMMIT;\n");
-                backupStream.end(() => {
-                  resolve();
-                });
+                gzip.write("COMMIT;\n");
+                gzip.end();
               });
             });
           });
@@ -265,13 +299,13 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
     });
   }
 
-  private restoreDatabaseFromFile(): Promise<void> {
+  private restoreDatabaseFromFile(filePathOfBackupToRestore: string): Promise<void> {
     const backupDatabaseFilePath = this.databaseFilePath;
 
     return new Promise((resolve, reject) => {
       try {
         const db = new sqlite3.Database(backupDatabaseFilePath);
-        const data = nodeFs.readFileSync(this.backupSQLFilePath, "utf-8");
+        const data = nodeFs.readFileSync(filePathOfBackupToRestore, "utf-8");
         const sqlStatements = data.split(this.parseBackupFileDelimiter).map((s) => s.trim());
 
         db.serialize(() => {
