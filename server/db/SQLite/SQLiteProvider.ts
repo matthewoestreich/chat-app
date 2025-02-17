@@ -160,8 +160,8 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
   }
 
   async restore(): Promise<void> {
-    const backupSQLFileName = nodePath.basename(this.backupSQLFilePath);
     const GZIPPED_BACKUP_SQL_FILE_PATH = this.backupSQLFilePath + ".gz";
+    const backupSQLFileName = nodePath.basename(GZIPPED_BACKUP_SQL_FILE_PATH);
 
     return new Promise(async (resolve, reject) => {
       try {
