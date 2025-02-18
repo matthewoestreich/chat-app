@@ -214,24 +214,17 @@ export default function ChatView(): React.JSX.Element {
 
       if (message.type === "DirectConversation") {
         // If our state.chatScope is null it HAS to mean someone is sending us a DM. If we had a chatScope, it means we
-        // explicitly entered a "scope" and could be a room or direct convo message.
-        // This is bc a room message only gets broadcast to active members in that room.
+        // explicitly entered a "scope" and could be a room or direct convo message. This is bc a room message only gets broadcast to active members in that room.
         if (state.chatScope === null) {
           // We aren't in any scope, so we need to alert you that someone has sent you a message
           return console.log(`RECEIVE_MESSAGE : someone you are not in a convo with messaged you, this is where the UI should alert you!`);
         }
-        // See if we are actively in a direct convo with the person that messaged us, if so we can just dispatch new state so the message
-        // can be rendered.
         console.log("RECEIVE_MESSAGE", { message, stateChatScope: state.chatScope });
+        // See if we are actively in a direct convo with the person that messaged us, if so we can just dispatch new state so the message can be rendered.
         if (state.chatScope.id === message.scopeId) {
           return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
         }
       }
-      //if (state.chatScope === null) {
-      //  console.log({ from: "ChatView::handleReceiveMessage", message });
-      //  return dispatch({ type: "RECEIVE_MESSAGE", payload: message });
-      //}
-      //console.log(`RECEIVED_MESSAGE`, JSON.stringify(message, null, 2));
     };
 
     websocketeer.on("RECEIVE_MESSAGE", handleReceiveMessage);
@@ -258,6 +251,17 @@ export default function ChatView(): React.JSX.Element {
     }
     websocketeer.send("SEND_MESSAGE", { message: chatMessageInputRef.current.value, scope: state.chatScope });
   }
+
+  const hasUnreadDirectMessages = useCallback(() => {
+    if (!state.directConversations || !state.directConversations.length) {
+      return false;
+    }
+    for (const dc of state.directConversations) {
+      if (dc.unreadMessagesCount > 0) {
+        return true;
+      }
+    }
+  }, [state.directConversations]);
 
   const handleMessageInputKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -466,6 +470,15 @@ export default function ChatView(): React.JSX.Element {
                     className="btn btn-primary flex-grow-1 shadow"
                     type="button"
                     title="Direct Messages"
+                    style={
+                      hasUnreadDirectMessages()
+                        ? {
+                            animation: "blink 1s",
+                            animationIterationCount: 3,
+                            border: "5px solid red",
+                          }
+                        : {}
+                    }
                   >
                     <i className="bi bi-chat-dots-fill"></i>
                   </button>
@@ -486,7 +499,20 @@ export default function ChatView(): React.JSX.Element {
                     data-bs-target="#members-offcanvas"
                     onClick={handleOpenDirectMessagesDrawer}
                   >
-                    <button className="btn btn-secondary shadow" type="button" title="View Members">
+                    <button
+                      className="btn btn-secondary shadow"
+                      type="button"
+                      title="View Direct Messages"
+                      style={
+                        hasUnreadDirectMessages()
+                          ? {
+                              animation: "blink 1s",
+                              animationIterationCount: 3,
+                              border: "5px solid red",
+                            }
+                          : {}
+                      }
+                    >
                       <i className="bi bi-chat-dots-fill"></i>
                     </button>
                   </a>

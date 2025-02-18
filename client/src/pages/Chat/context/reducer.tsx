@@ -84,6 +84,7 @@ export default function chatReducer(state: ChatState, action: ChatStateAction): 
       if (newState.directConversations[otherPersonIndex].unreadMessagesCount > 0) {
         newState.directConversations[otherPersonIndex].unreadMessagesCount = 0;
       }
+      sortPublicDirectConversations(newState.directConversations, false);
       return newState;
     }
     case "SET_DIRECT_CONVERSATIONS": {

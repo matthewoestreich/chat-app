@@ -280,3 +280,5 @@ a.navbar-icon {
   border-top: 15px solid #e5e5ea;
   border-left: 15px solid transparent;
 }
+
+@keyframes blink { 50% { border-color: unset; }  }
