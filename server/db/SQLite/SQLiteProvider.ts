@@ -233,7 +233,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
                 .replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
                 .replace("CREATE TRIGGER", "CREATE TRIGGER IF NOT EXISTS");
               // @ts-ignore
-              gzip.write(`${sql};${this.parseBackupFileDelimiter}\n`);
+              backupStream.write(`${sql};${this.parseBackupFileDelimiter}\n`);
             });
 
             // Write data
