@@ -5,7 +5,6 @@ import { DatabasePool, DatabaseProvider, RoomsRepository, RoomsMessagesRepositor
 import WebSocketApp from "@server/wss/WebSocketApp";
 import { generateFakeData } from "@server/fakerService";
 import { getGistFiles, updateGist } from "@server/gistService";
-import { ZipWriteStream, unzipFile } from "@server/zipService";
 import SQLitePool from "./pool/SQLitePool";
 import { insertFakeData } from "./insertFakeData";
 import tableNames from "../tables";
@@ -16,9 +15,6 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
   private parseBackupFileDelimiter: string = "~~__~~";
   private backupSQLFilePath: string;
   private databaseFilePath: string;
-
-  private BACKUP_ZIP_FILE: string;
-  private BACKUP_B64_FILE: string;
 
   databasePool: DatabasePool<sqlite3.Database>;
   rooms: RoomsRepository<sqlite3.Database>;
@@ -35,9 +31,6 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
       name: "sqlite",
       ext: ".sql",
     });
-    this.BACKUP_ZIP_FILE = this.backupSQLFilePath + ".zip";
-    this.BACKUP_B64_FILE = this.backupSQLFilePath + ".zip.b64";
-
     this.databasePool = new SQLitePool(databaseFilePath, maxConnections);
     this.rooms = new RoomsRepositorySQLite(this.databasePool);
     this.roomMessages = new RoomsMessagesRepositorySQLite(this.databasePool);
@@ -142,21 +135,13 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
       }
 
       try {
-        // Backup to .zip file
-        await this.backupDatabaseToZipFile(this.BACKUP_ZIP_FILE);
-        // Read zip contents and encode as base64. This prevents corruption when uploading binary files to gists.
-        nodeFs.writeFileSync(this.BACKUP_B64_FILE, nodeFs.readFileSync(this.BACKUP_ZIP_FILE).toString("base64"));
-        // Upload our base64 encoded zip file to gists.
-        await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [this.BACKUP_B64_FILE]);
-        nodeFs.unlinkSync(this.BACKUP_ZIP_FILE);
-        nodeFs.unlinkSync(this.BACKUP_B64_FILE);
+        await this.backupDatabaseToFile();
+        await updateGist(process.env.GH_GISTS_API_KEY, process.env.GIST_ID, [this.backupSQLFilePath]);
+        nodeFs.unlinkSync(this.backupSQLFilePath);
         resolve();
       } catch (e) {
-        if (nodeFs.existsSync(this.BACKUP_ZIP_FILE)) {
-          nodeFs.unlinkSync(this.BACKUP_ZIP_FILE);
-        }
-        if (nodeFs.existsSync(this.BACKUP_B64_FILE)) {
-          nodeFs.unlinkSync(this.BACKUP_B64_FILE);
+        if (nodeFs.existsSync(this.backupSQLFilePath)) {
+          nodeFs.unlinkSync(this.backupSQLFilePath);
         }
         reject(e);
       }
@@ -164,7 +149,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
   }
 
   async restore(): Promise<void> {
-    const backupSQLFileName = nodePath.basename(this.BACKUP_B64_FILE);
+    const backupSQLFileName = nodePath.basename(this.backupSQLFilePath);
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -180,32 +165,20 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         if (!file) {
           return reject(new Error(`[SQLiteProvider.restore()] backup file not found in gist.`));
         }
-
-        // Decode base64 encoded zip file content
-        const zipBuffer = Buffer.from(file.content, "base64");
-        // Write zipped content to .zip file
-        nodeFs.writeFileSync(this.BACKUP_ZIP_FILE, zipBuffer);
-        // Unzip zipped file to our original .sql file
-        unzipFile(this.BACKUP_ZIP_FILE, this.backupSQLFilePath);
-        // Remove the .zip file
-        nodeFs.unlinkSync(this.BACKUP_ZIP_FILE);
-        // Continue with restore
-        await this.restoreDatabaseFromFile(this.backupSQLFilePath);
+        nodeFs.writeFileSync(this.backupSQLFilePath, file.content);
+        await this.restoreDatabaseFromFile();
         nodeFs.unlinkSync(this.backupSQLFilePath);
         resolve();
       } catch (e) {
         if (nodeFs.existsSync(this.backupSQLFilePath)) {
           nodeFs.unlinkSync(this.backupSQLFilePath);
         }
-        if (nodeFs.existsSync(this.BACKUP_ZIP_FILE)) {
-          nodeFs.unlinkSync(this.BACKUP_ZIP_FILE);
-        }
         reject(e);
       }
     });
   }
 
-  private backupDatabaseToZipFile(backupOutputFilePath: string): Promise<void> {
+  private backupDatabaseToFile(): Promise<void> {
     const backupDatabaseFilePath = this.databaseFilePath;
 
     return new Promise((resolve, reject) => {
@@ -215,7 +188,7 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
         }
 
         const db = new sqlite3.Database(backupDatabaseFilePath, sqlite3.OPEN_READONLY);
-        const backupStream = new ZipWriteStream(backupOutputFilePath);
+        const backupStream = nodeFs.createWriteStream(this.backupSQLFilePath);
 
         db.serialize(() => {
           backupStream.write(`PRAGMA foreign_keys=OFF;${this.parseBackupFileDelimiter}\nBEGIN TRANSACTION;${this.parseBackupFileDelimiter}\n`);
@@ -269,10 +242,11 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
                 );
               });
 
-              db.close(async () => {
+              db.close(() => {
                 backupStream.write("COMMIT;\n");
-                await backupStream.end();
-                resolve();
+                backupStream.end(() => {
+                  resolve();
+                });
               });
             });
           });
@@ -283,13 +257,13 @@ export default class SQLiteProvider implements DatabaseProvider<sqlite3.Database
     });
   }
 
-  private restoreDatabaseFromFile(filePathOfBackupToRestore: string): Promise<void> {
+  private restoreDatabaseFromFile(): Promise<void> {
     const backupDatabaseFilePath = this.databaseFilePath;
 
     return new Promise((resolve, reject) => {
       try {
         const db = new sqlite3.Database(backupDatabaseFilePath);
-        const data = nodeFs.readFileSync(filePathOfBackupToRestore, "utf-8");
+        const data = nodeFs.readFileSync(this.backupSQLFilePath, "utf-8");
         const sqlStatements = data.split(this.parseBackupFileDelimiter).map((s) => s.trim());
 
         db.serialize(() => {
