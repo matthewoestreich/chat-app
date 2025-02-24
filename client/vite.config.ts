@@ -4,9 +4,7 @@ import react from "@vitejs/plugin-react";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react({ include: "**/*.{ts,js,tsx}" })],
   base: "/",
   root: nodePath.resolve(__dirname, "./src"),
   build: {
@@ -17,6 +15,14 @@ export default defineConfig({
   esbuild: {
     drop: IS_DEV ? undefined : ["console", "debugger"],
   },
+  plugins: [
+    react({
+      include: "**/*.{ts,js,tsx}",
+      babel: {
+        plugins: [["babel-plugin-react-compiler"]],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@src": nodePath.resolve(__dirname, "../client/src"),
