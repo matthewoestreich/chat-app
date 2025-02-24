@@ -85,6 +85,7 @@ const clientConfig: Linter.Config = {
     },
   },
   plugins: {
+    "react-compiler": require("eslint-plugin-react-compiler"),
     "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
     react: reactPlugin,
     "react-hooks": require("eslint-plugin-react-hooks"),
@@ -95,6 +96,7 @@ const clientConfig: Linter.Config = {
     },
   },
   rules: {
+    "react-compiler/react-compiler": "error",
     ...tsPlugin.configs.recommended.rules,
     // React
     "react/jsx-filename-extension": [1, { extensions: [".tsx"] }],
