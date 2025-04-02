@@ -20,7 +20,7 @@ export default class AccountsRepositorySQLite implements AccountsRepository<sqli
         if (err) {
           return reject(err);
         }
-        const userEntity: User = { id: row.id, userName: row.user_name, email: row.email, password: row.password };
+        const userEntity: User = { id: row?.id, userName: row?.user_name, email: row?.email, password: row?.password };
         return resolve(userEntity);
       });
     });

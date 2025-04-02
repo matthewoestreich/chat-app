@@ -40,12 +40,22 @@ describe("Homepage", () => {
   });
 });
 
+describe("Login", () => {
+  it("Should display error when login attempted with nonexistent account", () => {
+    cy.visit("/");
+    cy.getLoginInputEmail().type("_");
+    cy.getLoginInputPassword().type("_");
+    cy.getLoginButton().click();
+    cy.get("#alert-message").should("contain.text", "Something went wrong");
+  });
+});
+
 /**
  * THERE IS NO NEED TO CALL cy.visit("/chat")` AT THE START OF A TEST
  * WITHIN THIS "describe" BLOCK. THIS IS BC WE LOGIN `beforeEach(..)`
  * WHICH REDIRECTS US TO `/chat` AUTOMATICALLY!!!
  */
-describe("Global", () => {
+describe("General Functionality", () => {
   const USER = generateAccountInfo();
   const NEW_ROOM_NAME = getRandomString(7);
   let DIRECT_CONVERSATION_NAME;

@@ -8,6 +8,7 @@ import Topbar from "../Topbar";
 const TopbarMemo = memo(Topbar);
 
 export default function LoginPage(): React.JSX.Element {
+  // eslint-disable-next-line react-compiler/react-compiler
   document.title = "RTChat | Welcome!";
 
   const [email, setEmail] = useState("");
@@ -47,6 +48,7 @@ export default function LoginPage(): React.JSX.Element {
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    handleCloseAlert();
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;

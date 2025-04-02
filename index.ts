@@ -9,7 +9,11 @@ import DatabaseProviderFactory from "./server/db/DatabaseProviderFactory";
 
 process.env.EXPRESS_PORT = process.env.EXPRESS_PORT || undefined;
 process.env.JWT_SIGNATURE = process.env.JWT_SIGNATURE || undefined;
+process.env.DATABASE_PROVIDER = process.env.DATABASE_PROVIDER || undefined;
 
+if (process.env.DATABASE_PROVIDER === undefined) {
+  throw new Error("[MAIN][ERROR] process.env.DATABASE_PROVIDER is undefined! It is required to start this server.");
+}
 if (process.env.EXPRESS_PORT === undefined) {
   throw new Error("[MAIN][ERROR] process.env.EXPRESS_PORT is undefined! It is required to start this server.");
 }
@@ -17,31 +21,32 @@ if (process.env.JWT_SIGNATURE === undefined) {
   throw new Error("[MAIN][ERROR] process.env.JWT_SIGNATURE is undefined! It is required to start this server.");
 }
 
-const provider = DatabaseProviderFactory.create("sqlite");
-if (!provider) {
-  throw new Error("Provider not recognized!");
+const database = DatabaseProviderFactory.create(process.env.DATABASE_PROVIDER);
+if (!database) {
+  throw new Error(`Provider '${process.env.DATABASE_PROVIDER}' not recognized!`);
 }
-setDatabaseProvider(provider);
+
+setDatabaseProvider(database);
 
 (async (): Promise<void> => {
   try {
     switch (process.env.NODE_ENV) {
       case "production":
       case "render": {
-        await provider.restore();
+        await database.restore();
         keepAliveCronJob.start();
-        backupDatabaseCronJob(provider).start();
-        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        backupDatabaseCronJob(database).start();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, database);
         break;
       }
       case "development": {
-        await provider.initialize();
-        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        await database.initialize();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, database);
         break;
       }
       case "test": {
-        await provider.initialize();
-        startExpressAndWebSocketApps(expressApp, startWebSocketApp, provider);
+        await database.initialize();
+        startExpressAndWebSocketApps(expressApp, startWebSocketApp, database);
         break;
       }
       default: {
